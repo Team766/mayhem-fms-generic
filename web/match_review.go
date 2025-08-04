@@ -11,6 +11,7 @@ import (
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"net/http"
+	"sort"
 	"strconv"
 )
 
@@ -183,8 +184,17 @@ func (web *Web) buildMatchReviewList(matchType model.MatchType) ([]MatchReviewLi
 		return []MatchReviewListItem{}, err
 	}
 
+	// Sort matches by time in reverse chronological order (newest first)
+	matchesByTime := make([]*model.Match, len(matches))
+	for i := range matches {
+		matchesByTime[i] = &matches[i]
+	}
+	sort.Slice(matchesByTime, func(i, j int) bool {
+		return matchesByTime[i].Time.After(matchesByTime[j].Time)
+	})
+
 	matchReviewList := make([]MatchReviewListItem, len(matches))
-	for i, match := range matches {
+	for i, match := range matchesByTime {
 		matchReviewList[i].Id = match.Id
 		matchReviewList[i].ShortName = match.ShortName
 		matchReviewList[i].Time = match.Time.Local().Format("Mon 1/02 03:04 PM")

@@ -181,14 +181,14 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			if args.ReefPosition >= 1 && args.ReefPosition <= 12 && args.ReefLevel >= 2 && args.ReefLevel <= 4 {
-				level := game.Level(args.ReefLevel - 2)
-				reefIndex := args.ReefPosition - 1
+				// level := game.Level(args.ReefLevel - 2)
+				// reefIndex := args.ReefPosition - 1
 				if args.Current {
-					score.Reef.Branches[level][reefIndex] = !score.Reef.Branches[level][reefIndex]
+					// score.Reef.Branches[level][reefIndex] = !score.Reef.Branches[level][reefIndex]
 					scoreChanged = true
 				}
 				if args.Autonomous {
-					score.Reef.AutoBranches[level][reefIndex] = !score.Reef.AutoBranches[level][reefIndex]
+					// score.Reef.AutoBranches[level][reefIndex] = !score.Reef.AutoBranches[level][reefIndex]
 					scoreChanged = true
 				}
 				scoreChanged = true
@@ -221,7 +221,13 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
-				score.LeaveStatuses[args.TeamPosition-1] = !score.LeaveStatuses[args.TeamPosition-1]
+				// Toggle between LeaveNone (0) and LeaveFull (2)
+				currentStatus := score.LeaveStatuses[args.TeamPosition-1]
+				if currentStatus == game.LeaveNone {
+					score.LeaveStatuses[args.TeamPosition-1] = game.LeaveFull
+				} else {
+					score.LeaveStatuses[args.TeamPosition-1] = game.LeaveNone
+				}
 				scoreChanged = true
 			}
 		} else if command == "addFoul" {
@@ -259,26 +265,62 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			switch command {
+			case "score":
+				args := struct {
+					PieceType  string `mapstructure:"pieceType"`
+					Adjustment int    `mapstructure:"adjustment"`
+				}{}
+				err = mapstructure.Decode(data, &args)
+				if err != nil {
+					ws.WriteError(err.Error())
+					continue
+				}
+
+				switch args.PieceType {
+				case "gamepiece1":
+					if web.arena.MatchState == field.AutoPeriod {
+						score.GamePiece1Auton = max(0, score.GamePiece1Auton+args.Adjustment)
+					} else {
+						score.GamePiece1Teleop = max(0, score.GamePiece1Teleop+args.Adjustment)
+					}
+					scoreChanged = true
+				case "gamepiece2":
+					if web.arena.MatchState == field.AutoPeriod {
+						score.GamePiece2Auton = max(0, score.GamePiece2Auton+args.Adjustment)
+					} else {
+						score.GamePiece2Teleop = max(0, score.GamePiece2Teleop+args.Adjustment)
+					}
+					scoreChanged = true
+				}
+
 			case "barge":
-				score.BargeAlgae = max(0, score.BargeAlgae+args.Adjustment)
+				if web.arena.MatchState == field.AutoPeriod {
+					score.GamePiece1Auton = max(0, score.GamePiece1Auton+args.Adjustment)
+				} else {
+					score.GamePiece1Teleop = max(0, score.GamePiece1Teleop+args.Adjustment)
+				}
 				scoreChanged = true
 			case "processor":
-				score.ProcessorAlgae = max(0, score.ProcessorAlgae+args.Adjustment)
+				if web.arena.MatchState == field.AutoPeriod {
+					score.GamePiece2Auton = max(0, score.GamePiece2Auton+args.Adjustment)
+				} else {
+					score.GamePiece2Teleop = max(0, score.GamePiece2Teleop+args.Adjustment)
+				}
 				scoreChanged = true
 			case "trough":
 				if args.Current {
 					if args.NearSide {
-						score.Reef.TroughNear = max(0, score.Reef.TroughNear+args.Adjustment)
+						// score.Reef.TroughNear = max(0, score.Reef.TroughNear+args.Adjustment)
 					} else {
-						score.Reef.TroughFar = max(0, score.Reef.TroughFar+args.Adjustment)
+						// score.Reef.TroughFar = max(0, score.Reef.TroughFar+args.Adjustment)
 					}
 					scoreChanged = true
 				}
 				if args.Autonomous {
 					if args.NearSide {
-						score.Reef.AutoTroughNear = max(0, score.Reef.AutoTroughNear+args.Adjustment)
+						// score.Reef.AutoTroughNear = max(0, score.Reef.AutoTroughNear+args.Adjustment)
 					} else {
-						score.Reef.AutoTroughFar = max(0, score.Reef.AutoTroughFar+args.Adjustment)
+						// score.Reef.AutoTroughFar = max(0, score.Reef.AutoTroughFar+args.Adjustment)
 					}
 					scoreChanged = true
 				}

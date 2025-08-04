@@ -6,15 +6,15 @@
 package web
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/dchest/uniuri"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/dchest/uniuri"
 )
 
 const wpaKeyLength = 8
@@ -181,7 +181,6 @@ func (web *Web) teamEditPostHandler(w http.ResponseWriter, r *http.Request) {
 	team.Country = r.PostFormValue("country")
 	team.RookieYear, _ = strconv.Atoi(r.PostFormValue("rookieYear"))
 	team.RobotName = r.PostFormValue("robotName")
-	team.Accomplishments = r.PostFormValue("accomplishments")
 	if web.arena.EventSettings.NetworkSecurityEnabled {
 		team.WpaKey = r.PostFormValue("wpaKey")
 		if len(team.WpaKey) < 8 || len(team.WpaKey) > 63 {
@@ -319,22 +318,6 @@ func (web *Web) populateOfficialTeamInfo(team *model.Team) error {
 	if err != nil {
 		return err
 	}
-
-	// Generate string of recent awards in reverse chronological order.
-	recentAwards, err := web.arena.TbaClient.GetTeamAwards(team.Id)
-	if err != nil {
-		return err
-	}
-	var accomplishmentsBuffer bytes.Buffer
-	for i := len(recentAwards) - 1; i >= 0; i-- {
-		award := recentAwards[i]
-		if time.Now().Year()-award.Year <= 1 {
-			accomplishmentsBuffer.WriteString(
-				fmt.Sprintf("<p>%d %s - %s</p>", award.Year, award.EventName, award.Name),
-			)
-		}
-	}
-	team.Accomplishments = accomplishmentsBuffer.String()
 
 	// Download and store the team's avatar; if there isn't one, ignore the error.
 	if err = web.arena.TbaClient.DownloadTeamAvatar(team.Id, time.Now().Year()); err != nil {

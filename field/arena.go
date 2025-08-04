@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/Team254/cheesy-arena/game"
@@ -195,11 +194,6 @@ func (arena *Arena) LoadSettings() error {
 	game.MatchTiming.WarningRemainingDurationSec = settings.WarningRemainingDurationSec
 	game.UpdateMatchSounds()
 	arena.MatchTimingNotifier.Notify()
-
-	game.AutoBonusCoralThreshold = settings.AutoBonusCoralThreshold
-	game.CoralBonusPerLevelThreshold = settings.CoralBonusPerLevelThreshold
-	game.CoralBonusCoopEnabled = settings.CoralBonusCoopEnabled
-	game.BargeBonusPointThreshold = settings.BargeBonusPointThreshold
 
 	// Reconstruct the playoff tournament in memory.
 	if err = arena.CreatePlayoffTournament(); err != nil {
@@ -436,13 +430,6 @@ func (arena *Arena) StartMatch() error {
 				allianceStation.Team.HasConnected = true
 				arena.Database.UpdateTeam(allianceStation.Team)
 			}
-		}
-
-		// Propagate which teams were bypassed to the tracked score.
-		for i := 0; i < 3; i++ {
-			stationNumber := strconv.Itoa(i + 1)
-			arena.RedRealtimeScore.CurrentScore.RobotsBypassed[i] = arena.AllianceStations["R"+stationNumber].Bypass
-			arena.BlueRealtimeScore.CurrentScore.RobotsBypassed[i] = arena.AllianceStations["B"+stationNumber].Bypass
 		}
 
 		arena.MatchState = StartMatch
@@ -1003,7 +990,6 @@ func (arena *Arena) handlePlcInputOutput() {
 	// Get all the game-specific inputs and update the score.
 	if arena.MatchState == AutoPeriod || arena.MatchState == PausePeriod || arena.MatchState == TeleopPeriod ||
 		inGracePeriod {
-		redScore.ProcessorAlgae, blueScore.ProcessorAlgae = arena.Plc.GetProcessorCounts()
 	}
 	if !oldRedScore.Equals(redScore) || !oldBlueScore.Equals(blueScore) {
 		arena.RealtimeScoreNotifier.Notify()
@@ -1015,28 +1001,8 @@ func (arena *Arena) handlePlcInputOutput() {
 		if warningSequenceActive {
 			arena.Plc.SetTrussLights(lights, lights)
 		} else {
-			if !game.CoralBonusCoopEnabled || arena.CurrentMatch.Type == model.Playoff {
-				// Just leave the lights on all match if co-op is not enabled for this match (or event).
-				arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
-			} else {
-				// Set the lights to reflect co-op status.
-				if arena.RedScoreSummary().CoopertitionBonus && arena.BlueScoreSummary().CoopertitionBonus {
-					arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
-				} else {
-					arena.Plc.SetTrussLights(
-						[3]bool{
-							arena.RedRealtimeScore.CurrentScore.ProcessorAlgae >= 1,
-							arena.RedRealtimeScore.CurrentScore.ProcessorAlgae >= 2,
-							false,
-						},
-						[3]bool{
-							arena.BlueRealtimeScore.CurrentScore.ProcessorAlgae >= 1,
-							arena.BlueRealtimeScore.CurrentScore.ProcessorAlgae >= 2,
-							false,
-						},
-					)
-				}
-			}
+			// Just leave the lights on all match if co-op is not enabled for this match (or event).
+			arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
 		}
 	} else {
 		arena.Plc.SetTrussLights(

@@ -6,25 +6,15 @@
 package game
 
 type ScoreSummary struct {
-	LeavePoints             int
-	AutoPoints              int
-	NumCoral                int
-	CoralPoints             int
-	NumAlgae                int
-	AlgaePoints             int
-	BargePoints             int
-	MatchPoints             int
-	FoulPoints              int
-	Score                   int
-	CoopertitionCriteriaMet bool
-	CoopertitionBonus       bool
-	NumCoralLevels          int
-	NumCoralLevelsGoal      int
-	AutoBonusRankingPoint   bool
-	CoralBonusRankingPoint  bool
-	BargeBonusRankingPoint  bool
-	BonusRankingPoints      int
-	NumOpponentMajorFouls   int
+	LeavePoints           int
+	GamePiece1Points      int
+	GamePiece2Points      int
+	EndgamePoints         int
+	MatchPoints           int
+	FoulPoints            int
+	Score                 int
+	BonusRankingPoints    int
+	NumOpponentMajorFouls int
 }
 
 type MatchStatus int
@@ -54,12 +44,7 @@ func DetermineMatchStatus(redScoreSummary, blueScoreSummary *ScoreSummary, apply
 		); status != TieMatch {
 			return status
 		}
-		if status := comparePoints(redScoreSummary.AutoPoints, blueScoreSummary.AutoPoints); status != TieMatch {
-			return status
-		}
-		if status := comparePoints(redScoreSummary.BargePoints, blueScoreSummary.BargePoints); status != TieMatch {
-			return status
-		}
+		// TODO: Add tiebreakers for generic game.
 	}
 
 	return TieMatch

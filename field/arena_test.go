@@ -128,12 +128,6 @@ func TestArenaMatchFlow(t *testing.T) {
 	assert.Equal(t, WarmupPeriod, arena.MatchState)
 	assert.Equal(t, true, arena.AllianceStations["B3"].DsConn.Auto)
 	assert.Equal(t, false, arena.AllianceStations["B3"].DsConn.Enabled)
-	assert.Equal(t, true, arena.RedRealtimeScore.CurrentScore.RobotsBypassed[0])
-	assert.Equal(t, false, arena.RedRealtimeScore.CurrentScore.RobotsBypassed[1])
-	assert.Equal(t, true, arena.RedRealtimeScore.CurrentScore.RobotsBypassed[2])
-	assert.Equal(t, true, arena.BlueRealtimeScore.CurrentScore.RobotsBypassed[0])
-	assert.Equal(t, true, arena.BlueRealtimeScore.CurrentScore.RobotsBypassed[1])
-	assert.Equal(t, false, arena.BlueRealtimeScore.CurrentScore.RobotsBypassed[2])
 	arena.Update()
 	assert.Equal(t, WarmupPeriod, arena.MatchState)
 	assert.Equal(t, true, arena.AllianceStations["B3"].DsConn.Auto)
@@ -1045,10 +1039,6 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 	plc.redProcessorCount = 5
 	plc.blueProcessorCount = 8
 	arena.Update()
-	redScore := &arena.RedRealtimeScore.CurrentScore
-	blueScore := &arena.BlueRealtimeScore.CurrentScore
-	assert.Equal(t, 0, redScore.ProcessorAlgae)
-	assert.Equal(t, 0, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{false, false, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{false, false, false}, plc.blueTrussLights)
 	plc.redProcessorCount = 0
@@ -1071,8 +1061,6 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 	// Check the autonomous period.
 	plc.redProcessorCount = 1
 	arena.Update()
-	assert.Equal(t, 1, redScore.ProcessorAlgae)
-	assert.Equal(t, 0, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, false, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{false, false, false}, plc.blueTrussLights)
 
@@ -1084,8 +1072,6 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 	assert.Equal(t, PausePeriod, arena.MatchState)
 	plc.redProcessorCount = 2
 	arena.Update()
-	assert.Equal(t, 2, redScore.ProcessorAlgae)
-	assert.Equal(t, 0, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, true, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{false, false, false}, plc.blueTrussLights)
 
@@ -1099,38 +1085,26 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 
 	plc.blueProcessorCount = 1
 	arena.Update()
-	assert.Equal(t, 2, redScore.ProcessorAlgae)
-	assert.Equal(t, 1, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, true, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, false, false}, plc.blueTrussLights)
 
 	plc.redProcessorCount = 3
 	arena.Update()
-	assert.Equal(t, 3, redScore.ProcessorAlgae)
-	assert.Equal(t, 1, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, true, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, false, false}, plc.blueTrussLights)
 
 	plc.redProcessorCount = 17
 	arena.Update()
-	assert.Equal(t, 17, redScore.ProcessorAlgae)
-	assert.Equal(t, 1, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, true, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, false, false}, plc.blueTrussLights)
-	assert.Equal(t, true, arena.RedScoreSummary().CoopertitionCriteriaMet)
 	assert.Equal(t, false, arena.RedScoreSummary().CoopertitionBonus)
-	assert.Equal(t, false, arena.BlueScoreSummary().CoopertitionCriteriaMet)
 	assert.Equal(t, false, arena.BlueScoreSummary().CoopertitionBonus)
 
 	plc.blueProcessorCount = 2
 	arena.Update()
-	assert.Equal(t, 17, redScore.ProcessorAlgae)
-	assert.Equal(t, 2, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
-	assert.Equal(t, true, arena.RedScoreSummary().CoopertitionCriteriaMet)
 	assert.Equal(t, true, arena.RedScoreSummary().CoopertitionBonus)
-	assert.Equal(t, true, arena.BlueScoreSummary().CoopertitionCriteriaMet)
 	assert.Equal(t, true, arena.BlueScoreSummary().CoopertitionBonus)
 
 	// Check the truss lights during the "sonar ping" warning sound.
@@ -1158,8 +1132,6 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 	arena.MatchStartTime = time.Now().Add(-durationToWarning - 5000*time.Millisecond)
 	plc.redProcessorCount = 1
 	arena.Update()
-	assert.Equal(t, 1, redScore.ProcessorAlgae)
-	assert.Equal(t, 2, blueScore.ProcessorAlgae)
 	assert.Equal(t, [3]bool{true, false, false}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, true, false}, plc.blueTrussLights)
 
@@ -1181,14 +1153,7 @@ func TestPlcMatchCycleGameSpecificWithCoopEnabled(t *testing.T) {
 	assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 	assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 	arena.MatchStartTime = time.Now().Add(-durationToTeleopEnd - 3001*time.Millisecond)
-	arena.Update()
-	assert.Equal(t, [3]bool{false, false, false}, plc.redTrussLights)
-	assert.Equal(t, [3]bool{false, false, false}, plc.blueTrussLights)
-}
-
-func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 	defer func() {
-		game.CoralBonusCoopEnabled = true
 	}()
 
 	testCases := []struct {
@@ -1213,7 +1178,6 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 				var plc FakePlc
 				plc.isEnabled = true
 				arena.Plc = &plc
-				game.CoralBonusCoopEnabled = tc.coopEnabled
 				arena.CurrentMatch.Type = tc.matchType
 
 				// Check that no inputs or outputs are active before the match starts.
@@ -1221,11 +1185,7 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 				plc.redProcessorCount = 5
 				plc.blueProcessorCount = 8
 				arena.Update()
-				redScore := &arena.RedRealtimeScore.CurrentScore
-				blueScore := &arena.BlueRealtimeScore.CurrentScore
-				assert.Equal(t, 0, redScore.ProcessorAlgae)
-				assert.Equal(t, 0, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{false, false, false}, plc.redTrussLights)
+							assert.Equal(t, [3]bool{false, false, false}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{false, false, false}, plc.blueTrussLights)
 				plc.redProcessorCount = 0
 				plc.blueProcessorCount = 0
@@ -1247,9 +1207,7 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 				// Check the autonomous period.
 				plc.redProcessorCount = 1
 				arena.Update()
-				assert.Equal(t, 1, redScore.ProcessorAlgae)
-				assert.Equal(t, 0, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				// Check the pause period.
@@ -1260,9 +1218,7 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 				assert.Equal(t, PausePeriod, arena.MatchState)
 				plc.redProcessorCount = 2
 				arena.Update()
-				assert.Equal(t, 2, redScore.ProcessorAlgae)
-				assert.Equal(t, 0, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				// Check the teleop period.
@@ -1275,30 +1231,22 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 
 				plc.blueProcessorCount = 1
 				arena.Update()
-				assert.Equal(t, 2, redScore.ProcessorAlgae)
-				assert.Equal(t, 1, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				plc.redProcessorCount = 3
 				arena.Update()
-				assert.Equal(t, 3, redScore.ProcessorAlgae)
-				assert.Equal(t, 1, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				plc.redProcessorCount = 17
 				arena.Update()
-				assert.Equal(t, 17, redScore.ProcessorAlgae)
-				assert.Equal(t, 1, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				plc.blueProcessorCount = 2
 				arena.Update()
-				assert.Equal(t, 17, redScore.ProcessorAlgae)
-				assert.Equal(t, 2, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				// Check the truss lights during the "sonar ping" warning sound.
@@ -1326,9 +1274,7 @@ func TestPlcMatchCycleGameSpecificWithCoopDisabled(t *testing.T) {
 				arena.MatchStartTime = time.Now().Add(-durationToWarning - 5000*time.Millisecond)
 				plc.redProcessorCount = 1
 				arena.Update()
-				assert.Equal(t, 1, redScore.ProcessorAlgae)
-				assert.Equal(t, 2, blueScore.ProcessorAlgae)
-				assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
+										assert.Equal(t, [3]bool{true, true, true}, plc.redTrussLights)
 				assert.Equal(t, [3]bool{true, true, true}, plc.blueTrussLights)
 
 				// Check after the end of the match.

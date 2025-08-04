@@ -5,32 +5,48 @@
 
 package game
 
-type Score struct {
-	RobotsBypassed  [3]bool
-	LeaveStatuses   [3]bool
-	Reef            Reef
-	BargeAlgae      int
-	ProcessorAlgae  int
-	EndgameStatuses [3]EndgameStatus
-	Fouls           []Foul
-	PlayoffDq       bool
-}
+// create constants for each of the scoring elements
+const (
+	LeaveNonePoints        = 0
+	LeavePartialPoints     = 3
+	LeaveFullPoints        = 6
+	GamePiece1AutonPoints  = 5
+	GamePiece2AutonPoints  = 7
+	GamePiece1TeleopPoints = 6
+	GamePiece2TeleopPoints = 8
+	EndgameNonePoints      = 0
+	EndgamePartialPoints   = 2
+	EndgameFullPoints      = 5
+)
 
-// Game-specific settings that can be changed via the settings.
-var AutoBonusCoralThreshold = 1
-var CoralBonusPerLevelThreshold = 7
-var CoralBonusCoopEnabled = true
-var BargeBonusPointThreshold = 16
+// LeaveStatus represents the autonomous performance of a robot.
+type LeaveStatus int
 
-// Represents the state of a robot at the end of the match.
+const (
+	LeaveNone LeaveStatus = iota
+	LeavePartial
+	LeaveFull
+)
+
+// EndgameStatus represents the state of a robot at the end of the match.
 type EndgameStatus int
 
 const (
 	EndgameNone EndgameStatus = iota
-	EndgameParked
-	EndgameShallowCage
-	EndgameDeepCage
+	EndgamePartial
+	EndgameFull
 )
+
+type Score struct {
+	LeaveStatuses    [3]LeaveStatus
+	GamePiece1Auton  int
+	GamePiece1Teleop int
+	GamePiece2Auton  int
+	GamePiece2Teleop int
+	EndgameStatuses  [3]EndgameStatus
+	Fouls            []Foul
+	PlayoffDq        bool
+}
 
 // Summarize calculates and returns the summary fields used for ranking and display.
 func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
@@ -42,33 +58,36 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	}
 
 	// Calculate autonomous period points.
+	summary.LeavePoints = 0
 	for _, status := range score.LeaveStatuses {
-		if status {
-			summary.LeavePoints += 3
-		}
-	}
-	autoCoralPoints := score.Reef.AutoCoralPoints()
-	summary.AutoPoints = summary.LeavePoints + autoCoralPoints
-
-	summary.NumCoral = score.Reef.AutoCoralCount() + score.Reef.TeleopCoralCount()
-	summary.CoralPoints = autoCoralPoints + score.Reef.TeleopCoralPoints()
-	summary.NumAlgae = score.BargeAlgae + score.ProcessorAlgae
-	summary.AlgaePoints = 4*score.BargeAlgae + 6*score.ProcessorAlgae
-
-	// Calculate endgame points.
-	for _, status := range score.EndgameStatuses {
 		switch status {
-		case EndgameParked:
-			summary.BargePoints += 2
-		case EndgameShallowCage:
-			summary.BargePoints += 6
-		case EndgameDeepCage:
-			summary.BargePoints += 12
+		case LeavePartial:
+			summary.LeavePoints += LeavePartialPoints
+		case LeaveFull:
+			summary.LeavePoints += LeaveFullPoints
 		default:
 		}
 	}
 
-	summary.MatchPoints = summary.LeavePoints + summary.CoralPoints + summary.AlgaePoints + summary.BargePoints
+	// Calculate Game Piece 1 points.
+	summary.GamePiece1Points = (score.GamePiece1Auton * GamePiece1AutonPoints) + (score.GamePiece1Teleop * GamePiece1TeleopPoints)
+
+	// Calculate Game Piece 2 points.
+	summary.GamePiece2Points = (score.GamePiece2Auton * GamePiece2AutonPoints) + (score.GamePiece2Teleop * GamePiece2TeleopPoints)
+
+	// Calculate endgame points.
+	summary.EndgamePoints = 0
+	for _, status := range score.EndgameStatuses {
+		switch status {
+		case EndgamePartial:
+			summary.EndgamePoints += EndgamePartialPoints
+		case EndgameFull:
+			summary.EndgamePoints += EndgameFullPoints
+		default:
+		}
+	}
+
+	summary.MatchPoints = summary.LeavePoints + summary.GamePiece1Points + summary.GamePiece2Points + summary.EndgamePoints
 
 	// Calculate penalty points.
 	for _, foul := range opponentScore.Fouls {
@@ -78,86 +97,50 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 			summary.NumOpponentMajorFouls++
 		}
 
-		rule := foul.Rule()
+		// TODO: Review foul.Rule() and IsRankingPoint for generic game
+		/* rule := foul.Rule()
 		if rule != nil {
 			// Check for the opponent fouls that automatically trigger a ranking point.
 			if rule.IsRankingPoint {
-				switch rule.RuleNumber {
-				case "G410":
-					summary.CoralBonusRankingPoint = true
-				case "G418":
-					summary.BargeBonusRankingPoint = true
-				case "G428":
-					summary.BargeBonusRankingPoint = true
-				}
+				// This section will need to be updated for generic ranking points
 			}
-		}
+		} */
 	}
 
 	summary.Score = summary.MatchPoints + summary.FoulPoints
 
 	// Calculate bonus ranking points.
-	// Autonomous bonus ranking point.
-	allRobotsLeft := true
-	for i, left := range score.LeaveStatuses {
-		if !left && !score.RobotsBypassed[i] {
-			allRobotsLeft = false
-			break
-		}
-	}
-	if allRobotsLeft && score.Reef.isAutoBonusCoralThresholdMet() {
-		summary.AutoBonusRankingPoint = true
-	}
+	// TODO: This section needs to be updated based on generic game ranking rules.
+	// For now, bonus ranking points will be 0 or based on simple criteria.
+	summary.BonusRankingPoints = 0
 
-	// Coral bonus ranking point.
-	summary.NumCoralLevels = score.Reef.countCoralBonusSatisfiedLevels()
-	summary.NumCoralLevelsGoal = 4
-	if CoralBonusCoopEnabled {
-		summary.CoopertitionCriteriaMet = score.ProcessorAlgae >= 2
-		summary.CoopertitionBonus = summary.CoopertitionCriteriaMet && opponentScore.ProcessorAlgae >= 2
-		if summary.CoopertitionBonus {
-			summary.NumCoralLevelsGoal = 3
-		}
-	}
-	if summary.NumCoralLevels >= summary.NumCoralLevelsGoal {
-		summary.CoralBonusRankingPoint = true
-	}
+	// Example: A simple RP for achieving a certain score
+	// if summary.MatchPoints >= 50 { // Arbitrary threshold
+	// 	summary.BonusRankingPoints++
+	// }
 
-	// Barge bonus ranking point.
-	if summary.BargePoints >= BargeBonusPointThreshold {
-		summary.BargeBonusRankingPoint = true
-	}
-
-	// Check for G206 violation.
-	for _, foul := range score.Fouls {
-		if foul.Rule() != nil && foul.Rule().RuleNumber == "G206" {
-			summary.CoralBonusRankingPoint = false
-			summary.BargeBonusRankingPoint = false
-			break
-		}
-	}
-
-	// Add up the bonus ranking points.
-	if summary.AutoBonusRankingPoint {
-		summary.BonusRankingPoints++
-	}
-	if summary.CoralBonusRankingPoint {
-		summary.BonusRankingPoints++
-	}
-	if summary.BargeBonusRankingPoint {
-		summary.BonusRankingPoints++
-	}
+	// Example: A simple RP for all robots achieving Full Leave
+	// allRobotsFullLeave := true
+	// for _, status := range score.AutonStatuses {
+	// 	if status != LeaveFull {
+	// 		allRobotsFullLeave = false
+	// 		break
+	// 	}
+	// }
+	// if allRobotsFullLeave {
+	// 	summary.BonusRankingPoints++
+	// }
 
 	return summary
 }
 
 // Equals returns true if and only if all fields of the two scores are equal.
 func (score *Score) Equals(other *Score) bool {
-	if score.RobotsBypassed != other.RobotsBypassed ||
-		score.LeaveStatuses != other.LeaveStatuses ||
-		score.Reef != other.Reef ||
-		score.BargeAlgae != other.BargeAlgae ||
-		score.ProcessorAlgae != other.ProcessorAlgae ||
+	if score.LeaveStatuses != other.LeaveStatuses ||
+		score.GamePiece1Auton != other.GamePiece1Auton ||
+		score.GamePiece1Teleop != other.GamePiece1Teleop ||
+		score.GamePiece2Auton != other.GamePiece2Auton ||
+		score.GamePiece2Teleop != other.GamePiece2Teleop ||
 		score.EndgameStatuses != other.EndgameStatuses ||
 		score.PlayoffDq != other.PlayoffDq ||
 		len(score.Fouls) != len(other.Fouls) {

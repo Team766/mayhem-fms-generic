@@ -7,14 +7,15 @@ package web
 
 import (
 	"fmt"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/tournament"
-	"github.com/Team254/cheesy-arena/websocket"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/Team254/cheesy-arena/tournament"
+	"github.com/Team254/cheesy-arena/websocket"
 )
 
 // Global var to hold configurable time limit for selections. A value of zero disables the timer.
@@ -235,20 +236,6 @@ func (web *Web) allianceSelectionFinalizeHandler(w http.ResponseWriter, r *http.
 	if err != nil {
 		handleWebErr(w, err)
 		return
-	}
-
-	if web.arena.EventSettings.TbaPublishingEnabled {
-		// Publish alliances and schedule to The Blue Alliance.
-		err = web.arena.TbaClient.PublishAlliances(web.arena.Database)
-		if err != nil {
-			web.renderAllianceSelection(w, r, fmt.Sprintf("Failed to publish alliances: %s", err.Error()))
-			return
-		}
-		err = web.arena.TbaClient.PublishMatches(web.arena.Database)
-		if err != nil {
-			web.renderAllianceSelection(w, r, fmt.Sprintf("Failed to publish matches: %s", err.Error()))
-			return
-		}
 	}
 
 	// Signal displays of the bracket to update themselves.

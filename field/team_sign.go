@@ -7,14 +7,15 @@ package field
 
 import (
 	"fmt"
-	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/model"
 	"image/color"
 	"log"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Team254/cheesy-arena/game"
+	"github.com/Team254/cheesy-arena/model"
 )
 
 // Represents a collection of team number and timer signs.
@@ -107,18 +108,14 @@ func (signs *TeamSigns) Update(arena *Arena) {
 
 	// Generate the in-match rear text which is common to a whole alliance.
 	redInMatchTeamRearText := generateInMatchTeamRearText(arena, true, countdown)
-	redInMatchTimerRearText := generateInMatchTimerRearText(arena, true)
 	blueInMatchTeamRearText := generateInMatchTeamRearText(arena, false, countdown)
-	blueInMatchTimerRearText := generateInMatchTimerRearText(arena, false)
 
 	signs.Red1.update(arena, arena.AllianceStations["R1"], true, countdown, redInMatchTeamRearText)
 	signs.Red2.update(arena, arena.AllianceStations["R2"], true, countdown, redInMatchTeamRearText)
 	signs.Red3.update(arena, arena.AllianceStations["R3"], true, countdown, redInMatchTeamRearText)
-	signs.RedTimer.update(arena, nil, true, countdown, redInMatchTimerRearText)
 	signs.Blue1.update(arena, arena.AllianceStations["B1"], false, countdown, blueInMatchTeamRearText)
 	signs.Blue2.update(arena, arena.AllianceStations["B2"], false, countdown, blueInMatchTeamRearText)
 	signs.Blue3.update(arena, arena.AllianceStations["B3"], false, countdown, blueInMatchTeamRearText)
-	signs.BlueTimer.update(arena, nil, false, countdown, blueInMatchTimerRearText)
 }
 
 // Sets the team numbers for the next match on all signs.
@@ -204,29 +201,8 @@ func generateInMatchTeamRearText(arena *Arena, isRed bool, countdown string) str
 	allianceScores := fmt.Sprintf(formatString, scoreTotal, opponentScoreTotal)
 
 	var coralRankingPointProgress string
-	if arena.CurrentMatch.Type != model.Playoff {
-		coralRankingPointProgress = fmt.Sprintf("%d/%d", scoreSummary.NumCoralLevels, scoreSummary.NumCoralLevelsGoal)
-	}
 
 	return fmt.Sprintf("%s %s %s", countdown, allianceScores, coralRankingPointProgress)
-}
-
-// Returns the in-match rear text for the timer display for the given alliance.
-func generateInMatchTimerRearText(arena *Arena, isRed bool) string {
-	var reef *game.Reef
-	if isRed {
-		reef = &arena.RedRealtimeScore.CurrentScore.Reef
-	} else {
-		reef = &arena.BlueRealtimeScore.CurrentScore.Reef
-	}
-
-	return fmt.Sprintf(
-		"1-%02d 2-%02d 3-%02d 4-%02d",
-		reef.CountTotalCoralByLevel(game.Level1),
-		reef.CountTotalCoralByLevel(game.Level2),
-		reef.CountTotalCoralByLevel(game.Level3),
-		reef.CountTotalCoralByLevel(game.Level4),
-	)
 }
 
 // Returns the front text, front color, and rear text to display on the timer display.

@@ -16,41 +16,27 @@ func TestScore1() *Score {
 		{true, 25, 15},
 	}
 	return &Score{
-		RobotsBypassed: [3]bool{false, false, true},
-		LeaveStatuses:  [3]bool{true, true, false},
-		Reef: Reef{
-			AutoBranches:   [3][12]bool{{true}},
-			Branches:       [3][12]bool{{true, true}, {true, true, true}},
-			AutoTroughNear: 0,
-			AutoTroughFar:  1,
-			TroughNear:     3,
-			TroughFar:      4,
-		},
-		BargeAlgae:      7,
-		ProcessorAlgae:  2,
-		EndgameStatuses: [3]EndgameStatus{EndgameParked, EndgameNone, EndgameDeepCage},
-		Fouls:           fouls,
-		PlayoffDq:       false,
+		LeaveStatuses:    [3]LeaveStatus{LeaveFull, LeavePartial, LeaveNone},
+		GamePiece1Auton:  2,
+		GamePiece1Teleop: 5,
+		GamePiece2Auton:  1,
+		GamePiece2Teleop: 4,
+		EndgameStatuses:  [3]EndgameStatus{EndgamePartial, EndgameNone, EndgameFull},
+		Fouls:            fouls,
+		PlayoffDq:        false,
 	}
 }
 
 func TestScore2() *Score {
 	return &Score{
-		RobotsBypassed: [3]bool{false, false, false},
-		LeaveStatuses:  [3]bool{false, true, false},
-		Reef: Reef{
-			AutoBranches:   [3][12]bool{{}, {}, {true, true, true, true}},
-			Branches:       [3][12]bool{{true, true, true}, {true, true, true, true, true}, {true, true, true}},
-			AutoTroughNear: 2,
-			AutoTroughFar:  1,
-			TroughNear:     10,
-			TroughFar:      5,
-		},
-		BargeAlgae:      9,
-		ProcessorAlgae:  1,
-		EndgameStatuses: [3]EndgameStatus{EndgameDeepCage, EndgameShallowCage, EndgameShallowCage},
-		Fouls:           []Foul{},
-		PlayoffDq:       false,
+		LeaveStatuses:    [3]LeaveStatus{LeaveNone, LeaveFull, LeaveNone},
+		GamePiece1Auton:  4,
+		GamePiece1Teleop: 8,
+		GamePiece2Auton:  5,
+		GamePiece2Teleop: 10,
+		EndgameStatuses:  [3]EndgameStatus{EndgameFull, EndgamePartial, EndgameFull},
+		Fouls:            []Foul{},
+		PlayoffDq:        false,
 	}
 }
 

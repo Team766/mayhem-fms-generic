@@ -139,18 +139,7 @@ UI for configuring event settings.
                 </div>
               </div>
             </fieldset>
-            <fieldset class="mb-4">
-              <legend>Team Info Download</legend>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label" for="tbaDownloadEnabled">
-                  Enable Team Info Download (From The Blue Alliance)
-                </label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="tbaDownloadEnabled"
-                    name="tbaDownloadEnabled" {{if .TbaDownloadEnabled}} checked{{end}}>
-                </div>
-              </div>
-            </fieldset>
+            
             <fieldset class="mb-4">
               <legend>Authentication</legend>
               <p>Configure password to enable authentication, or leave blank to disable.</p>
@@ -415,25 +404,7 @@ UI for configuring event settings.
                 </div>
               </div>
             </fieldset>
-            <div class="col-lg-4">
-              {{if .TbaPublishingEnabled}}
-              <legend>Publishing Operations</legend>
-              <div>
-                <a href="/setup/settings/publish_teams" class="btn btn-primary">Publish Teams</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_matches" class="btn btn-primary">Publish Schedule/Results</a></div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_rankings" class="btn btn-primary">Publish Standings</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_alliances" class="btn btn-primary">Publish Alliances</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_awards" class="btn btn-primary">Publish Awards</a>
-              </div>
-              {{end}}
-            </div>
+            
           </div>
           <div class="tab-pane" id="automation" role="tabpanel">
             <fieldset class="mb-4">

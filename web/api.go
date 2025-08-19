@@ -8,15 +8,15 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/partner"
-	"github.com/Team254/cheesy-arena/playoff"
-	"github.com/Team254/cheesy-arena/websocket"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/Team254/cheesy-arena/game"
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/Team254/cheesy-arena/playoff"
+	"github.com/Team254/cheesy-arena/websocket"
 )
 
 type MatchResultWithSummary struct {
@@ -213,6 +213,9 @@ func (web *Web) arenaWebsocketApiHandler(w http.ResponseWriter, r *http.Request)
 	ws.HandleNotifiers(web.arena.MatchTimingNotifier, web.arena.MatchLoadNotifier, web.arena.MatchTimeNotifier)
 }
 
+// Directory containing team avatar images
+const AvatarsDir = "static/img/avatars"
+
 // Serves the avatar for a given team, or a default if none exists.
 func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
 	teamId, err := strconv.Atoi(r.PathValue("teamId"))
@@ -221,9 +224,9 @@ func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	avatarPath := fmt.Sprintf("%s/%d.png", partner.AvatarsDir, teamId)
+	avatarPath := fmt.Sprintf("%s/%d.png", AvatarsDir, teamId)
 	if _, err := os.Stat(avatarPath); os.IsNotExist(err) {
-		avatarPath = fmt.Sprintf("%s/0.png", partner.AvatarsDir)
+		avatarPath = fmt.Sprintf("%s/0.png", AvatarsDir)
 	}
 
 	http.ServeFile(w, r, avatarPath)

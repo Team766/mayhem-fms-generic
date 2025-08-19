@@ -8,6 +8,87 @@ UI for entering realtime scores.
 {{define "title"}}Scoring Panel{{end}}
 {{define "body"}}
 <header id="banner">
+  <div class="screen-title">{{.Position.Title}} - <span id="matchName">&nbsp;</span></div>
+</header>
+<main>
+  {{if .Position.ScoresAuto}}
+  <div class="scoring-section">
+    <h2>Autonomous</h2>
+    <div class="button-group">
+      {{range $i := seq 3}}
+      {{template "teamButton" (dict "id" (printf "leave-%d" $i) "index" $i "class" "scoring-button" "onclick" (printf "handleLeaveClick(%d);" $i) "label" "Leave")}}
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Position.ScoresStructure1}}
+  <div class="scoring-section">
+    <h2>Structure 1</h2>
+    {{template "counter" (dict "id" "gp1_l1" "label" "Gamepiece 1 Level 1")}}
+    {{template "counter" (dict "id" "gp1_l2" "label" "Gamepiece 1 Level 2")}}
+  </div>
+  {{end}}
+
+  {{if .Position.ScoresStructure2}}
+  <div class="scoring-section">
+    <h2>Structure 2</h2>
+    {{template "counter" (dict "id" "gp2" "label" "Gamepiece 2")}}
+  </div>
+  {{end}}
+
+  {{if .Position.ScoresEndgame}}
+  <div class="scoring-section">
+    <h2>Endgame</h2>
+    <div class="button-group">
+      {{range $i := seq 3}}
+      {{template "teamButton" (dict "id" (printf "park-%d" $i) "index" $i "class" "scoring-button" "onclick" (printf "handleParkClick(%d);" $i) "label" "Park")}}
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  <div class="scoring-section">
+    <button id="edit-auto" onclick="toggleEditAuto();" ontouchstart disabled>Edit Auto</button>
+    <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
+  </div>
+</main>
+{{end}}
+
+{{define "head"}}
+<link rel="manifest" href="/static/manifest/{{.PositionName}}_scoring.manifest">
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<link href="/static/css/scoring_panel.css" rel="stylesheet">
+{{end}}
+{{define "script"}}
+<script src="/static/js/match_timing.js"></script>
+<script src="/static/js/scoring_panel.js"></script>
+{{end}}
+
+{{define "teamButton"}}
+<button id="{{.id}}" class="team-button team-{{.index}} {{.class}}" onclick="{{.onclick}}" ontouchstart disabled>
+  <div class="team-num"></div>
+  <div class="team-text">{{.label}}</div>
+</button>
+{{end}}
+
+{{define "counter"}}
+<div id="{{.id}}" class="counter">
+  <div class="counter-label">{{.label}}</div>
+  <div class="counter-controls">
+    <button class="counter-decrement scoring-button" onclick="handleCounterClick('{{.id}}', -1);" ontouchstart disabled>
+      -
+    </button>
+    <div class="counter-value">0</div>
+    <button class="counter-increment scoring-button" onclick="handleCounterClick('{{.id}}', 1);" ontouchstart disabled>
+      +
+    </button>
+  </div>
+</div>
+{{end}}
+
+{{define "body"}}
+<header id="banner">
   {{if .Position.ScoresAuto }}
   <div class="banner-title">Auto</div>
   {{else}}

@@ -6,11 +6,12 @@
 package field
 
 import (
+	"strconv"
+
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/websocket"
-	"strconv"
 )
 
 type ArenaNotifiers struct {
@@ -289,7 +290,6 @@ func (arena *Arena) GenerateScorePostedMessage() any {
 		BlueWins            int
 		RedDestination      string
 		BlueDestination     string
-		CoopertitionEnabled bool
 	}{
 		arena.SavedMatch,
 		redScoreSummary,
@@ -311,7 +311,6 @@ func (arena *Arena) GenerateScorePostedMessage() any {
 		blueWins,
 		redDestination,
 		blueDestination,
-		game.CoralBonusCoopEnabled,
 	}
 }
 

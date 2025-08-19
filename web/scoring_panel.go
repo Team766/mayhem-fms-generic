@@ -7,68 +7,59 @@ package web
 
 import (
 	"fmt"
-	"github.com/Team254/cheesy-arena/field"
-	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/websocket"
-	"github.com/mitchellh/mapstructure"
 	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
+
+	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/Team254/cheesy-arena/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 type ScoringPosition struct {
 	Title            string
 	Alliance         string
-	NearSide         bool
 	ScoresAuto       bool
 	ScoresEndgame    bool
-	ScoresBarge      bool
-	ScoresProcessor  bool
-	LeftmostReefPole int
+	ScoresStructure1 bool
+	ScoresStructure2 bool
 }
 
 var positionParameters = map[string]ScoringPosition{
 	"red_near": {
 		Title:            "Red Near",
 		Alliance:         "red",
-		NearSide:         true,
 		ScoresAuto:       true,
 		ScoresEndgame:    true,
-		ScoresBarge:      true,
-		ScoresProcessor:  false,
-		LeftmostReefPole: 6,
+		ScoresStructure1: true,
+		ScoresStructure2: false,
 	},
 	"red_far": {
 		Title:            "Red Far",
 		Alliance:         "red",
-		NearSide:         false,
 		ScoresAuto:       false,
 		ScoresEndgame:    false,
-		ScoresBarge:      false,
-		ScoresProcessor:  true,
-		LeftmostReefPole: 0,
+		ScoresStructure1: false,
+		ScoresStructure2: true,
 	},
 	"blue_near": {
 		Title:            "Blue Near",
 		Alliance:         "blue",
-		NearSide:         true,
 		ScoresAuto:       false,
 		ScoresEndgame:    false,
-		ScoresBarge:      false,
-		ScoresProcessor:  true,
-		LeftmostReefPole: 0,
+		ScoresStructure1: false,
+		ScoresStructure2: true,
 	},
 	"blue_far": {
 		Title:            "Blue Far",
 		Alliance:         "blue",
-		NearSide:         false,
 		ScoresAuto:       true,
 		ScoresEndgame:    true,
-		ScoresBarge:      true,
-		ScoresProcessor:  false,
-		LeftmostReefPole: 6,
+		ScoresStructure1: true,
+		ScoresStructure2: false,
 	},
 }
 
@@ -81,7 +72,7 @@ func (web *Web) scoringPanelHandler(w http.ResponseWriter, r *http.Request) {
 	position := r.PathValue("position")
 	parameters, ok := positionParameters[position]
 	if !ok {
-		handleWebErr(w, fmt.Errorf("Invalid position '%s'.", position))
+		handleWebErr(w, fmt.Errorf("invalid position '%s'", position))
 		return
 	}
 
@@ -92,10 +83,9 @@ func (web *Web) scoringPanelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	data := struct {
 		*model.EventSettings
-		PlcIsEnabled bool
 		PositionName string
 		Position     ScoringPosition
-	}{web.arena.EventSettings, web.arena.Plc.IsEnabled(), position, parameters}
+	}{web.arena.EventSettings, position, parameters}
 	err = template.ExecuteTemplate(w, "base_no_navbar", data)
 	if err != nil {
 		handleWebErr(w, err)
@@ -167,49 +157,6 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 			web.arena.ScoringPanelRegistry.SetScoreCommitted(position, ws)
 			web.arena.ScoringStatusNotifier.Notify()
-		} else if command == "reef" {
-			args := struct {
-				ReefPosition int
-				ReefLevel    int
-				Current      bool
-				Autonomous   bool
-			}{}
-			err = mapstructure.Decode(data, &args)
-			if err != nil {
-				ws.WriteError(err.Error())
-				continue
-			}
-
-			if args.ReefPosition >= 1 && args.ReefPosition <= 12 && args.ReefLevel >= 2 && args.ReefLevel <= 4 {
-				level := game.Level(args.ReefLevel - 2)
-				reefIndex := args.ReefPosition - 1
-				if args.Current {
-					score.Reef.Branches[level][reefIndex] = !score.Reef.Branches[level][reefIndex]
-					scoreChanged = true
-				}
-				if args.Autonomous {
-					score.Reef.AutoBranches[level][reefIndex] = !score.Reef.AutoBranches[level][reefIndex]
-					scoreChanged = true
-				}
-				scoreChanged = true
-			}
-
-		} else if command == "endgame" {
-			args := struct {
-				TeamPosition  int
-				EndgameStatus int
-			}{}
-			err = mapstructure.Decode(data, &args)
-			if err != nil {
-				ws.WriteError(err.Error())
-				continue
-			}
-
-			if args.TeamPosition >= 1 && args.TeamPosition <= 3 && args.EndgameStatus >= 0 && args.EndgameStatus <= 3 {
-				endgameStatus := game.EndgameStatus(args.EndgameStatus)
-				score.EndgameStatuses[args.TeamPosition-1] = endgameStatus
-				scoreChanged = true
-			}
 		} else if command == "leave" {
 			args := struct {
 				TeamPosition int
@@ -224,10 +171,9 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				score.LeaveStatuses[args.TeamPosition-1] = !score.LeaveStatuses[args.TeamPosition-1]
 				scoreChanged = true
 			}
-		} else if command == "addFoul" {
+		} else if command == "park" {
 			args := struct {
-				Alliance string
-				IsMajor  bool
+				TeamPosition int
 			}{}
 			err = mapstructure.Decode(data, &args)
 			if err != nil {
@@ -235,22 +181,14 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				continue
 			}
 
-			// Add the foul to the correct alliance's list.
-			foul := game.Foul{IsMajor: args.IsMajor}
-			if args.Alliance == "red" {
-				web.arena.RedRealtimeScore.CurrentScore.Fouls =
-					append(web.arena.RedRealtimeScore.CurrentScore.Fouls, foul)
-			} else {
-				web.arena.BlueRealtimeScore.CurrentScore.Fouls =
-					append(web.arena.BlueRealtimeScore.CurrentScore.Fouls, foul)
+			if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
+				score.ParkStatuses[args.TeamPosition-1] = !score.ParkStatuses[args.TeamPosition-1]
+				scoreChanged = true
 			}
-			web.arena.RealtimeScoreNotifier.Notify()
-		} else {
+		} else if command == "updateScore" {
 			args := struct {
+				Field      string
 				Adjustment int
-				Current    bool
-				Autonomous bool
-				NearSide   bool
 			}{}
 			err = mapstructure.Decode(data, &args)
 			if err != nil {
@@ -258,28 +196,12 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				continue
 			}
 
-			switch command {
-			case "barge":
-				score.BargeAlgae = max(0, score.BargeAlgae+args.Adjustment)
-				scoreChanged = true
-			case "processor":
-				score.ProcessorAlgae = max(0, score.ProcessorAlgae+args.Adjustment)
-				scoreChanged = true
-			case "trough":
-				if args.Current {
-					if args.NearSide {
-						score.Reef.TroughNear = max(0, score.Reef.TroughNear+args.Adjustment)
-					} else {
-						score.Reef.TroughFar = max(0, score.Reef.TroughFar+args.Adjustment)
-					}
-					scoreChanged = true
-				}
-				if args.Autonomous {
-					if args.NearSide {
-						score.Reef.AutoTroughNear = max(0, score.Reef.AutoTroughNear+args.Adjustment)
-					} else {
-						score.Reef.AutoTroughFar = max(0, score.Reef.AutoTroughFar+args.Adjustment)
-					}
+			// Use reflection to update the given field in the score.
+			field := reflect.ValueOf(score).Elem().FieldByName(args.Field)
+			if field.IsValid() && field.CanSet() && field.Kind() == reflect.Int {
+				newValue := field.Int() + int64(args.Adjustment)
+				if newValue >= 0 {
+					field.SetInt(newValue)
 					scoreChanged = true
 				}
 			}

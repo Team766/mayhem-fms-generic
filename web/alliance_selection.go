@@ -237,19 +237,7 @@ func (web *Web) allianceSelectionFinalizeHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if web.arena.EventSettings.TbaPublishingEnabled {
-		// Publish alliances and schedule to The Blue Alliance.
-		err = web.arena.TbaClient.PublishAlliances(web.arena.Database)
-		if err != nil {
-			web.renderAllianceSelection(w, r, fmt.Sprintf("Failed to publish alliances: %s", err.Error()))
-			return
-		}
-		err = web.arena.TbaClient.PublishMatches(web.arena.Database)
-		if err != nil {
-			web.renderAllianceSelection(w, r, fmt.Sprintf("Failed to publish matches: %s", err.Error()))
-			return
-		}
-	}
+	
 
 	// Signal displays of the bracket to update themselves.
 	web.arena.ScorePostedNotifier.Notify()

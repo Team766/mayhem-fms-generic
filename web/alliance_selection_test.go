@@ -145,10 +145,11 @@ func TestAllianceSelectionErrors(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "valid start time")
 
-	// Do other things after finalization.
+	// Actually finalize
 	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
-	assert.Equal(t, 200, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "already been finalized")
+	assert.Equal(t, 303, recorder.Code)
+
+	// Try to do other things after finalization.
 	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=asdf")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "already been finalized")

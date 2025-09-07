@@ -4,12 +4,13 @@
 package web
 
 import (
+	"testing"
+	"time"
+
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestScoringPanel(t *testing.T) {
@@ -174,7 +175,7 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	gamepieceData.Current = false
 	gamepieceData.Autonomous = true
 	redWs.Write("gamepiece", gamepieceData)
-	gamepieceData.GamepieceType = 2  // Gamepiece2
+	gamepieceData.GamepieceType = 2 // Gamepiece2
 	redWs.Write("gamepiece", gamepieceData)
 	gamepieceData.GamepieceLevel = 2 // Level2
 	redWs.Write("gamepiece", gamepieceData)

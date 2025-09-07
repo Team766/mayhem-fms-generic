@@ -7,13 +7,14 @@ package web
 
 import (
 	"fmt"
-	"github.com/Team254/cheesy-arena/game"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/Team254/cheesy-arena/game"
 
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/model"
@@ -161,8 +162,6 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("GET /displays/queueing/websocket", web.queueingDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/rankings", web.rankingsDisplayHandler)
 	mux.HandleFunc("GET /displays/rankings/websocket", web.rankingsDisplayWebsocketHandler)
-	mux.HandleFunc("GET /displays/twitch", web.twitchDisplayHandler)
-	mux.HandleFunc("GET /displays/twitch/websocket", web.twitchDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/wall", web.wallDisplayHandler)
 	mux.HandleFunc("GET /displays/wall/websocket", web.wallDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/webpage", web.webpageDisplayHandler)
@@ -218,7 +217,7 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/schedule/save", web.scheduleSavePostHandler)
 	mux.HandleFunc("GET /setup/settings", web.settingsGetHandler)
 	mux.HandleFunc("POST /setup/settings", web.settingsPostHandler)
-	
+
 	mux.HandleFunc("GET /setup/sponsor_slides", web.sponsorSlidesGetHandler)
 	mux.HandleFunc("POST /setup/sponsor_slides", web.sponsorSlidesPostHandler)
 	mux.HandleFunc("GET /setup/teams", web.teamsGetHandler)
@@ -229,7 +228,7 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/teams/clear", web.teamsClearHandler)
 	mux.HandleFunc("GET /setup/teams/generate_wpa_keys", web.teamsGenerateWpaKeysHandler)
 	mux.HandleFunc("GET /setup/teams/progress", web.teamsUpdateProgressBarHandler)
-	
+
 	return mux
 }
 

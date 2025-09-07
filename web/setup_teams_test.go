@@ -23,10 +23,6 @@ func TestSetupTeams(t *testing.T) {
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.getHttpResponse("/setup/teams")
 	assert.Contains(t, recorder.Body.String(), "2 teams")
-	assert.Contains(t, recorder.Body.String(), "The Cheesy Poofs")
-	assert.Contains(t, recorder.Body.String(), "1114")
-	team, _ := web.arena.Database.GetTeamById(254)
-	assert.Equal(t, "Bellarmine College Preparatory", team.SchoolName)
 
 	// Add another team.
 	recorder = web.postHttpResponse("/setup/teams", "teamNumbers=33")
@@ -38,18 +34,10 @@ func TestSetupTeams(t *testing.T) {
 	// Edit a team.
 	recorder = web.getHttpResponse("/setup/teams/254/edit")
 	assert.Equal(t, 200, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "The Cheesy Poofs")
 	recorder = web.postHttpResponse("/setup/teams/254/edit", "nickname=Teh Chezy Pofs")
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.getHttpResponse("/setup/teams")
 	assert.Contains(t, recorder.Body.String(), "Teh Chezy Pofs")
-
-	// Re-download team info from TBA.
-	recorder = web.getHttpResponse("/setup/teams/refresh")
-	assert.Equal(t, 303, recorder.Code)
-	recorder = web.getHttpResponse("/setup/teams")
-	assert.Contains(t, recorder.Body.String(), "The Cheesy Poofs")
-	assert.NotContains(t, recorder.Body.String(), "Teh Chezy Pofs")
 
 	// Delete a team.
 	recorder = web.postHttpResponse("/setup/teams/1114/delete", "")

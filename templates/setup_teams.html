@@ -28,13 +28,6 @@ UI for configuring the team list for an event.
         <div class="row mb-3">
           <button type="submit" class="btn btn-primary" onclick="$('#loadingFromTba').modal('show');">Add Teams</button>
         </div>
-        {{if .EventSettings.TbaDownloadEnabled}}
-        <div class="row mb-3">
-          <a href="/setup/teams/refresh" class="btn btn-primary" onclick="$('#loadingFromTba').modal('show');">
-            Refresh Team Data from TBA
-          </a>
-        </div>
-        {{end}}
         <div class="row mb-3">
           <button type="button" class="btn btn-danger" onclick="$('#confirmClearTeams').modal('show');">
             Clear Team List

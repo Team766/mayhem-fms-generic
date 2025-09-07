@@ -57,8 +57,8 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 	recorder := web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Contains(t, recorder.Body.String(), ">94<")  // The red score
-	assert.Contains(t, recorder.Body.String(), ">186<") // The blue score
+	assert.Contains(t, recorder.Body.String(), ">63<") // The red score
+	assert.Contains(t, recorder.Body.String(), ">96<") // The blue score
 
 	// Check response for non-existent match.
 	recorder = web.getHttpResponse(fmt.Sprintf("/match_review/%d/edit", 12345))
@@ -71,8 +71,8 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 
 	// Update the score to something else.
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"EndgameStatuses\":[0,2,1]},\"BlueScore\":{"+
-			"\"Reef\":{\"TroughFar\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
 	)
@@ -83,8 +83,8 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 	recorder = web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Contains(t, recorder.Body.String(), ">10<") // The red score
-	assert.Contains(t, recorder.Body.String(), ">42<") // The blue score
+	assert.Contains(t, recorder.Body.String(), ">12<") // The red score
+	assert.Contains(t, recorder.Body.String(), ">21<") // The blue score
 }
 
 func TestMatchReviewCreateNewResult(t *testing.T) {
@@ -112,8 +112,8 @@ func TestMatchReviewCreateNewResult(t *testing.T) {
 
 	// Update the score to something else.
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"EndgameStatuses\":[0,2,1]},\"BlueScore\":{"+
-			"\"Reef\":{\"TroughFar\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
 	)
@@ -124,8 +124,8 @@ func TestMatchReviewCreateNewResult(t *testing.T) {
 	recorder = web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Contains(t, recorder.Body.String(), ">10<") // The red score
-	assert.Contains(t, recorder.Body.String(), ">42<") // The blue score
+	assert.Contains(t, recorder.Body.String(), ">12<") // The red score
+	assert.Contains(t, recorder.Body.String(), ">21<") // The blue score
 }
 
 func TestMatchReviewEditCurrentMatch(t *testing.T) {
@@ -151,8 +151,8 @@ func TestMatchReviewEditCurrentMatch(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), " Qualification 352 ")
 
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"EndgameStatuses\":[0,2,1]},\"BlueScore\":{"+
-			"\"Reef\":{\"TroughFar\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":1}]},"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":1}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
 	)

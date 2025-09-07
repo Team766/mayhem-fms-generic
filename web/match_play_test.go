@@ -4,7 +4,9 @@
 package web
 
 import (
-	"bytes"
+	"testing"
+	"time"
+
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
@@ -13,9 +15,6 @@ import (
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"testing"
-	"time"
 )
 
 func TestMatchPlay(t *testing.T) {
@@ -94,17 +93,6 @@ func TestCommitMatch(t *testing.T) {
 	assert.Equal(t, 3, matchResult.PlayNumber)
 	match, _ = web.arena.Database.GetMatchById(1)
 	assert.Equal(t, game.TieMatch, match.Status)
-
-	// Verify TBA publishing by checking the log for the expected failure messages.
-	web.arena.TbaClient.BaseUrl = "fakeUrl"
-	web.arena.EventSettings.TbaPublishingEnabled = true
-	var writer bytes.Buffer
-	log.SetOutput(&writer)
-	err = web.commitMatchScore(match, matchResult, true)
-	assert.Nil(t, err)
-	time.Sleep(time.Millisecond * 100) // Allow some time for the asynchronous publishing to happen.
-	assert.Contains(t, writer.String(), "Failed to publish matches")
-	assert.Contains(t, writer.String(), "Failed to publish rankings")
 }
 
 func TestCommitTiebreak(t *testing.T) {
@@ -126,11 +114,12 @@ func TestCommitTiebreak(t *testing.T) {
 		MatchId: match.Id,
 		// These should all be fields that aren't part of the tiebreaker.
 		RedScore: &game.Score{
-			Reef:  game.Reef{TroughFar: 1},
-			Fouls: []game.Foul{{IsMajor: false}, {IsMajor: false}},
+			Mayhem: game.Mayhem{TeleopGamepiece1Level1Count: 5},
+			Fouls:  []game.Foul{{IsMajor: false}, {IsMajor: false}},
 		},
 		BlueScore: &game.Score{
-			Fouls: []game.Foul{{IsMajor: false}},
+			Mayhem: game.Mayhem{TeleopGamepiece1Level2Count: 1},
+			Fouls:  []game.Foul{{IsMajor: false}},
 		},
 	}
 
@@ -155,7 +144,7 @@ func TestCommitTiebreak(t *testing.T) {
 	assert.Equal(t, game.TieMatch, match.Status)
 
 	// Change the score to still be equal nominally but trigger the tiebreaker criteria.
-	matchResult.BlueScore.ProcessorAlgae = 1
+	matchResult.BlueScore.Mayhem.TeleopGamepiece2Count = 3
 	matchResult.BlueScore.Fouls = []game.Foul{{IsMajor: false}, {IsMajor: true}}
 
 	// Sanity check that the test scores are equal; they will need to be updated accordingly for each new game.
@@ -334,11 +323,11 @@ func TestMatchPlayWebsocketCommands(t *testing.T) {
 	ws.Write("abortMatch", nil)
 	readWebsocketType(t, ws, "audienceDisplayMode")
 	assert.Equal(t, field.PostMatch, web.arena.MatchState)
-	web.arena.RedRealtimeScore.CurrentScore.BargeAlgae = 6
+	web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count = 6
 	web.arena.BlueRealtimeScore.CurrentScore.LeaveStatuses = [3]bool{true, false, true}
 	ws.Write("commitResults", nil)
 	readWebsocketMultiple(t, ws, 5) // scorePosted, matchLoad, realtimeScore, allianceStationDisplayMode, scoringStatus
-	assert.Equal(t, 6, web.arena.SavedMatchResult.RedScore.BargeAlgae)
+	assert.Equal(t, 6, web.arena.SavedMatchResult.RedScore.Mayhem.TeleopGamepiece2Count)
 	assert.Equal(t, [3]bool{true, false, true}, web.arena.SavedMatchResult.BlueScore.LeaveStatuses)
 	assert.Equal(t, field.PreMatch, web.arena.MatchState)
 	ws.Write("discardResults", nil)

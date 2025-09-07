@@ -28,7 +28,7 @@ func TestScore1() *Score {
 			AutoGamepiece2Count:         2,
 			TeleopGamepiece2Count:       4,
 		},
-		ParkStatuses: [3]bool{true, false, true},
+		ParkStatuses: [3]bool{true, true, false},
 		Fouls:        fouls,
 		PlayoffDq:    false,
 	}

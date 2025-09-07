@@ -24,4 +24,6 @@ const (
 	TeleopGamepiece2Points       = 2
 
 	Gamepiece1BonusThreshold = 8
+	MinorFoulPoints          = 2
+	MajorFoulPoints          = 6
 )

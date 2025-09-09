@@ -174,22 +174,15 @@ const handleRealtimeScore = function (data) {
 const handleCounterClick = function (id, adjustment) {
   const autoMode = (!inTeleop || editingAuto);
   
-  // For now, we'll only handle increments since the backend doesn't have
-  // decrement functionality yet. We would need to add decrement handlers
-  // in the backend and then update this code to handle them.
-  if (adjustment <= 0) {
-    return;
-  }
-  
   switch (id) {
     case "gp1_l1":
-      websocket.send("GP1", { Level: 1, Autonomous: autoMode });
+      websocket.send("GP1", { Level: 1, Autonomous: autoMode, Adjustment: adjustment });
       break;
     case "gp1_l2":
-      websocket.send("GP1", { Level: 2, Autonomous: autoMode });
+      websocket.send("GP1", { Level: 2, Autonomous: autoMode, Adjustment: adjustment });
       break;
     case "gp2":
-      websocket.send("GP2", { Autonomous: autoMode });
+      websocket.send("GP2", { Autonomous: autoMode, Adjustment: adjustment });
       break;
     default:
       return;

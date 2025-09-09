@@ -189,6 +189,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			args := struct {
 				Level      int
 				Autonomous bool
+				Adjustment int
 			}{}
 			err = mapstructure.Decode(data, &args)
 			if err != nil {
@@ -200,19 +201,35 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				if args.Autonomous {
 					switch args.Level {
 					case 1:
-						score.Mayhem.AutoGamepiece1Level1Count++
+						// Add the adjustment and ensure we don't go below zero
+						score.Mayhem.AutoGamepiece1Level1Count += args.Adjustment
+						if score.Mayhem.AutoGamepiece1Level1Count < 0 {
+							score.Mayhem.AutoGamepiece1Level1Count = 0
+						}
 						scoreChanged = true
 					case 2:
-						score.Mayhem.AutoGamepiece1Level2Count++
+						// Add the adjustment and ensure we don't go below zero
+						score.Mayhem.AutoGamepiece1Level2Count += args.Adjustment
+						if score.Mayhem.AutoGamepiece1Level2Count < 0 {
+							score.Mayhem.AutoGamepiece1Level2Count = 0
+						}
 						scoreChanged = true
 					}
 				} else {
 					switch args.Level {
 					case 1:
-						score.Mayhem.TeleopGamepiece1Level1Count++
+						// Add the adjustment and ensure we don't go below zero
+						score.Mayhem.TeleopGamepiece1Level1Count += args.Adjustment
+						if score.Mayhem.TeleopGamepiece1Level1Count < 0 {
+							score.Mayhem.TeleopGamepiece1Level1Count = 0
+						}
 						scoreChanged = true
 					case 2:
-						score.Mayhem.TeleopGamepiece1Level2Count++
+						// Add the adjustment and ensure we don't go below zero
+						score.Mayhem.TeleopGamepiece1Level2Count += args.Adjustment
+						if score.Mayhem.TeleopGamepiece1Level2Count < 0 {
+							score.Mayhem.TeleopGamepiece1Level2Count = 0
+						}
 						scoreChanged = true
 					}
 				}
@@ -220,6 +237,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 		} else if command == "GP2" {
 			args := struct {
 				Autonomous bool
+				Adjustment int
 			}{}
 			err = mapstructure.Decode(data, &args)
 			if err != nil {
@@ -227,10 +245,18 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				continue
 			}
 			if args.Autonomous {
-				score.Mayhem.AutoGamepiece2Count++
+				// Add the adjustment and ensure we don't go below zero
+				score.Mayhem.AutoGamepiece2Count += args.Adjustment
+				if score.Mayhem.AutoGamepiece2Count < 0 {
+					score.Mayhem.AutoGamepiece2Count = 0
+				}
 				scoreChanged = true
 			} else {
-				score.Mayhem.TeleopGamepiece2Count++
+				// Add the adjustment and ensure we don't go below zero
+				score.Mayhem.TeleopGamepiece2Count += args.Adjustment
+				if score.Mayhem.TeleopGamepiece2Count < 0 {
+					score.Mayhem.TeleopGamepiece2Count = 0
+				}
 				scoreChanged = true
 			}
 		} else if command == "addFoul" {

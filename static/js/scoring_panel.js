@@ -187,6 +187,7 @@ const handleCounterClick = function (id, adjustment) {
     default:
       return;
   }
+  // TODO: update this
   websocket.send("updateScore", { Field: field, Adjustment: adjustment });
 }
 

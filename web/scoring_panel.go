@@ -10,10 +10,10 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	"github.com/mitchellh/mapstructure"
@@ -33,7 +33,7 @@ var positionParameters = map[string]ScoringPosition{
 		Title:            "Red Near",
 		Alliance:         "red",
 		ScoresAuto:       true,
-		ScoresEndgame:    true,
+		ScoresEndgame:    false,
 		ScoresStructure1: true,
 		ScoresStructure2: false,
 	},
@@ -41,25 +41,25 @@ var positionParameters = map[string]ScoringPosition{
 		Title:            "Red Far",
 		Alliance:         "red",
 		ScoresAuto:       false,
-		ScoresEndgame:    false,
+		ScoresEndgame:    true,
 		ScoresStructure1: false,
 		ScoresStructure2: true,
 	},
 	"blue_near": {
 		Title:            "Blue Near",
 		Alliance:         "blue",
-		ScoresAuto:       false,
+		ScoresAuto:       true,
 		ScoresEndgame:    false,
-		ScoresStructure1: false,
-		ScoresStructure2: true,
+		ScoresStructure1: true,
+		ScoresStructure2: false,
 	},
 	"blue_far": {
 		Title:            "Blue Far",
 		Alliance:         "blue",
-		ScoresAuto:       true,
+		ScoresAuto:       false,
 		ScoresEndgame:    true,
-		ScoresStructure1: true,
-		ScoresStructure2: false,
+		ScoresStructure1: false,
+		ScoresStructure2: true,
 	},
 }
 
@@ -185,10 +185,10 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				score.ParkStatuses[args.TeamPosition-1] = !score.ParkStatuses[args.TeamPosition-1]
 				scoreChanged = true
 			}
-		} else if command == "updateScore" {
+		} else if command == "GP1" {
 			args := struct {
-				Field      string
-				Adjustment int
+				Level      int
+				Autonomous bool
 			}{}
 			err = mapstructure.Decode(data, &args)
 			if err != nil {
@@ -196,15 +196,64 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				continue
 			}
 
-			// Use reflection to update the given field in the score.
-			field := reflect.ValueOf(score).Elem().FieldByName(args.Field)
-			if field.IsValid() && field.CanSet() && field.Kind() == reflect.Int {
-				newValue := field.Int() + int64(args.Adjustment)
-				if newValue >= 0 {
-					field.SetInt(newValue)
-					scoreChanged = true
+			if args.Level >= 1 && args.Level <= 3 {
+				if args.Autonomous {
+					switch args.Level {
+					case 1:
+						score.Mayhem.AutoGamepiece1Level1Count++
+						scoreChanged = true
+					case 2:
+						score.Mayhem.AutoGamepiece1Level2Count++
+						scoreChanged = true
+					}
+				} else {
+					switch args.Level {
+					case 1:
+						score.Mayhem.TeleopGamepiece1Level1Count++
+						scoreChanged = true
+					case 2:
+						score.Mayhem.TeleopGamepiece1Level2Count++
+						scoreChanged = true
+					}
 				}
 			}
+		} else if command == "GP2" {
+			args := struct {
+				Autonomous bool
+			}{}
+			err = mapstructure.Decode(data, &args)
+			if err != nil {
+				ws.WriteError(err.Error())
+				continue
+			}
+			if args.Autonomous {
+				score.Mayhem.AutoGamepiece2Count++
+				scoreChanged = true
+			} else {
+				score.Mayhem.TeleopGamepiece2Count++
+				scoreChanged = true
+			}
+		} else if command == "addFoul" {
+			args := struct {
+				Alliance string
+				IsMajor  bool
+			}{}
+			err = mapstructure.Decode(data, &args)
+			if err != nil {
+				ws.WriteError(err.Error())
+				continue
+			}
+
+			// Add the foul to the correct alliance's list.
+			foul := game.Foul{IsMajor: args.IsMajor}
+			if args.Alliance == "red" {
+				web.arena.RedRealtimeScore.CurrentScore.Fouls =
+					append(web.arena.RedRealtimeScore.CurrentScore.Fouls, foul)
+			} else {
+				web.arena.BlueRealtimeScore.CurrentScore.Fouls =
+					append(web.arena.BlueRealtimeScore.CurrentScore.Fouls, foul)
+			}
+			web.arena.RealtimeScoreNotifier.Notify()
 		}
 
 		if scoreChanged {

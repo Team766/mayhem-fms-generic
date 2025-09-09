@@ -124,9 +124,9 @@ const handleRealtimeScore = function (data) {
     $(`#${scoreRoot} .team-1-park`).text(score.ParkStatuses[0] ? "✓" : "❌");
     $(`#${scoreRoot} .team-2-park`).text(score.ParkStatuses[1] ? "✓" : "❌");
     $(`#${scoreRoot} .team-3-park`).text(score.ParkStatuses[2] ? "✓" : "❌");
-    $(`#${scoreRoot} .gp1-l1`).text(score.AutoGamepiece1Level1Count + score.TeleopGamepiece1Level1Count);
-    $(`#${scoreRoot} .gp1-l2`).text(score.AutoGamepiece1Level2Count + score.TeleopGamepiece1Level2Count);
-    $(`#${scoreRoot} .gp2`).text(score.AutoGamepiece2Count + score.TeleopGamepiece2Count);
+    $(`#${scoreRoot} .gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count + score.Mayhem.TeleopGamepiece1Level1Count);
+    $(`#${scoreRoot} .gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count + score.Mayhem.TeleopGamepiece1Level2Count);
+    $(`#${scoreRoot} .gp2`).text(score.Mayhem.AutoGamepiece2Count + score.Mayhem.TeleopGamepiece2Count);
   }
 }
 

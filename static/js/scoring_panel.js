@@ -165,9 +165,9 @@ const handleRealtimeScore = function (data) {
   }
 
   // Update counters
-  $("#gp1_l1 .counter-value").text(score.AutoGamepiece1Level1Count + score.TeleopGamepiece1Level1Count);
-  $("#gp1_l2 .counter-value").text(score.AutoGamepiece1Level2Count + score.TeleopGamepiece1Level2Count);
-  $("#gp2 .counter-value").text(score.AutoGamepiece2Count + score.TeleopGamepiece2Count);
+  $("#gp1_l1 .counter-value").text(score.Mayhem.AutoGamepiece1Level1Count + score.Mayhem.TeleopGamepiece1Level1Count);
+  $("#gp1_l2 .counter-value").text(score.Mayhem.AutoGamepiece1Level2Count + score.Mayhem.TeleopGamepiece1Level2Count);
+  $("#gp2 .counter-value").text(score.Mayhem.AutoGamepiece2Count + score.Mayhem.TeleopGamepiece2Count);
 };
 
 // Websocket message senders for various buttons

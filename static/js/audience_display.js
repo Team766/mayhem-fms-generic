@@ -147,12 +147,12 @@ const handleRealtimeScore = function (data) {
   $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score);
   $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score);
 
-  const redGp1 = data.Red.Score.AutoGamepiece1Level1Count + data.Red.Score.TeleopGamepiece1Level1Count +
-    data.Red.Score.AutoGamepiece1Level2Count + data.Red.Score.TeleopGamepiece1Level2Count;
-  const redGp2 = data.Red.Score.AutoGamepiece2Count + data.Red.Score.TeleopGamepiece2Count;
-  const blueGp1 = data.Blue.Score.AutoGamepiece1Level1Count + data.Blue.Score.TeleopGamepiece1Level1Count +
-    data.Blue.Score.AutoGamepiece1Level2Count + data.Blue.Score.TeleopGamepiece1Level2Count;
-  const blueGp2 = data.Blue.Score.AutoGamepiece2Count + data.Blue.Score.TeleopGamepiece2Count;
+  const redGp1 = data.Red.Score.Mayhem.AutoGamepiece1Level1Count + data.Red.Score.Mayhem.TeleopGamepiece1Level1Count +
+    data.Red.Score.Mayhem.AutoGamepiece1Level2Count + data.Red.Score.Mayhem.TeleopGamepiece1Level2Count;
+  const redGp2 = data.Red.Score.Mayhem.AutoGamepiece2Count + data.Red.Score.Mayhem.TeleopGamepiece2Count;
+  const blueGp1 = data.Blue.Score.Mayhem.AutoGamepiece1Level1Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level1Count +
+    data.Blue.Score.Mayhem.AutoGamepiece1Level2Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level2Count;
+  const blueGp2 = data.Blue.Score.Mayhem.AutoGamepiece2Count + data.Blue.Score.Mayhem.TeleopGamepiece2Count;
 
   $(`#${redSide}Gp1`).text(redGp1);
   $(`#${redSide}Gp2`).text(redGp2);

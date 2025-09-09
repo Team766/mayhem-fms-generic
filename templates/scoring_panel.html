@@ -27,14 +27,16 @@ UI for entering realtime scores.
 
 {{define "counter"}}
 <div id="{{.id}}" class="counter">
-  <div class="counter-label">{{.label}}</div>
+  <div class="counter-header">
+    <div class="counter-label">{{.label}}</div>
+  </div>
   <div class="counter-controls">
     <button class="counter-decrement scoring-button" onclick="handleCounterClick('{{.id}}', -1);" ontouchstart disabled>
-      -
+      <span class="button-symbol">−</span>
     </button>
     <div class="counter-value">0</div>
     <button class="counter-increment scoring-button" onclick="handleCounterClick('{{.id}}', 1);" ontouchstart disabled>
-      +
+      <span class="button-symbol">+</span>
     </button>
   </div>
 </div>

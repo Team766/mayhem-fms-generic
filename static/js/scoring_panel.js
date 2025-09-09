@@ -172,23 +172,28 @@ const handleRealtimeScore = function (data) {
 
 // Websocket message senders for various buttons
 const handleCounterClick = function (id, adjustment) {
-  let field;
   const autoMode = (!inTeleop || editingAuto);
+  
+  // For now, we'll only handle increments since the backend doesn't have
+  // decrement functionality yet. We would need to add decrement handlers
+  // in the backend and then update this code to handle them.
+  if (adjustment <= 0) {
+    return;
+  }
+  
   switch (id) {
     case "gp1_l1":
-      field = autoMode ? "AutoGamepiece1Level1Count" : "TeleopGamepiece1Level1Count";
+      websocket.send("GP1", { Level: 1, Autonomous: autoMode });
       break;
     case "gp1_l2":
-      field = autoMode ? "AutoGamepiece1Level2Count" : "TeleopGamepiece1Level2Count";
+      websocket.send("GP1", { Level: 2, Autonomous: autoMode });
       break;
     case "gp2":
-      field = autoMode ? "AutoGamepiece2Count" : "TeleopGamepiece2Count";
+      websocket.send("GP2", { Autonomous: autoMode });
       break;
     default:
       return;
   }
-  // TODO: update this
-  websocket.send("updateScore", { Field: field, Adjustment: adjustment });
 }
 
 const handleLeaveClick = function (teamPosition) {

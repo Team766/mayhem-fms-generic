@@ -164,26 +164,42 @@ const handleRealtimeScore = function (data) {
     $(`#park-${i1}`).attr("data-selected", score.ParkStatuses[i]);
   }
 
-  // Update counters
-  $("#gp1_l1 .counter-value").text(score.Mayhem.AutoGamepiece1Level1Count + score.Mayhem.TeleopGamepiece1Level1Count);
-  $("#gp1_l2 .counter-value").text(score.Mayhem.AutoGamepiece1Level2Count + score.Mayhem.TeleopGamepiece1Level2Count);
-  $("#gp2 .counter-value").text(score.Mayhem.AutoGamepiece2Count + score.Mayhem.TeleopGamepiece2Count);
+  // Update auto counters
+  $("#auto_gp1_l1 .counter-value").text(score.Mayhem.AutoGamepiece1Level1Count);
+  $("#auto_gp1_l2 .counter-value").text(score.Mayhem.AutoGamepiece1Level2Count);
+  $("#auto_gp2 .counter-value").text(score.Mayhem.AutoGamepiece2Count);
+  
+  // Update teleop counters
+  $("#teleop_gp1_l1 .counter-value").text(score.Mayhem.TeleopGamepiece1Level1Count);
+  $("#teleop_gp1_l2 .counter-value").text(score.Mayhem.TeleopGamepiece1Level2Count);
+  $("#teleop_gp2 .counter-value").text(score.Mayhem.TeleopGamepiece2Count);
 };
 
 // Websocket message senders for various buttons
 const handleCounterClick = function (id, adjustment) {
-  const autoMode = (!inTeleop || editingAuto);
-  
   switch (id) {
-    case "gp1_l1":
-      websocket.send("GP1", { Level: 1, Autonomous: autoMode, Adjustment: adjustment });
+    // Auto counters
+    case "auto_gp1_l1":
+      websocket.send("GP1", { Level: 1, Autonomous: true, Adjustment: adjustment });
       break;
-    case "gp1_l2":
-      websocket.send("GP1", { Level: 2, Autonomous: autoMode, Adjustment: adjustment });
+    case "auto_gp1_l2":
+      websocket.send("GP1", { Level: 2, Autonomous: true, Adjustment: adjustment });
       break;
-    case "gp2":
-      websocket.send("GP2", { Autonomous: autoMode, Adjustment: adjustment });
+    case "auto_gp2":
+      websocket.send("GP2", { Autonomous: true, Adjustment: adjustment });
       break;
+    
+    // Teleop counters
+    case "teleop_gp1_l1":
+      websocket.send("GP1", { Level: 1, Autonomous: false, Adjustment: adjustment });
+      break;
+    case "teleop_gp1_l2":
+      websocket.send("GP1", { Level: 2, Autonomous: false, Adjustment: adjustment });
+      break;
+    case "teleop_gp2":
+      websocket.send("GP2", { Autonomous: false, Adjustment: adjustment });
+      break;
+    
     default:
       return;
   }

@@ -60,16 +60,25 @@ UI for entering realtime scores.
 
   {{if .Position.ScoresStructure1}}
   <div class="scoring-section">
-    <h2>Structure 1</h2>
-    {{template "counter" (dict "id" "gp1_l1" "label" "Gamepiece 1 Level 1")}}
-    {{template "counter" (dict "id" "gp1_l2" "label" "Gamepiece 1 Level 2")}}
+    <h2>Structure 1 - Auto</h2>
+    {{template "counter" (dict "id" "auto_gp1_l1" "label" "Auto GP1 Level 1")}}
+    {{template "counter" (dict "id" "auto_gp1_l2" "label" "Auto GP1 Level 2")}}
+  </div>
+  <div class="scoring-section">
+    <h2>Structure 1 - Teleop</h2>
+    {{template "counter" (dict "id" "teleop_gp1_l1" "label" "Teleop GP1 Level 1")}}
+    {{template "counter" (dict "id" "teleop_gp1_l2" "label" "Teleop GP1 Level 2")}}
   </div>
   {{end}}
 
   {{if .Position.ScoresStructure2}}
   <div class="scoring-section">
-    <h2>Structure 2</h2>
-    {{template "counter" (dict "id" "gp2" "label" "Gamepiece 2")}}
+    <h2>Structure 2 - Auto</h2>
+    {{template "counter" (dict "id" "auto_gp2" "label" "Auto GP2")}}
+  </div>
+  <div class="scoring-section">
+    <h2>Structure 2 - Teleop</h2>
+    {{template "counter" (dict "id" "teleop_gp2" "label" "Teleop GP2")}}
   </div>
   {{end}}
 
@@ -85,7 +94,6 @@ UI for entering realtime scores.
   {{end}}
 
   <div class="scoring-section">
-    <button id="edit-auto" onclick="toggleEditAuto();" ontouchstart disabled>Edit Auto</button>
     <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
   </div>
 </main>

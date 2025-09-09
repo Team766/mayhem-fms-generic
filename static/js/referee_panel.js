@@ -124,9 +124,15 @@ const handleRealtimeScore = function (data) {
     $(`#${scoreRoot} .team-1-park`).text(score.ParkStatuses[0] ? "✓" : "❌");
     $(`#${scoreRoot} .team-2-park`).text(score.ParkStatuses[1] ? "✓" : "❌");
     $(`#${scoreRoot} .team-3-park`).text(score.ParkStatuses[2] ? "✓" : "❌");
-    $(`#${scoreRoot} .gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count + score.Mayhem.TeleopGamepiece1Level1Count);
-    $(`#${scoreRoot} .gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count + score.Mayhem.TeleopGamepiece1Level2Count);
-    $(`#${scoreRoot} .gp2`).text(score.Mayhem.AutoGamepiece2Count + score.Mayhem.TeleopGamepiece2Count);
+    // Auto counters
+    $(`#${scoreRoot} .auto-gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count);
+    $(`#${scoreRoot} .auto-gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count);
+    $(`#${scoreRoot} .auto-gp2`).text(score.Mayhem.AutoGamepiece2Count);
+    
+    // Teleop counters
+    $(`#${scoreRoot} .teleop-gp1-l1`).text(score.Mayhem.TeleopGamepiece1Level1Count);
+    $(`#${scoreRoot} .teleop-gp1-l2`).text(score.Mayhem.TeleopGamepiece1Level2Count);
+    $(`#${scoreRoot} .teleop-gp2`).text(score.Mayhem.TeleopGamepiece2Count);
   }
 }
 

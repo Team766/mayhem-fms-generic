@@ -955,3 +955,108 @@ func TestPlcMatchCycleEvergreen(t *testing.T) {
 	arena.Update()
 	assert.Equal(t, true, plc.fieldResetLight)
 }
+
+// 2v2 mode tests
+// Verifies that in 2v2 mode, only R1,R2,B1,B2 are required to be connected/bypassed to start the match.
+func TestTwoVsTwo_CheckCanStartMatch(t *testing.T) {
+    arena := setupTestArena(t)
+    arena.EventSettings.TwoVsTwoMode = true
+
+    // Only require first two stations per side.
+    arena.AllianceStations["R1"].Bypass = true
+    arena.AllianceStations["R2"].Bypass = true
+    arena.AllianceStations["B1"].Bypass = true
+    arena.AllianceStations["B2"].Bypass = true
+    // Third stations are not bypassed and may even have E-stop asserted; should not block start.
+    arena.AllianceStations["R3"].Bypass = false
+    arena.AllianceStations["B3"].Bypass = false
+    arena.AllianceStations["B3"].EStop = true
+
+    assert.Nil(t, arena.checkCanStartMatch())
+}
+
+// Verifies that LoadMatch in 2v2 mode bypasses and clears third stations (R3/B3).
+func TestTwoVsTwo_LoadMatchBypassThirdStations(t *testing.T) {
+    arena := setupTestArena(t)
+    arena.EventSettings.TwoVsTwoMode = true
+
+    // Create teams and a match that populates all stations.
+    arena.Database.CreateTeam(&model.Team{Id: 101})
+    arena.Database.CreateTeam(&model.Team{Id: 102})
+    arena.Database.CreateTeam(&model.Team{Id: 103})
+    arena.Database.CreateTeam(&model.Team{Id: 201})
+    arena.Database.CreateTeam(&model.Team{Id: 202})
+    arena.Database.CreateTeam(&model.Team{Id: 203})
+    m := model.Match{Type: model.Practice, Red1: 101, Red2: 102, Red3: 103, Blue1: 201, Blue2: 202, Blue3: 203}
+    assert.Nil(t, arena.Database.CreateMatch(&m))
+    assert.Nil(t, arena.LoadMatch(&m))
+
+    // R3/B3 should be cleared and bypassed, with no DS connection.
+    assert.Nil(t, arena.AllianceStations["R3"].Team)
+    assert.Nil(t, arena.AllianceStations["B3"].Team)
+    assert.True(t, arena.AllianceStations["R3"].Bypass)
+    assert.True(t, arena.AllianceStations["B3"].Bypass)
+    assert.Nil(t, arena.AllianceStations["R3"].DsConn)
+    assert.Nil(t, arena.AllianceStations["B3"].DsConn)
+}
+
+// Verifies that SubstituteTeams in 2v2 mode also bypasses and clears third stations.
+func TestTwoVsTwo_SubstituteTeamsBypassThirdStations(t *testing.T) {
+    arena := setupTestArena(t)
+    arena.EventSettings.TwoVsTwoMode = true
+
+    // Practice match to allow substitution.
+    m := model.Match{Type: model.Practice}
+    arena.Database.CreateMatch(&m)
+    assert.Nil(t, arena.LoadMatch(&m))
+
+    // Create teams and substitute.
+    arena.Database.CreateTeam(&model.Team{Id: 301})
+    arena.Database.CreateTeam(&model.Team{Id: 302})
+    arena.Database.CreateTeam(&model.Team{Id: 303})
+    arena.Database.CreateTeam(&model.Team{Id: 401})
+    arena.Database.CreateTeam(&model.Team{Id: 402})
+    arena.Database.CreateTeam(&model.Team{Id: 403})
+    assert.Nil(t, arena.SubstituteTeams(301, 302, 303, 401, 402, 403))
+
+    assert.Nil(t, arena.AllianceStations["R3"].Team)
+    assert.Nil(t, arena.AllianceStations["B3"].Team)
+    assert.True(t, arena.AllianceStations["R3"].Bypass)
+    assert.True(t, arena.AllianceStations["B3"].Bypass)
+    assert.Nil(t, arena.AllianceStations["R3"].DsConn)
+    assert.Nil(t, arena.AllianceStations["B3"].DsConn)
+}
+
+// Verifies that PLC team-stop handling is skipped for R3/B3 in 2v2 mode.
+func TestTwoVsTwo_HandlePlcSkipsThirdStations(t *testing.T) {
+    arena := setupTestArena(t)
+    arena.EventSettings.TwoVsTwoMode = true
+
+    var plc FakePlc
+    plc.isEnabled = true
+    arena.Plc = &plc
+
+    // Prepare minimal conditions to start a match.
+    arena.AllianceStations["R1"].Bypass = true
+    arena.AllianceStations["R2"].Bypass = true
+    arena.AllianceStations["B1"].Bypass = true
+    arena.AllianceStations["B2"].Bypass = true
+    arena.AllianceStations["R3"].Bypass = true
+    arena.AllianceStations["B3"].Bypass = true
+    assert.Nil(t, arena.StartMatch())
+    arena.Update()
+    arena.MatchStartTime = time.Now().Add(-time.Duration(game.MatchTiming.WarmupDurationSec) * time.Second)
+    arena.Update()
+    assert.Equal(t, AutoPeriod, arena.MatchState)
+
+    // Assert stops for third stations; they should be ignored in 2v2 mode.
+    plc.redAStops[2] = true
+    plc.redEStops[2] = true
+    plc.blueAStops[2] = true
+    plc.blueEStops[2] = true
+    arena.Update()
+    assert.False(t, arena.AllianceStations["R3"].AStop)
+    assert.False(t, arena.AllianceStations["R3"].EStop)
+    assert.False(t, arena.AllianceStations["B3"].AStop)
+    assert.False(t, arena.AllianceStations["B3"].EStop)
+}

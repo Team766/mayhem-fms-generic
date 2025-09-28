@@ -182,6 +182,15 @@ UI for configuring event settings.
             <fieldset class="mb-4">
               <legend>Game-Specific</legend>
               <div class="row mb-3">
+                <div class="col-lg-6">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="twoVsTwoMode" name="twoVsTwoMode" value="true" {{if .EventSettings.TwoVsTwoMode}}checked{{end}}>
+                    <label class="form-check-label" for="twoVsTwoMode">2v2 Mode (hide third team in each alliance)</label>
+                    <div class="form-text">When enabled, only two teams per alliance will be shown in the interface and required for match start.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
                 <label class="col-lg-6 control-label">Autonomous Period Duration<br/>(seconds)</label>
                 <div class="col-lg-6">
                   <input type="text" class="form-control" name="autoDurationSec" value="{{.AutoDurationSec}}">

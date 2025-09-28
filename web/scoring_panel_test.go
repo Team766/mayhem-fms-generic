@@ -30,6 +30,26 @@ func TestScoringPanel(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Scoring Panel - Untitled Event - Cheesy Arena")
 }
 
+func TestScoringPanelTwoVsTwoAttribute(t *testing.T) {
+    web := setupTestWeb(t)
+
+    // TwoVsTwoMode off
+    web.arena.EventSettings.TwoVsTwoMode = false
+    recorder := web.getHttpResponse("/panels/scoring/red_near")
+    assert.Equal(t, 200, recorder.Code)
+    body := recorder.Body.String()
+    assert.Contains(t, body, "id=\"scoringPanel\"")
+    assert.Contains(t, body, "data-two-v-two=\"false\"")
+
+    // TwoVsTwoMode on
+    web.arena.EventSettings.TwoVsTwoMode = true
+    recorder = web.getHttpResponse("/panels/scoring/red_near")
+    assert.Equal(t, 200, recorder.Code)
+    body = recorder.Body.String()
+    assert.Contains(t, body, "id=\"scoringPanel\"")
+    assert.Contains(t, body, "data-two-v-two=\"true\"")
+}
+
 func TestScoringPanelWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

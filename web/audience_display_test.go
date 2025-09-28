@@ -27,6 +27,30 @@ func TestAudienceDisplay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Audience Display - Untitled Event - Cheesy Arena")
 }
 
+func TestAudienceDisplayTwoVsTwoTemplate(t *testing.T) {
+    web := setupTestWeb(t)
+
+    // TwoVsTwoMode off: third slots should be present in the HTML.
+    web.arena.EventSettings.TwoVsTwoMode = false
+    recorder := web.getHttpResponse("/displays/audience?displayId=1&background=%23000&reversed=false&overlayLocation=bottom")
+    assert.Equal(t, 200, recorder.Code)
+    body := recorder.Body.String()
+    assert.Contains(t, body, "leftTeam3")
+    assert.Contains(t, body, "rightTeam3")
+    assert.Contains(t, body, "leftTeam3Avatar")
+    assert.Contains(t, body, "rightTeam3Avatar")
+
+    // TwoVsTwoMode on: third slots should be omitted.
+    web.arena.EventSettings.TwoVsTwoMode = true
+    recorder = web.getHttpResponse("/displays/audience?displayId=1&background=%23000&reversed=false&overlayLocation=bottom")
+    assert.Equal(t, 200, recorder.Code)
+    body = recorder.Body.String()
+    assert.NotContains(t, body, "leftTeam3\"")
+    assert.NotContains(t, body, "rightTeam3\"")
+    assert.NotContains(t, body, "leftTeam3Avatar")
+    assert.NotContains(t, body, "rightTeam3Avatar")
+}
+
 func TestAudienceDisplayWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

@@ -12,6 +12,16 @@ UI for entering realtime scores.
 <link rel="manifest" href="/static/manifest/{{.PositionName}}_scoring.manifest">
 <meta name="viewport" content="width=device-width, user-scalable=no">
 <link href="/static/css/scoring_panel.css" rel="stylesheet">
+<style>
+  /* Hide third-team UI when 2v2 is enabled */
+  #scoringPanel[data-two-v-two="true"] .team-3,
+  #scoringPanel[data-two-v-two="true"] #leave-3,
+  #scoringPanel[data-two-v-two="true"] #park-3 {
+    display: none !important;
+  }
+  /* Adjust layout spacing if needed */
+  #scoringPanel[data-two-v-two="true"] .button-group { gap: 8px; }
+</style>
 {{end}}
 {{define "script"}}
 <script src="/static/js/match_timing.js"></script>
@@ -43,6 +53,7 @@ UI for entering realtime scores.
 {{end}}
 
 {{define "body"}}
+<div id="scoringPanel" data-two-v-two="{{.EventSettings.TwoVsTwoMode}}">
 <header id="banner">
   <div class="screen-title">{{.Position.Title}} - <span id="matchName">&nbsp;</span></div>
 </header>
@@ -97,4 +108,5 @@ UI for entering realtime scores.
     <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
   </div>
 </main>
+</div>
 {{end}}

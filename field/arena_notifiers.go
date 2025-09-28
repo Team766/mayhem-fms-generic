@@ -185,6 +185,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		RedOffFieldTeams  []*model.Team
 		BlueOffFieldTeams []*model.Team
 		BreakDescription  string
+		TwoVsTwoMode      bool
 	}{
 		arena.CurrentMatch,
 		arena.CurrentMatch.ShouldAllowSubstitution(),
@@ -195,6 +196,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		redOffFieldTeams,
 		blueOffFieldTeams,
 		arena.breakDescription,
+		arena.EventSettings.TwoVsTwoMode,
 	}
 }
 

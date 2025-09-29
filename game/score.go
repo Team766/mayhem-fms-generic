@@ -79,7 +79,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	}
 
 	// Gamepiece 1 Bonus RP
-	if summary.NumGamepiece1 >= Gamepiece1BonusThreshold {
+	if summary.NumGamepiece1 >= Gamepiece1RPThreshold {
 		summary.Gamepiece1BonusRankingPoint = true
 	}
 

@@ -264,8 +264,28 @@ h3 {
   visibility: hidden;
 }
 
+/* GP1 and GP2 rows */
 #scoreSummary .wide-row {
-  grid-column: span 3;
+  display: contents;
+}
+
+#scoreSummary .wide-row .label {
+  grid-column: 1;
+  text-align: right;
+  padding-right: 0.5vw;
+}
+
+#scoreSummary .wide-row .values {
+  grid-column: 3;  /* Align with first team's leave value */
+  display: flex;
+  gap: 1vw;
+  align-items: center;
+  padding-left: 0.5vw;  /* Add some spacing from the grid line */
+}
+
+/* Adjust for 2v2 mode */
+#refereePanel[data-two-v-two="true"] #scoreSummary .wide-row .values {
+  grid-column: 3;  /* Still column 3 since we're hiding column 4 in 2v2 mode */
 }
 
 #scoreSummary .label {

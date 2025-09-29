@@ -71,7 +71,7 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 
 	// Update the score to something else.
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"Mayhem\":{\"ParkStatuses\":[false,true,true]}},\"BlueScore\":{"+
 			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
@@ -112,7 +112,7 @@ func TestMatchReviewCreateNewResult(t *testing.T) {
 
 	// Update the score to something else.
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"Mayhem\":{\"ParkStatuses\":[false,true,true]}},\"BlueScore\":{"+
 			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":4}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
@@ -151,7 +151,7 @@ func TestMatchReviewEditCurrentMatch(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), " Qualification 352 ")
 
 	postBody := fmt.Sprintf(
-		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"ParkStatuses\":[false,true,true]},\"BlueScore\":{"+
+		"matchResultJson={\"MatchId\":%d,\"RedScore\":{\"Mayhem\":{\"ParkStatuses\":[false,true,true],\"LeaveStatuses\":[true,false,true]}},\"BlueScore\":{"+
 			"\"Mayhem\":{\"TeleopGamepiece1Level1Count\":21},\"Fouls\":[{\"TeamId\":973,\"RuleId\":1}]},"+
 			"\"RedCards\":{\"105\":\"yellow\"},\"BlueCards\":{}}",
 		match.Id,
@@ -166,7 +166,12 @@ func TestMatchReviewEditCurrentMatch(t *testing.T) {
 	assert.Equal(
 		t,
 		[3]bool{false, true, true},
-		web.arena.RedRealtimeScore.CurrentScore.ParkStatuses,
+		web.arena.RedRealtimeScore.CurrentScore.Mayhem.ParkStatuses,
+	)
+	assert.Equal(
+		t,
+		[3]bool{true, false, true},
+		web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses,
 	)
 	assert.Equal(t, 21, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
 	assert.Equal(t, 0, len(web.arena.RedRealtimeScore.CurrentScore.Fouls))

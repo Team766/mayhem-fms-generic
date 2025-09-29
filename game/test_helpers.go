@@ -18,8 +18,6 @@ func TestScore1() *Score {
 	return &Score{
 
 		RobotsBypassed: [3]bool{false, false, true},
-		LeaveStatuses:  [3]bool{true, true, false},
-
 		Mayhem: Mayhem{
 			AutoGamepiece1Level1Count:   1,
 			TeleopGamepiece1Level1Count: 2,
@@ -27,8 +25,9 @@ func TestScore1() *Score {
 			TeleopGamepiece1Level2Count: 4,
 			AutoGamepiece2Count:         2,
 			TeleopGamepiece2Count:       4,
+			LeaveStatuses:              [3]bool{true, true, false},
+			ParkStatuses:               [3]bool{true, true, false},
 		},
-		ParkStatuses: [3]bool{true, true, false},
 		Fouls:        fouls,
 		PlayoffDq:    false,
 	}
@@ -38,7 +37,6 @@ func TestScore2() *Score {
 	return &Score{
 
 		RobotsBypassed: [3]bool{false, false, false},
-		LeaveStatuses:  [3]bool{false, true, false},
 		Mayhem: Mayhem{
 			AutoGamepiece1Level1Count:   2,
 			TeleopGamepiece1Level1Count: 4,
@@ -46,8 +44,9 @@ func TestScore2() *Score {
 			TeleopGamepiece1Level2Count: 5,
 			AutoGamepiece2Count:         1,
 			TeleopGamepiece2Count:       4,
+			LeaveStatuses:              [3]bool{false, true, false},
+			ParkStatuses:               [3]bool{false, true, false},
 		},
-		ParkStatuses: [3]bool{false, true, false},
 		Fouls:        []Foul{},
 		PlayoffDq:    false,
 	}

@@ -118,12 +118,12 @@ const handleRealtimeScore = function (data) {
     }
 
     let scoreRoot = `${alliance}ScoreSummary`;
-    $(`#${scoreRoot} .team-1-leave`).text(score.LeaveStatuses[0] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-2-leave`).text(score.LeaveStatuses[1] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-3-leave`).text(score.LeaveStatuses[2] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-1-park`).text(score.ParkStatuses[0] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-2-park`).text(score.ParkStatuses[1] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-3-park`).text(score.ParkStatuses[2] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-1-leave`).text(score.Mayhem.LeaveStatuses[0] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-2-leave`).text(score.Mayhem.LeaveStatuses[1] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-3-leave`).text(score.Mayhem.LeaveStatuses[2] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-1-park`).text(score.Mayhem.ParkStatuses[0] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-2-park`).text(score.Mayhem.ParkStatuses[1] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-3-park`).text(score.Mayhem.ParkStatuses[2] ? "✓" : "❌");
     // Auto counters
     $(`#${scoreRoot} .auto-gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count);
     $(`#${scoreRoot} .auto-gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count);

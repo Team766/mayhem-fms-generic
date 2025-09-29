@@ -168,7 +168,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
-				score.LeaveStatuses[args.TeamPosition-1] = !score.LeaveStatuses[args.TeamPosition-1]
+				score.Mayhem.LeaveStatuses[args.TeamPosition-1] = !score.Mayhem.LeaveStatuses[args.TeamPosition-1]
 				scoreChanged = true
 			}
 		} else if command == "park" {
@@ -182,7 +182,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
-				score.ParkStatuses[args.TeamPosition-1] = !score.ParkStatuses[args.TeamPosition-1]
+				score.Mayhem.ParkStatuses[args.TeamPosition-1] = !score.Mayhem.ParkStatuses[args.TeamPosition-1]
 				scoreChanged = true
 			}
 		} else if command == "GP1" {

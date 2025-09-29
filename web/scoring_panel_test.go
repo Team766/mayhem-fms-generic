@@ -61,7 +61,7 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	readWebsocketType(t, blueWs, "realtimeScore")
 
 	// Send some autonomous period scoring commands.
-	assert.Equal(t, [3]bool{false, false, false}, web.arena.RedRealtimeScore.CurrentScore.LeaveStatuses)
+	assert.Equal(t, [3]bool{false, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
 	leaveData := struct {
 		TeamPosition int
 	}{}
@@ -74,11 +74,11 @@ func TestScoringPanelWebsocket(t *testing.T) {
 		readWebsocketType(t, redWs, "realtimeScore")
 		readWebsocketType(t, blueWs, "realtimeScore")
 	}
-	assert.Equal(t, [3]bool{true, false, true}, web.arena.RedRealtimeScore.CurrentScore.LeaveStatuses)
+	assert.Equal(t, [3]bool{true, false, true}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
 	redWs.Write("leave", leaveData)
 	readWebsocketType(t, redWs, "realtimeScore")
 	readWebsocketType(t, blueWs, "realtimeScore")
-	assert.Equal(t, [3]bool{true, false, false}, web.arena.RedRealtimeScore.CurrentScore.LeaveStatuses)
+	assert.Equal(t, [3]bool{true, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
 
 	// Send some counter scoring commands using the new GP1/GP2 protocol
 	gp1Data := struct {
@@ -281,16 +281,8 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	parkData := struct {
 		TeamPosition int
 	}{} // Note: ParkStatus field is not used in the implementation, it toggles based on position only
-	assert.Equal(
-		t,
-		[3]bool{false, false, false},
-		web.arena.RedRealtimeScore.CurrentScore.ParkStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]bool{false, false, false},
-		web.arena.BlueRealtimeScore.CurrentScore.ParkStatuses,
-	)
+	assert.Equal(t, [3]bool{false, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.ParkStatuses)
+	assert.Equal(t, [3]bool{false, false, false}, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.ParkStatuses)
 	parkData.TeamPosition = 1
 	redWs.Write("park", parkData)  // true
 	blueWs.Write("park", parkData) // true
@@ -309,12 +301,12 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	assert.Equal(
 		t,
 		[3]bool{true, true, false},
-		web.arena.RedRealtimeScore.CurrentScore.ParkStatuses,
+		web.arena.RedRealtimeScore.CurrentScore.Mayhem.ParkStatuses,
 	)
 	assert.Equal(
 		t,
 		[3]bool{true, true, true},
-		web.arena.BlueRealtimeScore.CurrentScore.ParkStatuses,
+		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.ParkStatuses,
 	)
 
 	// Test that some invalid commands do nothing and don't result in score change notifications.

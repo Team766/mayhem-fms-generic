@@ -160,8 +160,8 @@ const handleRealtimeScore = function (data) {
   // Update leave/park buttons
   for (let i = 0; i < 3; i++) {
     const i1 = i + 1;
-    $(`#leave-${i1}`).attr("data-selected", score.LeaveStatuses[i]);
-    $(`#park-${i1}`).attr("data-selected", score.ParkStatuses[i]);
+    $(`#leave-${i1}`).attr("data-selected", score.Mayhem.LeaveStatuses[i]);
+    $(`#park-${i1}`).attr("data-selected", score.Mayhem.ParkStatuses[i]);
   }
 
   // Update auto counters

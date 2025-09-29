@@ -11,6 +11,8 @@ type Mayhem struct {
 	TeleopGamepiece1Level2Count int
 	AutoGamepiece2Count         int
 	TeleopGamepiece2Count       int
+	LeaveStatuses               [3]bool
+	ParkStatuses                [3]bool
 }
 
 const (

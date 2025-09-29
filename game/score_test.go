@@ -59,7 +59,7 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score3.Equals(score1))
 
 	score2 = TestScore1()
-	score2.LeaveStatuses[0] = false
+	score2.Mayhem.LeaveStatuses[0] = false
 	assert.False(t, score1.Equals(score2))
 
 	score2 = TestScore1()
@@ -67,7 +67,7 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score1.Equals(score2))
 
 	score2 = TestScore1()
-	score2.ParkStatuses[0] = false
+	score2.Mayhem.ParkStatuses[0] = false
 	assert.False(t, score1.Equals(score2))
 
 	score2 = TestScore1()
@@ -76,17 +76,22 @@ func TestScoreEquals(t *testing.T) {
 }
 
 func TestLeaveBonusRankingPoint(t *testing.T) {
-	score := Score{RobotsBypassed: [3]bool{false, false, false}, LeaveStatuses: [3]bool{true, true, true}}
+	score := Score{
+		RobotsBypassed: [3]bool{false, false, false},
+		Mayhem: Mayhem{
+			LeaveStatuses: [3]bool{true, true, true},
+		},
+	}
 	summary := score.Summarize(&Score{})
 	assert.True(t, summary.LeaveBonusRankingPoint)
 
-	score.LeaveStatuses[1] = false
+	score.Mayhem.LeaveStatuses[1] = false
 	summary = score.Summarize(&Score{})
 	assert.False(t, summary.LeaveBonusRankingPoint)
 
-	score.LeaveStatuses[1] = true
+	score.Mayhem.LeaveStatuses[1] = true
 	score.RobotsBypassed[1] = true
-	score.LeaveStatuses[1] = false
+	score.Mayhem.LeaveStatuses[1] = false
 	summary = score.Summarize(&Score{})
 	assert.True(t, summary.LeaveBonusRankingPoint)
 }
@@ -102,17 +107,22 @@ func TestGamepiece1BonusRankingPoint(t *testing.T) {
 }
 
 func TestParkBonusRankingPoint(t *testing.T) {
-	score := Score{RobotsBypassed: [3]bool{false, false, false}, ParkStatuses: [3]bool{true, true, true}}
+	score := Score{
+		RobotsBypassed: [3]bool{false, false, false},
+		Mayhem: Mayhem{
+			ParkStatuses: [3]bool{true, true, true},
+		},
+	}
 	summary := score.Summarize(&Score{})
 	assert.True(t, summary.ParkBonusRankingPoint)
 
-	score.ParkStatuses[1] = false
+	score.Mayhem.ParkStatuses[1] = false
 	summary = score.Summarize(&Score{})
 	assert.False(t, summary.ParkBonusRankingPoint)
 
-	score.ParkStatuses[1] = true
+	score.Mayhem.ParkStatuses[1] = true
 	score.RobotsBypassed[1] = true
-	score.ParkStatuses[1] = false
+	score.Mayhem.ParkStatuses[1] = false
 	summary = score.Summarize(&Score{})
 	assert.True(t, summary.ParkBonusRankingPoint)
 }

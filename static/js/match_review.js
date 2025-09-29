@@ -42,7 +42,7 @@ const renderResults = function (alliance) {
     const i1 = i + 1;
 
     getInputElement(alliance, `RobotsBypassed${i1}`).prop("checked", result.score.RobotsBypassed[i]);
-    getInputElement(alliance, `LeaveStatuses${i1}`).prop("checked", result.score.LeaveStatuses[i]);
+    getInputElement(alliance, `LeaveStatuses${i1}`).prop("checked", result.score.Mayhem.LeaveStatuses[i]);
     getInputElement(alliance, `EndgameStatuses${i1}`, result.score.EndgameStatuses[i]).prop("checked", true);
 
     for (let j = 0; j < 12; j++) {
@@ -77,7 +77,9 @@ const updateResults = function (alliance) {
   });
 
   result.score.RobotsBypassed = [];
-  result.score.LeaveStatuses = [];
+  result.score.Mayhem = result.score.Mayhem || {};
+  result.score.Mayhem.LeaveStatuses = [];
+  result.score.Mayhem.ParkStatuses = [];
   result.score.Reef = {
     AutoBranches: [],
     Branches: [],
@@ -93,7 +95,8 @@ const updateResults = function (alliance) {
     const i1 = i + 1;
 
     result.score.RobotsBypassed[i] = formData[`${alliance}RobotsBypassed${i1}`] === "on";
-    result.score.LeaveStatuses[i] = formData[`${alliance}LeaveStatuses${i1}`] === "on";
+    result.score.Mayhem.LeaveStatuses[i] = formData[`${alliance}LeaveStatuses${i1}`] === "on";
+    result.score.Mayhem.ParkStatuses[i] = false; // Initialize ParkStatuses if not already set
     result.score.EndgameStatuses[i] = parseInt(formData[`${alliance}EndgameStatuses${i1}`]);
     result.score.Reef.AutoBranches[i] = [];
     result.score.Reef.Branches[i] = [];

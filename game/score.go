@@ -7,9 +7,7 @@ package game
 
 type Score struct {
 	RobotsBypassed [3]bool
-	LeaveStatuses  [3]bool
 	Mayhem         Mayhem
-	ParkStatuses   [3]bool
 	Fouls          []Foul
 	PlayoffDq      bool
 }
@@ -24,7 +22,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	}
 
 	// Calculate autonomous period points.
-	for _, status := range score.LeaveStatuses {
+	for _, status := range score.Mayhem.LeaveStatuses {
 		if status {
 			summary.LeavePoints += LeavePoints
 		}
@@ -49,7 +47,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 		score.Mayhem.TeleopGamepiece2Count*TeleopGamepiece2Points
 
 	// Calculate park points.
-	for _, status := range score.ParkStatuses {
+	for _, status := range score.Mayhem.ParkStatuses {
 		if status {
 			summary.ParkPoints += ParkPoints
 		}
@@ -70,7 +68,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	// Calculate bonus ranking points.
 	// Leave Bonus RP
 	allRobotsLeft := true
-	for i, left := range score.LeaveStatuses {
+	for i, left := range score.Mayhem.LeaveStatuses {
 		if !left && !score.RobotsBypassed[i] {
 			allRobotsLeft = false
 			break
@@ -87,7 +85,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 
 	// Park Bonus RP
 	allRobotsParked := true
-	for i, parked := range score.ParkStatuses {
+	for i, parked := range score.Mayhem.ParkStatuses {
 		if !parked && !score.RobotsBypassed[i] {
 			allRobotsParked = false
 			break
@@ -113,14 +111,14 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 
 // Equals returns true if and only if all fields of the two scores are equal.
 func (score *Score) Equals(other *Score) bool {
-	if score.LeaveStatuses != other.LeaveStatuses ||
+	if score.Mayhem.LeaveStatuses != other.Mayhem.LeaveStatuses ||
 		score.Mayhem.AutoGamepiece1Level1Count != other.Mayhem.AutoGamepiece1Level1Count ||
 		score.Mayhem.TeleopGamepiece1Level1Count != other.Mayhem.TeleopGamepiece1Level1Count ||
 		score.Mayhem.AutoGamepiece1Level2Count != other.Mayhem.AutoGamepiece1Level2Count ||
 		score.Mayhem.TeleopGamepiece1Level2Count != other.Mayhem.TeleopGamepiece1Level2Count ||
 		score.Mayhem.AutoGamepiece2Count != other.Mayhem.AutoGamepiece2Count ||
 		score.Mayhem.TeleopGamepiece2Count != other.Mayhem.TeleopGamepiece2Count ||
-		score.ParkStatuses != other.ParkStatuses ||
+		score.Mayhem.ParkStatuses != other.Mayhem.ParkStatuses ||
 		score.RobotsBypassed != other.RobotsBypassed ||
 		score.PlayoffDq != other.PlayoffDq ||
 		len(score.Fouls) != len(other.Fouls) {

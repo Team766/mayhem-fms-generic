@@ -11,7 +11,7 @@ type Rule struct {
 	Description    string
 }
 
-// A curated list of generic rules that can apply to many games.
+// A curated list of generic rules that carry point penalties.
 // @formatter:off
 var rules = []*Rule{
 	// General Conduct

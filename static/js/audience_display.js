@@ -144,21 +144,20 @@ const handleMatchTime = function (data) {
 
 // Handles a websocket message to update the match score.
 const handleRealtimeScore = function (data) {
-  $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score - data.Red.ScoreSummary.BargePoints);
-  $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score - data.Blue.ScoreSummary.BargePoints);
+  $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score);
+  $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score);
 
-  let redCoral, blueCoral;
-  if (currentMatch.Type === matchTypePlayoff) {
-    redCoral = data.Red.ScoreSummary.NumCoral;
-    blueCoral = data.Blue.ScoreSummary.NumCoral;
-  } else {
-    redCoral = `${data.Red.ScoreSummary.NumCoralLevels}/${data.Red.ScoreSummary.NumCoralLevelsGoal}`;
-    blueCoral = `${data.Blue.ScoreSummary.NumCoralLevels}/${data.Blue.ScoreSummary.NumCoralLevelsGoal}`;
-  }
-  $(`#${redSide}Coral`).text(redCoral);
-  $(`#${redSide}Algae`).text(data.Red.ScoreSummary.NumAlgae);
-  $(`#${blueSide}Coral`).text(blueCoral);
-  $(`#${blueSide}Algae`).text(data.Blue.ScoreSummary.NumAlgae);
+  const redGp1 = data.Red.Score.Mayhem.AutoGamepiece1Level1Count + data.Red.Score.Mayhem.TeleopGamepiece1Level1Count +
+    data.Red.Score.Mayhem.AutoGamepiece1Level2Count + data.Red.Score.Mayhem.TeleopGamepiece1Level2Count;
+  const redGp2 = data.Red.Score.Mayhem.AutoGamepiece2Count + data.Red.Score.Mayhem.TeleopGamepiece2Count;
+  const blueGp1 = data.Blue.Score.Mayhem.AutoGamepiece1Level1Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level1Count +
+    data.Blue.Score.Mayhem.AutoGamepiece1Level2Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level2Count;
+  const blueGp2 = data.Blue.Score.Mayhem.AutoGamepiece2Count + data.Blue.Score.Mayhem.TeleopGamepiece2Count;
+
+  $(`#${redSide}Gp1`).text(redGp1);
+  $(`#${redSide}Gp2`).text(redGp2);
+  $(`#${blueSide}Gp1`).text(blueGp1);
+  $(`#${blueSide}Gp2`).text(blueGp2);
 };
 
 // Handles a websocket message to populate the final score data.
@@ -174,40 +173,17 @@ const handleScorePosted = function (data) {
     setTeamInfo(redSide, 4, 0, data.RedCards, data.RedRankings);
   }
   $(`#${redSide}FinalLeavePoints`).text(data.RedScoreSummary.LeavePoints);
-  $(`#${redSide}FinalCoralPoints`).text(data.RedScoreSummary.CoralPoints);
-  $(`#${redSide}FinalAlgaePoints`).text(data.RedScoreSummary.AlgaePoints);
-  $(`#${redSide}FinalBargePoints`).text(data.RedScoreSummary.BargePoints);
+  $(`#${redSide}FinalGamepiece1Points`).text(data.RedScoreSummary.Gamepiece1Points);
+  $(`#${redSide}FinalGamepiece2Points`).text(data.RedScoreSummary.Gamepiece2Points);
+  $(`#${redSide}FinalParkPoints`).text(data.RedScoreSummary.ParkPoints);
   $(`#${redSide}FinalFoulPoints`).text(data.RedScoreSummary.FoulPoints);
-  $(`#${redSide}FinalCoopertitionBonus`).html(
-    data.RedScoreSummary.CoopertitionBonus ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${redSide}FinalCoopertitionBonus`).attr(
-    "data-checked", data.RedScoreSummary.CoopertitionBonus
-  );
-  $(`#${redSide}FinalAutoBonusRankingPoint`).html(
-    data.RedScoreSummary.AutoBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${redSide}FinalAutoBonusRankingPoint`).attr(
-    "data-checked", data.RedScoreSummary.AutoBonusRankingPoint
-  );
-  $(`#${redSide}FinalCoralBonusRankingPoint`).html(
-    data.RedScoreSummary.CoralBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${redSide}FinalCoralBonusRankingPoint`).attr(
-    "data-checked", data.RedScoreSummary.CoralBonusRankingPoint
-  );
-  $(`#${redSide}FinalBargeBonusRankingPoint`).html(
-    data.RedScoreSummary.BargeBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${redSide}FinalBargeBonusRankingPoint`).attr(
-    "data-checked", data.RedScoreSummary.BargeBonusRankingPoint
-  );
+  $(`#${redSide}FinalLeaveRankingPoint`).html(data.RedScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalLeaveRankingPoint`).attr("data-checked", data.RedScoreSummary.LeaveBonusRankingPoint);
+  $(`#${redSide}FinalGamepiece1RankingPoint`).html(data.RedScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.RedScoreSummary.Gamepiece1BonusRankingPoint);
+  $(`#${redSide}FinalParkRankingPoint`).html(data.RedScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalParkRankingPoint`).attr("data-checked", data.RedScoreSummary.ParkBonusRankingPoint);
   $(`#${redSide}FinalRankingPoints`).html(data.RedRankingPoints);
-  $(`#${redSide}FinalWins`).text(data.RedWins);
-  const redFinalDestination = $(`#${redSide}FinalDestination`);
-  redFinalDestination.html(data.RedDestination.replace("Advances to ", "Advances to<br>"));
-  redFinalDestination.toggle(data.RedDestination !== "");
-  redFinalDestination.attr("data-won", data.RedWon);
 
   $(`#${blueSide}FinalScore`).text(data.BlueScoreSummary.Score);
   $(`#${blueSide}FinalAlliance`).text("Alliance " + data.Match.PlayoffBlueAlliance);
@@ -220,40 +196,17 @@ const handleScorePosted = function (data) {
     setTeamInfo(blueSide, 4, 0, data.BlueCards, data.BlueRankings);
   }
   $(`#${blueSide}FinalLeavePoints`).text(data.BlueScoreSummary.LeavePoints);
-  $(`#${blueSide}FinalCoralPoints`).text(data.BlueScoreSummary.CoralPoints);
-  $(`#${blueSide}FinalAlgaePoints`).text(data.BlueScoreSummary.AlgaePoints);
-  $(`#${blueSide}FinalBargePoints`).text(data.BlueScoreSummary.BargePoints);
+  $(`#${blueSide}FinalGamepiece1Points`).text(data.BlueScoreSummary.Gamepiece1Points);
+  $(`#${blueSide}FinalGamepiece2Points`).text(data.BlueScoreSummary.Gamepiece2Points);
+  $(`#${blueSide}FinalParkPoints`).text(data.BlueScoreSummary.ParkPoints);
   $(`#${blueSide}FinalFoulPoints`).text(data.BlueScoreSummary.FoulPoints);
-  $(`#${blueSide}FinalCoopertitionBonus`).html(
-    data.BlueScoreSummary.CoopertitionBonus ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${blueSide}FinalCoopertitionBonus`).attr(
-    "data-checked", data.BlueScoreSummary.CoopertitionBonus
-  );
-  $(`#${blueSide}FinalAutoBonusRankingPoint`).html(
-    data.BlueScoreSummary.AutoBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${blueSide}FinalAutoBonusRankingPoint`).attr(
-    "data-checked", data.BlueScoreSummary.AutoBonusRankingPoint
-  );
-  $(`#${blueSide}FinalCoralBonusRankingPoint`).html(
-    data.BlueScoreSummary.CoralBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${blueSide}FinalCoralBonusRankingPoint`).attr(
-    "data-checked", data.BlueScoreSummary.CoralBonusRankingPoint
-  );
-  $(`#${blueSide}FinalBargeBonusRankingPoint`).html(
-    data.BlueScoreSummary.BargeBonusRankingPoint ? "&#x2714;" : "&#x2718;"
-  );
-  $(`#${blueSide}FinalBargeBonusRankingPoint`).attr(
-    "data-checked", data.BlueScoreSummary.BargeBonusRankingPoint
-  );
+  $(`#${blueSide}FinalLeaveRankingPoint`).html(data.BlueScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalLeaveRankingPoint`).attr("data-checked", data.BlueScoreSummary.LeaveBonusRankingPoint);
+  $(`#${blueSide}FinalGamepiece1RankingPoint`).html(data.BlueScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.BlueScoreSummary.Gamepiece1BonusRankingPoint);
+  $(`#${blueSide}FinalParkRankingPoint`).html(data.BlueScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalParkRankingPoint`).attr("data-checked", data.BlueScoreSummary.ParkBonusRankingPoint);
   $(`#${blueSide}FinalRankingPoints`).html(data.BlueRankingPoints);
-  $(`#${blueSide}FinalWins`).text(data.BlueWins);
-  const blueFinalDestination = $(`#${blueSide}FinalDestination`);
-  blueFinalDestination.html(data.BlueDestination.replace("Advances to ", "Advances to<br>"));
-  blueFinalDestination.toggle(data.BlueDestination !== "");
-  blueFinalDestination.attr("data-won", data.BlueWon);
 
   let matchName = data.Match.LongName;
   if (data.Match.NameDetail !== "") {
@@ -272,7 +225,6 @@ const handleScorePosted = function (data) {
     $(".playoff-hidden-field").show();
     $(".playoff-only-field").hide();
   }
-  $(".coopertition-hidden-field").toggle(data.CoopertitionEnabled);
 };
 
 // Handles a websocket message to play a sound to signal match start/stop/etc.

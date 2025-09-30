@@ -147,13 +147,6 @@ const updateUIMode = function () {
   $("#edit-auto").text(editingAuto ? "Save Auto" : "Edit Auto");
 }
 
-const endgameStatusNames = [
-  "None",
-  "Park",
-  "Shallow",
-  "Deep",
-];
-
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
   let realtimeScore;
@@ -164,67 +157,60 @@ const handleRealtimeScore = function (data) {
   }
   const score = realtimeScore.Score;
 
+  // Update leave/park buttons
   for (let i = 0; i < 3; i++) {
     const i1 = i + 1;
-    $(`#auto-status-${i1} > .team-text`).text(score.LeaveStatuses[i] ? "Leave" : "None");
-    $(`#auto-status-${i1}`).attr("data-selected", score.LeaveStatuses[i]);
-    $(`#endgame-status-${i1} > .team-text`).text(endgameStatusNames[score.EndgameStatuses[i]]);
-    $(`#endgame-status-${i1}`).attr("data-selected", endgameStatusNames[score.EndgameStatuses[i]] != "None");
-    for (let j = 0; j < endgameStatusNames.length; j++) {
-      $(`#endgame-input-${i1} .endgame-${j}`).attr("data-selected", j == score.EndgameStatuses[i]);
-    }
+    $(`#leave-${i1}`).attr("data-selected", score.Mayhem.LeaveStatuses[i]);
+    $(`#park-${i1}`).attr("data-selected", score.Mayhem.ParkStatuses[i]);
   }
 
-  for (let i = 0; i < 12; i++) {
-    const i1 = i + 1;
-    for (let j = 0; j < 3; j++) {
-      const j2 = j + 2;
-      $(`#reef-column-${i1}`).attr(`data-l${j2}-scored`, score.Reef.Branches[j][i]);
-      $(`#reef-column-${i1}`).attr(`data-l${j2}-auto-scored`, score.Reef.AutoBranches[j][i]);
-    }
-  }
-
-  $(`#barge .counter-value`).text(score.BargeAlgae);
-  $(`#processor .counter-value`).text(score.ProcessorAlgae);
-  if (nearSide) {
-    $(`#trough .counter-value`).text(score.Reef.TroughNear);
-    $(`#trough .counter-auto-value`).text(score.Reef.AutoTroughNear);
-  } else {
-    $(`#trough .counter-value`).text(score.Reef.TroughFar);
-    $(`#trough .counter-auto-value`).text(score.Reef.AutoTroughFar);
-  }
-
-  redFouls = data.Red.Score.Fouls || [];
-  blueFouls = data.Blue.Score.Fouls || [];
-  $(`#foul-blue-minor .fouls-global`).text(blueFouls.filter(foul => !foul.IsMajor).length)
-  $(`#foul-blue-major .fouls-global`).text(blueFouls.filter(foul => foul.IsMajor).length)
-  $(`#foul-red-minor .fouls-global`).text(redFouls.filter(foul => !foul.IsMajor).length)
-  $(`#foul-red-major .fouls-global`).text(redFouls.filter(foul => foul.IsMajor).length)
+  // Update auto counters
+  $("#auto_gp1_l1 .counter-value").text(score.Mayhem.AutoGamepiece1Level1Count);
+  $("#auto_gp1_l2 .counter-value").text(score.Mayhem.AutoGamepiece1Level2Count);
+  $("#auto_gp2 .counter-value").text(score.Mayhem.AutoGamepiece2Count);
+  
+  // Update teleop counters
+  $("#teleop_gp1_l1 .counter-value").text(score.Mayhem.TeleopGamepiece1Level1Count);
+  $("#teleop_gp1_l2 .counter-value").text(score.Mayhem.TeleopGamepiece1Level2Count);
+  $("#teleop_gp2 .counter-value").text(score.Mayhem.TeleopGamepiece2Count);
 };
 
 // Websocket message senders for various buttons
-const handleCounterClick = function (command, adjustment) {
-  websocket.send(command, {
-    Adjustment: adjustment,
-    Current: !editingAuto,
-    Autonomous: !inTeleop || editingAuto,
-    NearSide: nearSide
-  });
+const handleCounterClick = function (id, adjustment) {
+  switch (id) {
+    // Auto counters
+    case "auto_gp1_l1":
+      websocket.send("GP1", { Level: 1, Autonomous: true, Adjustment: adjustment });
+      break;
+    case "auto_gp1_l2":
+      websocket.send("GP1", { Level: 2, Autonomous: true, Adjustment: adjustment });
+      break;
+    case "auto_gp2":
+      websocket.send("GP2", { Autonomous: true, Adjustment: adjustment });
+      break;
+    
+    // Teleop counters
+    case "teleop_gp1_l1":
+      websocket.send("GP1", { Level: 1, Autonomous: false, Adjustment: adjustment });
+      break;
+    case "teleop_gp1_l2":
+      websocket.send("GP1", { Level: 2, Autonomous: false, Adjustment: adjustment });
+      break;
+    case "teleop_gp2":
+      websocket.send("GP2", { Autonomous: false, Adjustment: adjustment });
+      break;
+    
+    default:
+      return;
+  }
 }
+
 const handleLeaveClick = function (teamPosition) {
-  websocket.send("leave", {TeamPosition: teamPosition});
+  websocket.send("leave", { TeamPosition: teamPosition });
 }
-const handleEndgameClick = function (teamPosition, endgameStatus) {
-  websocket.send("endgame", {TeamPosition: teamPosition, EndgameStatus: endgameStatus});
-}
-const handleReefClick = function (reefPosition, reefLevel) {
-  websocket.send("reef", {
-    ReefPosition: reefPosition,
-    ReefLevel: reefLevel,
-    Current: !editingAuto,
-    Autonomous: !inTeleop || editingAuto,
-    NearSide: nearSide
-  });
+
+const handleParkClick = function (teamPosition) {
+  websocket.send("park", { TeamPosition: teamPosition });
 }
 
 // Sends a websocket message to indicate that the score for this alliance is ready.

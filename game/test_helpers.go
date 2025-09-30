@@ -16,48 +16,46 @@ func TestScore1() *Score {
 		{true, 25, 15},
 	}
 	return &Score{
+
 		RobotsBypassed: [3]bool{false, false, true},
-		LeaveStatuses:  [3]bool{true, true, false},
-		Reef: Reef{
-			AutoBranches:   [3][12]bool{{true}},
-			Branches:       [3][12]bool{{true, true}, {true, true, true}},
-			AutoTroughNear: 0,
-			AutoTroughFar:  1,
-			TroughNear:     3,
-			TroughFar:      4,
+		Mayhem: Mayhem{
+			AutoGamepiece1Level1Count:   1,
+			TeleopGamepiece1Level1Count: 2,
+			AutoGamepiece1Level2Count:   2,
+			TeleopGamepiece1Level2Count: 4,
+			AutoGamepiece2Count:         2,
+			TeleopGamepiece2Count:       4,
+			LeaveStatuses:              [3]bool{true, true, false},
+			ParkStatuses:               [3]bool{true, true, false},
 		},
-		BargeAlgae:      7,
-		ProcessorAlgae:  2,
-		EndgameStatuses: [3]EndgameStatus{EndgameParked, EndgameNone, EndgameDeepCage},
-		Fouls:           fouls,
-		PlayoffDq:       false,
+		Fouls:        fouls,
+		PlayoffDq:    false,
 	}
 }
 
 func TestScore2() *Score {
 	return &Score{
+
 		RobotsBypassed: [3]bool{false, false, false},
-		LeaveStatuses:  [3]bool{false, true, false},
-		Reef: Reef{
-			AutoBranches:   [3][12]bool{{}, {}, {true, true, true, true}},
-			Branches:       [3][12]bool{{true, true, true}, {true, true, true, true, true}, {true, true, true}},
-			AutoTroughNear: 2,
-			AutoTroughFar:  1,
-			TroughNear:     10,
-			TroughFar:      5,
+		Mayhem: Mayhem{
+			AutoGamepiece1Level1Count:   2,
+			TeleopGamepiece1Level1Count: 4,
+			AutoGamepiece1Level2Count:   3,
+			TeleopGamepiece1Level2Count: 5,
+			AutoGamepiece2Count:         1,
+			TeleopGamepiece2Count:       4,
+			LeaveStatuses:              [3]bool{false, true, false},
+			ParkStatuses:               [3]bool{false, true, false},
 		},
-		BargeAlgae:      9,
-		ProcessorAlgae:  1,
-		EndgameStatuses: [3]EndgameStatus{EndgameDeepCage, EndgameShallowCage, EndgameShallowCage},
-		Fouls:           []Foul{},
-		PlayoffDq:       false,
+		Fouls:        []Foul{},
+		PlayoffDq:    false,
 	}
 }
 
 func TestRanking1() *Ranking {
-	return &Ranking{254, 1, 0, RankingFields{20, 625, 90, 554, 12, 0.254, 3, 2, 1, 0, 10}}
+	return &Ranking{TeamId: 254, Rank: 1, PreviousRank: 0, RankingFields: RankingFields{RankingPoints: 20, MatchPoints: 625, AutoPoints: 90, Gamepiece2Points: 40, Wins: 3, Losses: 2, Ties: 1, Disqualifications: 0, Played: 10}}
 }
 
 func TestRanking2() *Ranking {
-	return &Ranking{1114, 2, 1, RankingFields{18, 700, 625, 90, 23, 0.1114, 1, 3, 2, 0, 10}}
+	return &Ranking{TeamId: 1114, Rank: 2, PreviousRank: 1, RankingFields: RankingFields{RankingPoints: 18, MatchPoints: 700, AutoPoints: 100, Gamepiece2Points: 50, Wins: 1, Losses: 3, Ties: 2, Disqualifications: 0, Played: 10}}
 }

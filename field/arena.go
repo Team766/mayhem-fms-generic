@@ -55,12 +55,9 @@ type Arena struct {
 	accessPoint      network.AccessPoint
 	networkSwitch    *network.Switch
 	Plc              plc.Plc
-	TbaClient        *partner.TbaClient
-	NexusClient      *partner.NexusClient
 	BlackmagicClient *partner.BlackmagicClient
 	AllianceStations map[string]*AllianceStation
 	Displays         map[string]*Display
-	TeamSigns        *TeamSigns
 	ScoringPanelRegistry
 	ArenaNotifiers
 	MatchState
@@ -121,8 +118,6 @@ func NewArena(dbPath string) (*Arena, error) {
 
 	arena.Displays = make(map[string]*Display)
 
-	arena.TeamSigns = NewTeamSigns()
-
 	var err error
 	arena.Database, err = model.OpenDatabase(dbPath)
 	if err != nil {
@@ -159,14 +154,6 @@ func (arena *Arena) LoadSettings() error {
 	arena.EventSettings = settings
 
 	// Initialize the components that depend on settings.
-	arena.TeamSigns.Red1.SetId(settings.TeamSignRed1Id)
-	arena.TeamSigns.Red2.SetId(settings.TeamSignRed2Id)
-	arena.TeamSigns.Red3.SetId(settings.TeamSignRed3Id)
-	arena.TeamSigns.RedTimer.SetId(settings.TeamSignRedTimerId)
-	arena.TeamSigns.Blue1.SetId(settings.TeamSignBlue1Id)
-	arena.TeamSigns.Blue2.SetId(settings.TeamSignBlue2Id)
-	arena.TeamSigns.Blue3.SetId(settings.TeamSignBlue3Id)
-	arena.TeamSigns.BlueTimer.SetId(settings.TeamSignBlueTimerId)
 	accessPointWifiStatuses := [6]*network.TeamWifiStatus{
 		&arena.AllianceStations["R1"].WifiStatus,
 		&arena.AllianceStations["R2"].WifiStatus,
@@ -184,8 +171,6 @@ func (arena *Arena) LoadSettings() error {
 	)
 	arena.networkSwitch = network.NewSwitch(settings.SwitchAddress, settings.SwitchPassword)
 	arena.Plc.SetAddress(settings.PlcAddress)
-	arena.TbaClient = partner.NewTbaClient(settings.TbaEventCode, settings.TbaSecretId, settings.TbaSecret)
-	arena.NexusClient = partner.NewNexusClient(settings.TbaEventCode)
 	arena.BlackmagicClient = partner.NewBlackmagicClient(settings.BlackmagicAddresses)
 
 	game.MatchTiming.WarmupDurationSec = settings.WarmupDurationSec
@@ -195,11 +180,6 @@ func (arena *Arena) LoadSettings() error {
 	game.MatchTiming.WarningRemainingDurationSec = settings.WarningRemainingDurationSec
 	game.UpdateMatchSounds()
 	arena.MatchTimingNotifier.Notify()
-
-	game.AutoBonusCoralThreshold = settings.AutoBonusCoralThreshold
-	game.CoralBonusPerLevelThreshold = settings.CoralBonusPerLevelThreshold
-	game.CoralBonusCoopEnabled = settings.CoralBonusCoopEnabled
-	game.BargeBonusPointThreshold = settings.BargeBonusPointThreshold
 
 	// Reconstruct the playoff tournament in memory.
 	if err = arena.CreatePlayoffTournament(); err != nil {
@@ -246,63 +226,42 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 
 	arena.CurrentMatch = match
 
-	loadedByNexus := false
-	if match.ShouldAllowNexusSubstitution() && arena.EventSettings.NexusEnabled {
-		// Attempt to get the match lineup from Nexus for FRC.
-		lineup, err := arena.NexusClient.GetLineup(match.TbaMatchKey)
-		if err != nil {
-			log.Printf("Failed to load lineup from Nexus: %s", err.Error())
-		} else {
-			err = arena.SubstituteTeams(lineup[0], lineup[1], lineup[2], lineup[3], lineup[4], lineup[5])
-			if err != nil {
-				log.Printf("Failed to substitute teams using Nexus lineup; loading match normally: %s", err.Error())
-			} else {
-				log.Printf(
-					"Successfully loaded lineup for match %s from Nexus: %v", match.TbaMatchKey.String(), *lineup,
-				)
-				loadedByNexus = true
-			}
-		}
+	err := arena.assignTeam(match.Red1, "R1")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Red2, "R2")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Red3, "R3")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue1, "B1")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue2, "B2")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue3, "B3")
+	if err != nil {
+		return err
 	}
 
-	if !loadedByNexus {
-		err := arena.assignTeam(match.Red1, "R1")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Red2, "R2")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Red3, "R3")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue1, "B1")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue2, "B2")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue3, "B3")
-		if err != nil {
-			return err
-		}
-
-		arena.setupNetwork(
-			[6]*model.Team{
-				arena.AllianceStations["R1"].Team,
-				arena.AllianceStations["R2"].Team,
-				arena.AllianceStations["R3"].Team,
-				arena.AllianceStations["B1"].Team,
-				arena.AllianceStations["B2"].Team,
-				arena.AllianceStations["B3"].Team,
-			},
-			false,
-		)
-	}
+	arena.setupNetwork(
+		[6]*model.Team{
+			arena.AllianceStations["R1"].Team,
+			arena.AllianceStations["R2"].Team,
+			arena.AllianceStations["R3"].Team,
+			arena.AllianceStations["B1"].Team,
+			arena.AllianceStations["B2"].Team,
+			arena.AllianceStations["B3"].Team,
+		},
+		false,
+	)
 
 	// Reset the arena state and realtime scores.
 	arena.soundsPlayed = make(map[*game.MatchSound]struct{})
@@ -665,9 +624,6 @@ func (arena *Arena) Update() {
 	// Handle field sensors/lights/actuators.
 	arena.handlePlcInputOutput()
 
-	// Handle the team number / timer displays.
-	arena.TeamSigns.Update(arena)
-
 	arena.LastMatchTimeSec = matchTimeSec
 	arena.lastMatchState = arena.MatchState
 }
@@ -798,15 +754,6 @@ func (arena *Arena) preLoadNextMatch() {
 	}
 
 	teamIds := [6]int{nextMatch.Red1, nextMatch.Red2, nextMatch.Red3, nextMatch.Blue1, nextMatch.Blue2, nextMatch.Blue3}
-	if nextMatch.ShouldAllowNexusSubstitution() && arena.EventSettings.NexusEnabled {
-		// Attempt to get the match lineup from Nexus for FRC.
-		lineup, err := arena.NexusClient.GetLineup(nextMatch.TbaMatchKey)
-		if err != nil {
-			log.Printf("Failed to load lineup from Nexus: %s", err.Error())
-		} else {
-			teamIds = *lineup
-		}
-	}
 
 	var teams [6]*model.Team
 	for i, teamId := range teamIds {
@@ -818,7 +765,6 @@ func (arena *Arena) preLoadNextMatch() {
 		}
 	}
 	arena.setupNetwork(teams, true)
-	arena.TeamSigns.SetNextMatchTeams(nextMatch)
 }
 
 // Asynchronously reconfigures the networking hardware for the new set of teams.
@@ -950,10 +896,7 @@ func (arena *Arena) handlePlcInputOutput() {
 	arena.AllianceStations["B3"].Ethernet = blueEthernets[2]
 
 	// Handle in-match PLC functions.
-	redScore := &arena.RedRealtimeScore.CurrentScore
-	oldRedScore := *redScore
-	blueScore := &arena.BlueRealtimeScore.CurrentScore
-	oldBlueScore := *blueScore
+
 	matchStartTime := arena.MatchStartTime
 	currentTime := time.Now()
 	teleopGracePeriod := matchStartTime.Add(game.GetDurationToTeleopEnd() + game.TeleopGracePeriodSec*time.Second)
@@ -999,44 +942,13 @@ func (arena *Arena) handlePlcInputOutput() {
 		arena.Plc.SetStackBuzzer(false)
 		arena.Plc.SetStackLights(!redAllianceReady, !blueAllianceReady, false, true)
 	}
-
-	// Get all the game-specific inputs and update the score.
-	if arena.MatchState == AutoPeriod || arena.MatchState == PausePeriod || arena.MatchState == TeleopPeriod ||
-		inGracePeriod {
-		redScore.ProcessorAlgae, blueScore.ProcessorAlgae = arena.Plc.GetProcessorCounts()
-	}
-	if !oldRedScore.Equals(redScore) || !oldBlueScore.Equals(blueScore) {
-		arena.RealtimeScoreNotifier.Notify()
-	}
-
 	// Handle the truss lights.
 	if arena.MatchState == AutoPeriod || arena.MatchState == PausePeriod || arena.MatchState == TeleopPeriod {
 		warningSequenceActive, lights := trussLightWarningSequence(arena.MatchTimeSec())
 		if warningSequenceActive {
 			arena.Plc.SetTrussLights(lights, lights)
 		} else {
-			if !game.CoralBonusCoopEnabled || arena.CurrentMatch.Type == model.Playoff {
-				// Just leave the lights on all match if co-op is not enabled for this match (or event).
-				arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
-			} else {
-				// Set the lights to reflect co-op status.
-				if arena.RedScoreSummary().CoopertitionBonus && arena.BlueScoreSummary().CoopertitionBonus {
-					arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
-				} else {
-					arena.Plc.SetTrussLights(
-						[3]bool{
-							arena.RedRealtimeScore.CurrentScore.ProcessorAlgae >= 1,
-							arena.RedRealtimeScore.CurrentScore.ProcessorAlgae >= 2,
-							false,
-						},
-						[3]bool{
-							arena.BlueRealtimeScore.CurrentScore.ProcessorAlgae >= 1,
-							arena.BlueRealtimeScore.CurrentScore.ProcessorAlgae >= 2,
-							false,
-						},
-					)
-				}
-			}
+			arena.Plc.SetTrussLights([3]bool{true, true, true}, [3]bool{true, true, true})
 		}
 	} else {
 		arena.Plc.SetTrussLights(

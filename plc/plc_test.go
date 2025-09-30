@@ -4,10 +4,11 @@
 package plc
 
 import (
+	"testing"
+
 	"github.com/Team254/cheesy-arena/websocket"
 	"github.com/goburrow/modbus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestPlcInitialization(t *testing.T) {
@@ -335,31 +336,6 @@ func TestPlcRegisters(t *testing.T) {
 			plc.GetArmorBlockStatuses(),
 		)
 	}
-}
-
-func TestPlcRegistersGameSpecific(t *testing.T) {
-	var client FakeModbusClient
-	var plc ModbusPlc
-	plc.client = &client
-	plc.handler = modbus.NewTCPClientHandler("dummy")
-	plc.ioChangeNotifier = &websocket.Notifier{}
-
-	client.registers[1] = 0
-	client.registers[2] = 0
-	plc.update()
-	redProcessor, blueProcessor := plc.GetProcessorCounts()
-	assert.Equal(t, 0, redProcessor)
-	assert.Equal(t, 0, blueProcessor)
-	client.registers[1] = 12
-	plc.update()
-	redProcessor, blueProcessor = plc.GetProcessorCounts()
-	assert.Equal(t, 12, redProcessor)
-	assert.Equal(t, 0, blueProcessor)
-	client.registers[2] = 34
-	plc.update()
-	redProcessor, blueProcessor = plc.GetProcessorCounts()
-	assert.Equal(t, 12, redProcessor)
-	assert.Equal(t, 34, blueProcessor)
 }
 
 func TestPlcCoils(t *testing.T) {

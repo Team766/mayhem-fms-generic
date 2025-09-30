@@ -4,13 +4,14 @@
 package web
 
 import (
+	"testing"
+
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAllianceSelection(t *testing.T) {
@@ -144,17 +145,11 @@ func TestAllianceSelectionErrors(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "valid start time")
 
-	// Finalize for real and check that TBA publishing is triggered.
-	web.arena.TbaClient.BaseUrl = "fakeurl"
-	web.arena.EventSettings.TbaPublishingEnabled = true
+	// Actually finalize
 	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
-	assert.Equal(t, 200, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to publish alliances")
+	assert.Equal(t, 303, recorder.Code)
 
-	// Do other things after finalization.
-	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
-	assert.Equal(t, 200, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "already been finalized")
+	// Try to do other things after finalization.
 	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=asdf")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "already been finalized")

@@ -5,15 +5,16 @@ package web
 
 import (
 	"bytes"
-	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/tournament"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Team254/cheesy-arena/game"
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/Team254/cheesy-arena/tournament"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetupSettings(t *testing.T) {
@@ -24,22 +25,16 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Untitled Event")
 	assert.Contains(t, recorder.Body.String(), "8")
-	assert.NotContains(t, recorder.Body.String(), "tbaPublishingEnabled\"  checked")
 
 	// Change the settings and check the response.
 	recorder = web.postHttpResponse(
 		"/setup/settings",
-		"name=Chezy Champs&code=CC&playoffType=single&numPlayoffAlliances=16&tbaPublishingEnabled=on&"+
-			"tbaEventCode=2014cc&tbaSecretId=secretId&tbaSecret=tbasec",
+		"name=Chezy Champs&code=CC&playoffType=single&numPlayoffAlliances=16",
 	)
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.getHttpResponse("/setup/settings")
 	assert.Contains(t, recorder.Body.String(), "Chezy Champs")
 	assert.Contains(t, recorder.Body.String(), "16")
-	assert.Contains(t, recorder.Body.String(), "tbaPublishingEnabled\"  checked")
-	assert.Contains(t, recorder.Body.String(), "2014cc")
-	assert.Contains(t, recorder.Body.String(), "secretId")
-	assert.Contains(t, recorder.Body.String(), "tbasec")
 }
 
 func TestSetupSettingsDoubleElimination(t *testing.T) {
@@ -205,33 +200,6 @@ func TestSetupSettingsBackupRestoreDb(t *testing.T) {
 	// Check restoring with the backup retrieved before.
 	recorder = web.postFileHttpResponse("/setup/db/restore", "databaseFile", backupBody)
 	assert.Equal(t, "Chezy Champs", web.arena.EventSettings.Name)
-}
-
-func TestSetupSettingsPublishToTba(t *testing.T) {
-	web := setupTestWeb(t)
-
-	web.arena.TbaClient.BaseUrl = "fakeurl"
-	web.arena.EventSettings.TbaPublishingEnabled = true
-
-	recorder := web.getHttpResponse("/setup/settings/publish_alliances")
-	assert.Equal(t, 500, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to publish alliances")
-
-	recorder = web.getHttpResponse("/setup/settings/publish_awards")
-	assert.Equal(t, 500, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to publish awards")
-
-	recorder = web.getHttpResponse("/setup/settings/publish_matches")
-	assert.Equal(t, 500, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to delete published matches")
-
-	recorder = web.getHttpResponse("/setup/settings/publish_rankings")
-	assert.Equal(t, 500, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to publish rankings")
-
-	recorder = web.getHttpResponse("/setup/settings/publish_teams")
-	assert.Equal(t, 500, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Failed to publish teams")
 }
 
 func (web *Web) postFileHttpResponse(path string, paramName string, file *bytes.Buffer) *httptest.ResponseRecorder {

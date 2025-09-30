@@ -117,24 +117,22 @@ const handleRealtimeScore = function (data) {
       score = data.Blue.Score;
     }
 
-    let l1_total = score.Reef.TroughNear + score.Reef.TroughFar;
-    let l2_total = score.Reef.Branches[0].filter(Boolean).length;
-    let l3_total = score.Reef.Branches[1].filter(Boolean).length;
-    let l4_total = score.Reef.Branches[2].filter(Boolean).length;
-
     let scoreRoot = `${alliance}ScoreSummary`;
-    $(`#${scoreRoot} .team-1-leave`).text(score.LeaveStatuses[0] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-2-leave`).text(score.LeaveStatuses[1] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-3-leave`).text(score.LeaveStatuses[2] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-1-endgame`).text(endgameStatusNames[score.EndgameStatuses[0]]);
-    $(`#${scoreRoot} .team-2-endgame`).text(endgameStatusNames[score.EndgameStatuses[1]]);
-    $(`#${scoreRoot} .team-3-endgame`).text(endgameStatusNames[score.EndgameStatuses[2]]);
-    $(`#${scoreRoot} .coral-l1`).text(l1_total);
-    $(`#${scoreRoot} .coral-l2`).text(l2_total);
-    $(`#${scoreRoot} .coral-l3`).text(l3_total);
-    $(`#${scoreRoot} .coral-l4`).text(l4_total);
-    $(`#${scoreRoot} .processor`).text(score.ProcessorAlgae);
-    $(`#${scoreRoot} .barge`).text(score.BargeAlgae);
+    $(`#${scoreRoot} .team-1-leave`).text(score.Mayhem.LeaveStatuses[0] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-2-leave`).text(score.Mayhem.LeaveStatuses[1] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-3-leave`).text(score.Mayhem.LeaveStatuses[2] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-1-park`).text(score.Mayhem.ParkStatuses[0] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-2-park`).text(score.Mayhem.ParkStatuses[1] ? "✓" : "❌");
+    $(`#${scoreRoot} .team-3-park`).text(score.Mayhem.ParkStatuses[2] ? "✓" : "❌");
+    // Auto counters
+    $(`#${scoreRoot} .auto-gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count);
+    $(`#${scoreRoot} .auto-gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count);
+    $(`#${scoreRoot} .auto-gp2`).text(score.Mayhem.AutoGamepiece2Count);
+    
+    // Teleop counters
+    $(`#${scoreRoot} .teleop-gp1-l1`).text(score.Mayhem.TeleopGamepiece1Level1Count);
+    $(`#${scoreRoot} .teleop-gp1-l2`).text(score.Mayhem.TeleopGamepiece1Level2Count);
+    $(`#${scoreRoot} .teleop-gp2`).text(score.Mayhem.TeleopGamepiece2Count);
   }
 }
 

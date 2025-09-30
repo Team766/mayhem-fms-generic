@@ -438,38 +438,65 @@ main {
 }
 
 .counter {
-  height: 90px;
-  max-width: 400px;
   width: 100%;
-  margin: 0 10px;
-  border-radius: var(--button-border-radius);
-  overflow: clip;
+  margin: 15px 0;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.counter-header {
+  background-color: var(--alliance-action);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.counter-label {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.counter-controls {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: white;
 }
 
-.counter:has(button:enabled) {
-  color: var(--text-active-dark);
-  box-shadow: black 0px 4px 4px;
-}
-
-.counter:not(:has(button:enabled)) {
-  color: var(--text-inactive-dark);
+.counter-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  min-width: 60px;
+  text-align: center;
+  padding: 0 15px;
 }
 
 .counter button {
-  flex: 1 1 0%;
-  color: var(--text-active);
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
   background-color: var(--alliance-action);
-  font-size: 24pt;
+  color: white;
   font-weight: bold;
-  display: grid;
-  place-items: center;
-  z-index: 1;
-  padding: 0.2em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0 5px;
+  padding: 0;
 }
 
-.counter button:enabled:not(:active) {
-  box-shadow: black 0px 0px 4px;
+.button-symbol {
+  font-size: 36px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  display: block;
 }
 
 .counter button:disabled {
@@ -483,15 +510,6 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-.counter-label {
-  font-size: 12pt;
-  padding: 0 0.2em 5px 0.2em;
-}
-
-.counter-value {
-  font-weight: bold;
 }
 
 .counter-main-value {

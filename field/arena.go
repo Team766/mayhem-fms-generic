@@ -832,10 +832,11 @@ func (arena *Arena) checkCanStartMatch() error {
 		return fmt.Errorf("cannot start match while there is a match still in progress or with results pending")
 	}
 
-	stations := []string{"R1", "R2", "B1", "B2"}
-	if !arena.EventSettings.TwoVsTwoMode {
-		// In 3v3 mode, also check the third team stations
-		stations = append(stations, "R3", "B3")
+	stations := []string{}
+	if arena.EventSettings.TwoVsTwoMode {
+		stations = []string{"R1", "R2", "B1", "B2"}
+	} else {
+		stations = []string{"R1", "R2", "R3", "B1", "B2", "B3"}
 	}
 
 	err := arena.checkAllianceStationsReady(stations...)

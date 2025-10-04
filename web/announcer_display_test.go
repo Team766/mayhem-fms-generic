@@ -19,6 +19,38 @@ func TestAnnouncerDisplay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Announcer Display - Untitled Event - Cheesy Arena")
 }
 
+func TestAnnouncerDisplayMatchLoadTwoVsTwo(t *testing.T) {
+    web := setupTestWeb(t)
+
+    // Create a match with all 3 teams per alliance.
+    match := model.Match{Type: model.Practice, Red1: 101, Red2: 102, Red3: 103, Blue1: 201, Blue2: 202, Blue3: 203}
+    web.arena.LoadMatch(&match)
+
+    // TwoVsTwoMode off: R3/B3 should be present.
+    web.arena.EventSettings.TwoVsTwoMode = false
+    recorder := web.getHttpResponse("/displays/announcer/match_load")
+    assert.Equal(t, 200, recorder.Code)
+    body := recorder.Body.String()
+    assert.Contains(t, body, "101")
+    assert.Contains(t, body, "102")
+    assert.Contains(t, body, "103") // R3 visible
+    assert.Contains(t, body, "201")
+    assert.Contains(t, body, "202")
+    assert.Contains(t, body, "203") // B3 visible
+
+    // TwoVsTwoMode on: R3/B3 should be omitted from the rendered list.
+    web.arena.EventSettings.TwoVsTwoMode = true
+    recorder = web.getHttpResponse("/displays/announcer/match_load")
+    assert.Equal(t, 200, recorder.Code)
+    body = recorder.Body.String()
+    assert.Contains(t, body, "101")
+    assert.Contains(t, body, "102")
+    assert.NotContains(t, body, "103") // R3 hidden
+    assert.Contains(t, body, "201")
+    assert.Contains(t, body, "202")
+    assert.NotContains(t, body, "203") // B3 hidden
+}
+
 func TestAnnouncerDisplayMatchLoad(t *testing.T) {
 	web := setupTestWeb(t)
 	match := model.Match{Type: model.Playoff, Red1: 254, Red2: 1114, Blue3: 2056}

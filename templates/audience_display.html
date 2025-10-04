@@ -20,18 +20,22 @@ Display shown on the audience screen overlayed over the video.
         <div class="playoff-alliance" id="leftPlayoffAlliance"></div>
         <div id="matchOverlay">
           <div id="matchOverlayTop">
-            <div class="teams" id="leftTeams">
-              <div id="leftTeam1"></div>
-              <div id="leftTeam2"></div>
-              <div id="leftTeam3"></div>
+          <div class="teams" id="leftTeams">
+            <div id="leftTeam1"></div>
+            <div id="leftTeam2"></div>
+            {{if not .EventSettings.TwoVsTwoMode}}
+            <div id="leftTeam3"></div>
+            {{end}}
+          </div>
+          <div class="score reversible-left">
+            <div class="avatars">
+              <img class="avatar" id="leftTeam1Avatar" src=""/>
+              <img class="avatar" id="leftTeam2Avatar" src=""/>
+              {{if not .EventSettings.TwoVsTwoMode}}
+              <img class="avatar" id="leftTeam3Avatar" src=""/>
+              {{end}}
             </div>
-            <div class="score reversible-left">
-              <div class="avatars">
-                <img class="avatar" id="leftTeam1Avatar" src=""/>
-                <img class="avatar" id="leftTeam2Avatar" src=""/>
-                <img class="avatar" id="leftTeam3Avatar" src=""/>
-              </div>
-              <div class="score-fields">
+            <div class="score-fields">
                 <div class="score-field">
                   <div class="score-label">GP1</div>
                   <div id="leftGp1"></div>
@@ -44,8 +48,8 @@ Display shown on the audience screen overlayed over the video.
               <div class="score-number" id="leftScoreNumber"></div>
             </div>
             <div class="score score-right reversible-right">
-              <div class="score-number" id="rightScoreNumber"></div>
-              <div class="score-fields">
+            <div class="score-number" id="rightScoreNumber"></div>
+            <div class="score-fields">
                 <div class="score-field">
                   <div class="score-label">GP1</div>
                   <div id="rightGp1"></div>
@@ -55,18 +59,22 @@ Display shown on the audience screen overlayed over the video.
                   <div id="rightGp2"></div>
                 </div>
               </div>
-              <div class="avatars">
-                <img class="avatar" id="rightTeam1Avatar" src=""/>
-                <img class="avatar" id="rightTeam2Avatar" src=""/>
-                <img class="avatar" id="rightTeam3Avatar" src=""/>
-              </div>
-            </div>
-            <div class="teams" id="rightTeams">
-              <div id="rightTeam1"></div>
-              <div id="rightTeam2"></div>
-              <div id="rightTeam3"></div>
+            <div class="avatars">
+              <img class="avatar" id="rightTeam1Avatar" src=""/>
+              <img class="avatar" id="rightTeam2Avatar" src=""/>
+              {{if not .EventSettings.TwoVsTwoMode}}
+              <img class="avatar" id="rightTeam3Avatar" src=""/>
+              {{end}}
             </div>
           </div>
+          <div class="teams" id="rightTeams">
+            <div id="rightTeam1"></div>
+            <div id="rightTeam2"></div>
+            {{if not .EventSettings.TwoVsTwoMode}}
+            <div id="rightTeam3"></div>
+            {{end}}
+          </div>
+        </div>
           <div id="eventMatchInfo">
             <span>{{.EventSettings.Name}}</span>
             <span id="matchName"></span>

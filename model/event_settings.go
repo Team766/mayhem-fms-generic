@@ -22,6 +22,7 @@ type EventSettings struct {
 	SelectionRound2Order        string
 	SelectionRound3Order        string
 	SelectionShowUnpickedTeams  bool
+	TwoVsTwoMode                bool
 	TbaDownloadEnabled          bool
 	TbaPublishingEnabled        bool
 	TbaEventCode                string
@@ -81,7 +82,6 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		PauseDurationSec:            game.MatchTiming.PauseDurationSec,
 		TeleopDurationSec:           game.MatchTiming.TeleopDurationSec,
 		WarningRemainingDurationSec: game.MatchTiming.WarningRemainingDurationSec,
-		
 	}
 
 	if err := database.eventSettingsTable.create(&eventSettings); err != nil {

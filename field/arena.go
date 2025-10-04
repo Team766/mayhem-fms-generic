@@ -251,6 +251,18 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 		return err
 	}
 
+	// In 2v2 mode, mark the third stations as bypassed and inactive.
+	if arena.EventSettings.TwoVsTwoMode {
+		for _, st := range []string{"R3", "B3"} {
+			if ds := arena.AllianceStations[st].DsConn; ds != nil {
+				ds.close()
+				arena.AllianceStations[st].DsConn = nil
+			}
+			arena.AllianceStations[st].Team = nil
+			arena.AllianceStations[st].Bypass = true
+		}
+	}
+
 	arena.setupNetwork(
 		[6]*model.Team{
 			arena.AllianceStations["R1"].Team,
@@ -342,6 +354,18 @@ func (arena *Arena) SubstituteTeams(red1, red2, red3, blue1, blue2, blue3 int) e
 	}
 	if err := arena.assignTeam(blue3, "B3"); err != nil {
 		return err
+	}
+
+	// In 2v2 mode, ensure the third stations are bypassed and inactive.
+	if arena.EventSettings.TwoVsTwoMode {
+		for _, st := range []string{"R3", "B3"} {
+			if ds := arena.AllianceStations[st].DsConn; ds != nil {
+				ds.close()
+				arena.AllianceStations[st].DsConn = nil
+			}
+			arena.AllianceStations[st].Team = nil
+			arena.AllianceStations[st].Bypass = true
+		}
 	}
 
 	arena.CurrentMatch.Red1 = red1
@@ -443,10 +467,10 @@ func (arena *Arena) ResetMatch() error {
 	arena.matchAborted = false
 	arena.AllianceStations["R1"].Bypass = false
 	arena.AllianceStations["R2"].Bypass = false
-	arena.AllianceStations["R3"].Bypass = false
+	arena.AllianceStations["R3"].Bypass = arena.EventSettings.TwoVsTwoMode
 	arena.AllianceStations["B1"].Bypass = false
 	arena.AllianceStations["B2"].Bypass = false
-	arena.AllianceStations["B3"].Bypass = false
+	arena.AllianceStations["B3"].Bypass = arena.EventSettings.TwoVsTwoMode
 	arena.MuteMatchSounds = false
 	return nil
 }
@@ -764,6 +788,11 @@ func (arena *Arena) preLoadNextMatch() {
 			log.Printf("Failed to get model for Team %d while pre-loading next match: %s", teamId, err.Error())
 		}
 	}
+	// In 2v2 mode, ensure the third stations are not preconfigured on the network.
+	if arena.EventSettings.TwoVsTwoMode {
+		teams[2] = nil // R3
+		teams[5] = nil // B3
+	}
 	arena.setupNetwork(teams, true)
 }
 
@@ -781,6 +810,11 @@ func (arena *Arena) setupNetwork(teams [6]*model.Team, isPreload bool) {
 	}
 
 	if arena.EventSettings.NetworkSecurityEnabled {
+		// In 2v2 mode, never configure networking for the third stations.
+		if arena.EventSettings.TwoVsTwoMode {
+			teams[2] = nil // R3
+			teams[5] = nil // B3
+		}
 		if err := arena.accessPoint.ConfigureTeamWifi(teams); err != nil {
 			log.Printf("Failed to configure team WiFi: %s", err.Error())
 		}
@@ -798,7 +832,14 @@ func (arena *Arena) checkCanStartMatch() error {
 		return fmt.Errorf("cannot start match while there is a match still in progress or with results pending")
 	}
 
-	err := arena.checkAllianceStationsReady("R1", "R2", "R3", "B1", "B2", "B3")
+	stations := []string{}
+	if arena.EventSettings.TwoVsTwoMode {
+		stations = []string{"R1", "R2", "B1", "B2"}
+	} else {
+		stations = []string{"R1", "R2", "R3", "B1", "B2", "B3"}
+	}
+
+	err := arena.checkAllianceStationsReady(stations...)
 	if err != nil {
 		return err
 	}
@@ -883,10 +924,14 @@ func (arena *Arena) handlePlcInputOutput() {
 	redAStops, blueAStops := arena.Plc.GetTeamAStops()
 	arena.handleTeamStop("R1", redEStops[0], redAStops[0])
 	arena.handleTeamStop("R2", redEStops[1], redAStops[1])
-	arena.handleTeamStop("R3", redEStops[2], redAStops[2])
+	if !arena.EventSettings.TwoVsTwoMode {
+		arena.handleTeamStop("R3", redEStops[2], redAStops[2])
+	}
 	arena.handleTeamStop("B1", blueEStops[0], blueAStops[0])
 	arena.handleTeamStop("B2", blueEStops[1], blueAStops[1])
-	arena.handleTeamStop("B3", blueEStops[2], blueAStops[2])
+	if !arena.EventSettings.TwoVsTwoMode {
+		arena.handleTeamStop("B3", blueEStops[2], blueAStops[2])
+	}
 	redEthernets, blueEthernets := arena.Plc.GetEthernetConnected()
 	arena.AllianceStations["R1"].Ethernet = redEthernets[0]
 	arena.AllianceStations["R2"].Ethernet = redEthernets[1]

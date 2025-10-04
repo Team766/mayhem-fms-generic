@@ -7,7 +7,7 @@ UI for entering and tracking fouls and red/yellow cards.
 {{define "title"}}Referee Panel{{end}}
 {{define "body"}}
 <div id="matchName"></div>
-<div id="refereePanel">
+<div id="refereePanel" data-two-v-two="{{.TwoVsTwoMode}}">
   <div id="cards" class="headRef-dependent">
     <h3>Red/Yellow Cards</h3>
     <div class="alliance-cards" id="redCards">
@@ -53,6 +53,16 @@ UI for entering and tracking fouls and red/yellow cards.
 <link rel="manifest" href="/static/manifest/referee.manifest">
 <meta name="viewport" content="width=device-width, user-scalable=no">
 <link href="/static/css/referee_panel.css" rel="stylesheet">
+<style>
+  /* Hide third-team UI when 2v2 is enabled */
+  #refereePanel[data-two-v-two="true"] #redTeam3Card,
+  #refereePanel[data-two-v-two="true"] #blueTeam3Card,
+  #refereePanel[data-two-v-two="true"] .team-3,
+  #refereePanel[data-two-v-two="true"] .team-3-leave,
+  #refereePanel[data-two-v-two="true"] .team-3-park {
+    display: none !important;
+  }
+</style>
 {{end}}
 {{define "script"}}
 <script src="/static/js/match_timing.js"></script>
@@ -79,24 +89,32 @@ UI for entering and tracking fouls and red/yellow cards.
   <div class="park-symbol team-2-park">❌</div>
   <div class="park-symbol team-3-park">❌</div>
 
-  <div class="label">Auto GP1</div>
   <div class="wide-row">
-    <span class="auto-gp1-l1">0</span> / <span class="auto-gp1-l2">0</span>
+    <div class="label">Auto GP1</div>
+    <div class="values">
+      <span class="auto-gp1-l1">0</span> / <span class="auto-gp1-l2">0</span>
+    </div>
   </div>
 
-  <div class="label">Teleop GP1</div>
   <div class="wide-row">
-    <span class="teleop-gp1-l1">0</span> / <span class="teleop-gp1-l2">0</span>
+    <div class="label">Teleop GP1</div>
+    <div class="values">
+      <span class="teleop-gp1-l1">0</span> / <span class="teleop-gp1-l2">0</span>
+    </div>
   </div>
 
-  <div class="label">Auto GP2</div>
   <div class="wide-row">
-    <span class="auto-gp2">0</span>
+    <div class="label">Auto GP2</div>
+    <div class="values">
+      <span class="auto-gp2">0</span>
+    </div>
   </div>
 
-  <div class="label">Teleop GP2</div>
   <div class="wide-row">
-    <span class="teleop-gp2">0</span>
+    <div class="label">Teleop GP2</div>
+    <div class="values">
+      <span class="teleop-gp2">0</span>
+    </div>
   </div>
 
 </div>

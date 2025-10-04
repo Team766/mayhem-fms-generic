@@ -21,6 +21,26 @@ func TestRefereePanel(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Referee Panel - Untitled Event - Cheesy Arena")
 }
 
+func TestRefereePanelTwoVsTwoAttribute(t *testing.T) {
+    web := setupTestWeb(t)
+
+    // TwoVsTwoMode off
+    web.arena.EventSettings.TwoVsTwoMode = false
+    recorder := web.getHttpResponse("/panels/referee")
+    assert.Equal(t, 200, recorder.Code)
+    body := recorder.Body.String()
+    assert.Contains(t, body, "id=\"refereePanel\"")
+    assert.Contains(t, body, "data-two-v-two=\"false\"")
+
+    // TwoVsTwoMode on
+    web.arena.EventSettings.TwoVsTwoMode = true
+    recorder = web.getHttpResponse("/panels/referee")
+    assert.Equal(t, 200, recorder.Code)
+    body = recorder.Body.String()
+    assert.Contains(t, body, "id=\"refereePanel\"")
+    assert.Contains(t, body, "data-two-v-two=\"true\"")
+}
+
 func TestRefereePanelWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

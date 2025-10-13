@@ -26,7 +26,6 @@ type FakePlc struct {
 	blueProcessorCount    int
 	redTrussLights        [3]bool
 	blueTrussLights       [3]bool
-	matchResetCycles      int // Tracks the number of cycles since the last match reset
 }
 
 func (plc *FakePlc) SetAddress(address string) {
@@ -68,8 +67,6 @@ func (plc *FakePlc) GetEthernetConnected() ([3]bool, [3]bool) {
 }
 
 func (plc *FakePlc) ResetMatch() {
-	plc.matchResetCycles = 0
-	// Reset any other necessary state here
 }
 
 func (plc *FakePlc) SetStackLights(red, blue, orange, green bool) {

@@ -2,13 +2,12 @@
 // Author: pat@patfairbank.com (Patrick Fairbank)
 //
 // Methods for interfacing with the field PLC.
-
 package plc
 
 import (
 	"fmt"
 	"log"
-	"slices"
+	"reflect"
 	"strings"
 	"time"
 
@@ -354,7 +353,7 @@ func (plc *ModbusPlc) GetCycleState(max, index, duration int) bool {
 
 func (plc *ModbusPlc) GetInputNames() []string {
 	inputNames := make([]string, inputCount)
-	for i := 0; i < int(inputCount); i++ {
+	for i := range plc.inputs {
 		inputNames[i] = input(i).String()
 	}
 	return inputNames
@@ -369,11 +368,11 @@ func (plc *ModbusPlc) GetRegisterNames() []string {
 }
 
 func (plc *ModbusPlc) GetCoilNames() []string {
-	names := make([]string, coilCount)
-	for i := 0; i < int(coilCount); i++ {
-		names[i] = coil(i).String()
+	coilNames := make([]string, coilCount)
+	for i := range plc.coils {
+		coilNames[i] = coil(i).String()
 	}
-	return names
+	return coilNames
 }
 
 // Sets the state of the red and blue truss lights. Each array represents the outer, middle, and inner lights,
@@ -423,24 +422,22 @@ func (plc *ModbusPlc) update() {
 		plc.isHealthy = isHealthy
 	}
 
-	// Check if any inputs, registers, or coils changed
-	inputsChanged := !slices.Equal(plc.inputs, plc.oldInputs)
-	registersChanged := plc.registers != plc.oldRegisters
-	coilsChanged := !slices.Equal(plc.coils, plc.oldCoils)
-
-	// Notify any listeners if any inputs or registers changed.
-	if inputsChanged || registersChanged || coilsChanged {
-		plc.ioChangeNotifier.Notify()
+	plc.cycleCounter++
+	if plc.cycleCounter == cycleCounterMax {
+		plc.cycleCounter = 0
 	}
 
-	plc.cycleCounter++
-	if plc.cycleCounter >= cycleCounterMax {
-		plc.cycleCounter = 0
+	// Detect any changes in input or output and notify listeners if so.
+	if !reflect.DeepEqual(plc.inputs, plc.oldInputs) || plc.registers != plc.oldRegisters || !reflect.DeepEqual(plc.coils, plc.oldCoils) {
+		plc.ioChangeNotifier.Notify()
+		plc.oldInputs = plc.inputs
+		plc.oldRegisters = plc.registers
+		plc.oldCoils = plc.coils
 	}
 }
 
 func (plc *ModbusPlc) readInputs() bool {
-	if plc.handler == nil {
+	if len(plc.inputs) == 0 {
 		return true
 	}
 

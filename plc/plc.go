@@ -177,9 +177,11 @@ func NewModbusPlcWithMaps(inputMap InputMap, coilMap CoilMap) *ModbusPlc {
 		oldInputs:        [inputCount]bool{},
 		coils:            [coilCount]bool{},
 		oldCoils:         [coilCount]bool{},
-		ioChangeNotifier: websocket.NewNotifier("plcIoChange", nil),
 		hasValidMappings: len(inputMap) == int(inputCount) && len(coilMap) == int(coilCount),
 	}
+
+	// Create the notifier with the generateIoChangeMessage method as the message producer
+	plc.ioChangeNotifier = websocket.NewNotifier("plcIoChange", plc.generateIoChangeMessage)
 
 	if !plc.hasValidMappings {
 		log.Printf("Warning: Invalid PLC pin mappings - input count: %d (expected %d), coil count: %d (expected %d)",

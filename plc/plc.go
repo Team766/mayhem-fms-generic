@@ -7,7 +7,6 @@ package plc
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 
@@ -50,12 +49,12 @@ type ModbusPlc struct {
 	isHealthy        bool
 	ioChangeNotifier *websocket.Notifier
 	hasValidMappings bool
-	inputs           []bool
+	inputs           [inputCount]bool
 	registers        [registerCount]uint16
-	coils            []bool
-	oldInputs        []bool
-	oldCoils         []bool
+	coils            [coilCount]bool
+	oldInputs        [inputCount]bool
 	oldRegisters     [registerCount]uint16
+	oldCoils         [coilCount]bool
 	cycleCounter     int
 	matchResetCycles int
 	inputMap         InputMap
@@ -170,14 +169,14 @@ func NewModbusPlcWithMaps(inputMap InputMap, coilMap CoilMap) *ModbusPlc {
 		}
 	}
 
-	// Initialize the PLC
+	// Initialize the PLC with zero values for all arrays
 	plc := &ModbusPlc{
 		inputMap:         inputMap,
 		coilMap:          coilMap,
-		inputs:           make([]bool, inputCount),
-		oldInputs:        make([]bool, inputCount),
-		coils:            make([]bool, coilCount),
-		oldCoils:         make([]bool, coilCount),
+		inputs:           [inputCount]bool{},
+		oldInputs:        [inputCount]bool{},
+		coils:            [coilCount]bool{},
+		oldCoils:         [coilCount]bool{},
 		ioChangeNotifier: websocket.NewNotifier("plcIoChange", nil),
 		hasValidMappings: len(inputMap) == int(inputCount) && len(coilMap) == int(coilCount),
 	}
@@ -428,7 +427,7 @@ func (plc *ModbusPlc) update() {
 	}
 
 	// Detect any changes in input or output and notify listeners if so.
-	if !reflect.DeepEqual(plc.inputs, plc.oldInputs) || plc.registers != plc.oldRegisters || !reflect.DeepEqual(plc.coils, plc.oldCoils) {
+	if plc.inputs != plc.oldInputs || plc.registers != plc.oldRegisters || plc.coils != plc.oldCoils {
 		plc.ioChangeNotifier.Notify()
 		plc.oldInputs = plc.inputs
 		plc.oldRegisters = plc.registers
@@ -440,7 +439,6 @@ func (plc *ModbusPlc) readInputs() bool {
 	if len(plc.inputs) == 0 {
 		return true
 	}
-
 	inputs, err := plc.client.ReadDiscreteInputs(0, uint16(len(plc.inputs)))
 	if err != nil {
 		log.Printf("PLC error reading inputs: %v", err)
@@ -450,7 +448,6 @@ func (plc *ModbusPlc) readInputs() bool {
 		log.Printf("Insufficient length of PLC inputs: got %d bytes, expected %d bits.", len(inputs), len(plc.inputs))
 		return false
 	}
-
 	copy(plc.inputs[:], byteToBool(inputs, len(plc.inputs)))
 	return true
 }
@@ -495,6 +492,7 @@ func (plc *ModbusPlc) writeCoils() bool {
 	} else {
 		plc.matchResetCycles++
 	}
+
 	return true
 }
 

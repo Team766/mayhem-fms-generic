@@ -307,22 +307,20 @@ func (plc *ModbusPlc) GetTeamAStops() ([3]bool, [3]bool) {
 // Returns whether anything is connected to each station's designated Ethernet port on the SCC.
 func (plc *ModbusPlc) GetEthernetConnected() ([3]bool, [3]bool) {
 	return [3]bool{
-			plc.inputs[redConnected1],
-			plc.inputs[redConnected2],
-			plc.inputs[redConnected3],
+			plc.inputs[plc.getInputPin(redConnected1)],
+			plc.inputs[plc.getInputPin(redConnected2)],
+			plc.inputs[plc.getInputPin(redConnected3)],
 		},
 		[3]bool{
-			plc.inputs[blueConnected1],
-			plc.inputs[blueConnected2],
-			plc.inputs[blueConnected3],
+			plc.inputs[plc.getInputPin(blueConnected1)],
+			plc.inputs[plc.getInputPin(blueConnected2)],
+			plc.inputs[plc.getInputPin(blueConnected3)],
 		}
 }
 
 // Resets the internal state of the PLC to start a new match.
 func (plc *ModbusPlc) ResetMatch() {
-	if plc.coils != nil && int(matchReset) < len(plc.coils) {
-		plc.coils[matchReset] = true
-	}
+	plc.coils[plc.getCoilPin(matchReset)] = true
 	plc.matchResetCycles = 0
 
 	// Clear register variables (other than fieldIoConnection) so that any values from pre-match testing don't carry
@@ -495,7 +493,8 @@ func (plc *ModbusPlc) writeCoils() bool {
 	}
 
 	if plc.matchResetCycles > 5 {
-		plc.coils[matchReset] = false // Only need a short pulse to reset the internal state of the PLC.
+		// Only need a short pulse to reset the internal state of the PLC.
+		plc.coils[plc.getCoilPin(matchReset)] = false
 	} else {
 		plc.matchResetCycles++
 	}

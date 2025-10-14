@@ -180,7 +180,6 @@ func NewModbusPlcWithMaps(inputMap InputMap, coilMap CoilMap) *ModbusPlc {
 		hasValidMappings: len(inputMap) == int(inputCount) && len(coilMap) == int(coilCount),
 	}
 
-	// Create the notifier with the generateIoChangeMessage method as the message producer
 	plc.ioChangeNotifier = websocket.NewNotifier("plcIoChange", plc.generateIoChangeMessage)
 
 	if !plc.hasValidMappings {
@@ -494,7 +493,6 @@ func (plc *ModbusPlc) writeCoils() bool {
 	} else {
 		plc.matchResetCycles++
 	}
-
 	return true
 }
 

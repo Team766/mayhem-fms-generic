@@ -57,8 +57,6 @@ type ModbusPlc struct {
 	oldCoils         [coilCount]bool
 	cycleCounter     int
 	matchResetCycles int
-	inputMap         InputMap
-	coilMap          CoilMap
 }
 
 const (
@@ -144,76 +142,21 @@ const (
 	armorBlockCount
 )
 
-// NewModbusPlc creates a new ModbusPlc with default 1:1 pin mappings.
-// For custom pin mappings, use NewModbusPlcWithMaps.
 func NewModbusPlc() *ModbusPlc {
-	return NewModbusPlcWithMaps(nil, nil)
-}
-
-// NewModbusPlcWithMaps creates a new ModbusPlc with the given input and coil mappings.
-// If nil is passed for either map, default 1:1 mappings will be used.
-// Invalid mappings will be logged and will cause IsHealthy() to return false.
-func NewModbusPlcWithMaps(inputMap InputMap, coilMap CoilMap) *ModbusPlc {
-	// Create default 1:1 mappings if none provided
-	if inputMap == nil {
-		inputMap = make(InputMap, inputCount)
-		for i := 0; i < int(inputCount); i++ {
-			inputMap[input(i)] = i
-		}
-	}
-
-	if coilMap == nil {
-		coilMap = make(CoilMap, coilCount)
-		for i := 0; i < int(coilCount); i++ {
-			coilMap[coil(i)] = i
-		}
-	}
-
-	// Initialize the PLC with zero values for all arrays
-	plc := &ModbusPlc{
-		inputMap:         inputMap,
-		coilMap:          coilMap,
-		inputs:           [inputCount]bool{},
-		oldInputs:        [inputCount]bool{},
-		coils:            [coilCount]bool{},
-		oldCoils:         [coilCount]bool{},
-		hasValidMappings: len(inputMap) == int(inputCount) && len(coilMap) == int(coilCount),
-	}
+	plc := &ModbusPlc{}
 
 	plc.ioChangeNotifier = websocket.NewNotifier("plcIoChange", plc.generateIoChangeMessage)
-
-	if !plc.hasValidMappings {
-		log.Printf("Warning: Invalid PLC pin mappings - input count: %d (expected %d), coil count: %d (expected %d)",
-			len(inputMap), inputCount, len(coilMap), coilCount)
-	}
-
 	return plc
 }
 
 // getInputPin returns the physical pin number for a logical input.
-// Panics if the input is not found in the mapping.
 func (plc *ModbusPlc) getInputPin(in input) int {
-	pin, ok := plc.inputMap[in]
-	if !ok {
-		panic(fmt.Sprintf("No mapping found for input %v", in))
-	}
-	if pin < 0 || pin >= len(plc.inputs) {
-		panic(fmt.Sprintf("Invalid pin number %d for input %v (must be 0-%d)", pin, in, len(plc.inputs)-1))
-	}
-	return pin
+	return int(in)
 }
 
 // getCoilPin returns the physical pin number for a logical coil.
-// Panics if the coil is not found in the mapping.
 func (plc *ModbusPlc) getCoilPin(c coil) int {
-	pin, ok := plc.coilMap[c]
-	if !ok {
-		panic(fmt.Sprintf("No mapping found for coil %v", c))
-	}
-	if pin < 0 || pin >= len(plc.coils) {
-		panic(fmt.Sprintf("Invalid pin number %d for coil %v (must be 0-%d)", pin, c, len(plc.coils)-1))
-	}
-	return pin
+	return int(c)
 }
 
 func (plc *ModbusPlc) SetAddress(address string) {
@@ -233,7 +176,7 @@ func (plc *ModbusPlc) IsEnabled() bool {
 
 // Returns true if the PLC is connected, responding to requests, and has valid pin mappings.
 func (plc *ModbusPlc) IsHealthy() bool {
-	return plc.isHealthy && plc.hasValidMappings
+	return plc.isHealthy
 }
 
 // Returns a notifier which fires whenever the I/O values change.

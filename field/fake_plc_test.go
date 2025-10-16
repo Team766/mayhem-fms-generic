@@ -100,10 +100,6 @@ func (plc *FakePlc) GetCoilNames() []string {
 	return []string{}
 }
 
-func (plc *FakePlc) GetProcessorCounts() (int, int) {
-	return plc.redProcessorCount, plc.blueProcessorCount
-}
-
 func (plc *FakePlc) SetTrussLights(redLights, blueLights [3]bool) {
 	plc.redTrussLights = redLights
 	plc.blueTrussLights = blueLights

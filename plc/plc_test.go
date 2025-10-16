@@ -13,7 +13,7 @@ import (
 
 func TestPlcInitialization(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	var notifier websocket.Notifier
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
@@ -27,7 +27,7 @@ func TestPlcInitialization(t *testing.T) {
 
 func TestPlcGetCycleState(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -59,7 +59,7 @@ func TestPlcGetCycleState(t *testing.T) {
 }
 
 func TestPlcGetNames(t *testing.T) {
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 
 	assert.Equal(
 		t,
@@ -121,7 +121,7 @@ func TestPlcGetNames(t *testing.T) {
 
 func TestPlcInputs(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -293,7 +293,7 @@ func TestPlcInputs(t *testing.T) {
 
 func TestPlcInputsGameSpecific(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -303,7 +303,7 @@ func TestPlcInputsGameSpecific(t *testing.T) {
 
 func TestPlcRegisters(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -340,7 +340,7 @@ func TestPlcRegisters(t *testing.T) {
 
 func TestPlcCoils(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -409,7 +409,7 @@ func TestPlcCoils(t *testing.T) {
 
 func TestPlcCoilsGameSpecific(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}
@@ -439,7 +439,7 @@ func TestPlcCoilsGameSpecific(t *testing.T) {
 
 func TestPlcIsHealthy(t *testing.T) {
 	var client FakeModbusClient
-	var plc ModbusPlc
+	plc := NewModbusPlc()
 	plc.client = &client
 	plc.handler = modbus.NewTCPClientHandler("dummy")
 	plc.ioChangeNotifier = &websocket.Notifier{}

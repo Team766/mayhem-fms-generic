@@ -48,7 +48,6 @@ type ModbusPlc struct {
 	client           modbus.Client
 	isHealthy        bool
 	ioChangeNotifier *websocket.Notifier
-	hasValidMappings bool
 	inputs           [inputCount]bool
 	registers        [registerCount]uint16
 	coils            [coilCount]bool

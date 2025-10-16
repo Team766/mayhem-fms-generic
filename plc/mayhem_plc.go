@@ -1,5 +1,16 @@
 package plc
 
+// MayhemPlc-specific input pins
+// TODO: either add support for Red3 and Blue3 estops when the hardware adds support,
+// or see if the hardware can set the same input pin for either team or field estops
+// for individual teams.
+const (
+	fieldRed1Estop  input = 9
+	fieldRed2Estop  input = 10
+	fieldBlue1Estop input = 11
+	fieldBlue2Estop input = 12
+)
+
 type MayhemPlc struct {
 	*ModbusPlc
 }
@@ -97,4 +108,22 @@ func (plc *MayhemPlc) getCoilPin(c coil) int {
 		// Fall back to default implementation for any coils we don't explicitly map
 		return plc.ModbusPlc.getCoilPin(c)
 	}
+}
+
+// GetTeamEStops returns the state of the red and blue driver station emergency stop buttons.
+// For MayhemPlc, this also checks the field E-stop buttons for stations 1 and 2.
+func (plc *MayhemPlc) GetTeamEStops() ([3]bool, [3]bool) {
+	// Get the base E-stop states from the parent implementation
+	redEStops, blueEStops := plc.ModbusPlc.GetTeamEStops()
+
+	// Add field E-stop checks for stations 1 and 2
+	// Station 1
+	redEStops[0] = redEStops[0] || !plc.inputs[plc.getInputPin(fieldRed1Estop)]
+	blueEStops[0] = blueEStops[0] || !plc.inputs[plc.getInputPin(fieldBlue1Estop)]
+
+	// Station 2
+	redEStops[1] = redEStops[1] || !plc.inputs[plc.getInputPin(fieldRed2Estop)]
+	blueEStops[1] = blueEStops[1] || !plc.inputs[plc.getInputPin(fieldBlue2Estop)]
+
+	return redEStops, blueEStops
 }

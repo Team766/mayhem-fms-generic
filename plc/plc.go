@@ -2,6 +2,7 @@
 // Author: pat@patfairbank.com (Patrick Fairbank)
 //
 // Methods for interfacing with the field PLC.
+
 package plc
 
 import (
@@ -36,19 +37,12 @@ type Plc interface {
 	SetTrussLights(redLights, blueLights [3]bool)
 }
 
-// InputMap defines the mapping from logical input to physical pin number
-type InputMap map[input]int
-
-// CoilMap defines the mapping from logical coil to physical pin number
-type CoilMap map[coil]int
-
 type ModbusPlc struct {
 	address          string
 	handler          *modbus.TCPClientHandler
 	client           modbus.Client
 	isHealthy        bool
 	ioChangeNotifier *websocket.Notifier
-	hasValidMappings bool
 	inputs           [inputCount]bool
 	registers        [registerCount]uint16
 	coils            [coilCount]bool
@@ -57,8 +51,6 @@ type ModbusPlc struct {
 	oldCoils         [coilCount]bool
 	cycleCounter     int
 	matchResetCycles int
-	inputMap         InputMap
-	coilMap          CoilMap
 }
 
 const (
@@ -144,78 +136,6 @@ const (
 	armorBlockCount
 )
 
-// NewModbusPlc creates a new ModbusPlc with default 1:1 pin mappings.
-// For custom pin mappings, use NewModbusPlcWithMaps.
-func NewModbusPlc() *ModbusPlc {
-	return NewModbusPlcWithMaps(nil, nil)
-}
-
-// NewModbusPlcWithMaps creates a new ModbusPlc with the given input and coil mappings.
-// If nil is passed for either map, default 1:1 mappings will be used.
-// Invalid mappings will be logged and will cause IsHealthy() to return false.
-func NewModbusPlcWithMaps(inputMap InputMap, coilMap CoilMap) *ModbusPlc {
-	// Create default 1:1 mappings if none provided
-	if inputMap == nil {
-		inputMap = make(InputMap, inputCount)
-		for i := 0; i < int(inputCount); i++ {
-			inputMap[input(i)] = i
-		}
-	}
-
-	if coilMap == nil {
-		coilMap = make(CoilMap, coilCount)
-		for i := 0; i < int(coilCount); i++ {
-			coilMap[coil(i)] = i
-		}
-	}
-
-	// Initialize the PLC with zero values for all arrays
-	plc := &ModbusPlc{
-		inputMap:         inputMap,
-		coilMap:          coilMap,
-		inputs:           [inputCount]bool{},
-		oldInputs:        [inputCount]bool{},
-		coils:            [coilCount]bool{},
-		oldCoils:         [coilCount]bool{},
-		hasValidMappings: len(inputMap) == int(inputCount) && len(coilMap) == int(coilCount),
-	}
-
-	plc.ioChangeNotifier = websocket.NewNotifier("plcIoChange", plc.generateIoChangeMessage)
-
-	if !plc.hasValidMappings {
-		log.Printf("Warning: Invalid PLC pin mappings - input count: %d (expected %d), coil count: %d (expected %d)",
-			len(inputMap), inputCount, len(coilMap), coilCount)
-	}
-
-	return plc
-}
-
-// getInputPin returns the physical pin number for a logical input.
-// Panics if the input is not found in the mapping.
-func (plc *ModbusPlc) getInputPin(in input) int {
-	pin, ok := plc.inputMap[in]
-	if !ok {
-		panic(fmt.Sprintf("No mapping found for input %v", in))
-	}
-	if pin < 0 || pin >= len(plc.inputs) {
-		panic(fmt.Sprintf("Invalid pin number %d for input %v (must be 0-%d)", pin, in, len(plc.inputs)-1))
-	}
-	return pin
-}
-
-// getCoilPin returns the physical pin number for a logical coil.
-// Panics if the coil is not found in the mapping.
-func (plc *ModbusPlc) getCoilPin(c coil) int {
-	pin, ok := plc.coilMap[c]
-	if !ok {
-		panic(fmt.Sprintf("No mapping found for coil %v", c))
-	}
-	if pin < 0 || pin >= len(plc.coils) {
-		panic(fmt.Sprintf("Invalid pin number %d for coil %v (must be 0-%d)", pin, c, len(plc.coils)-1))
-	}
-	return pin
-}
-
 func (plc *ModbusPlc) SetAddress(address string) {
 	plc.address = address
 	plc.resetConnection()
@@ -231,9 +151,9 @@ func (plc *ModbusPlc) IsEnabled() bool {
 	return plc.address != ""
 }
 
-// Returns true if the PLC is connected, responding to requests, and has valid pin mappings.
+// Returns true if the PLC is connected and responding to requests.
 func (plc *ModbusPlc) IsHealthy() bool {
-	return plc.isHealthy && plc.hasValidMappings
+	return plc.isHealthy
 }
 
 // Returns a notifier which fires whenever the I/O values change.
@@ -276,50 +196,50 @@ func (plc *ModbusPlc) GetArmorBlockStatuses() map[string]bool {
 
 // Returns the state of the field emergency stop button (true if e-stop is active).
 func (plc *ModbusPlc) GetFieldEStop() bool {
-	return !plc.inputs[plc.getInputPin(fieldEStop)]
+	return !plc.inputs[fieldEStop]
 }
 
 // Returns the state of the red and blue driver station emergency stop buttons (true if E-stop is active).
 func (plc *ModbusPlc) GetTeamEStops() ([3]bool, [3]bool) {
 	var redEStops, blueEStops [3]bool
-	redEStops[0] = !plc.inputs[plc.getInputPin(red1EStop)]
-	redEStops[1] = !plc.inputs[plc.getInputPin(red2EStop)]
-	redEStops[2] = !plc.inputs[plc.getInputPin(red3EStop)]
-	blueEStops[0] = !plc.inputs[plc.getInputPin(blue1EStop)]
-	blueEStops[1] = !plc.inputs[plc.getInputPin(blue2EStop)]
-	blueEStops[2] = !plc.inputs[plc.getInputPin(blue3EStop)]
+	redEStops[0] = !plc.inputs[red1EStop]
+	redEStops[1] = !plc.inputs[red2EStop]
+	redEStops[2] = !plc.inputs[red3EStop]
+	blueEStops[0] = !plc.inputs[blue1EStop]
+	blueEStops[1] = !plc.inputs[blue2EStop]
+	blueEStops[2] = !plc.inputs[blue3EStop]
 	return redEStops, blueEStops
 }
 
 // Returns the state of the red and blue driver station autonomous stop buttons (true if A-stop is active).
 func (plc *ModbusPlc) GetTeamAStops() ([3]bool, [3]bool) {
 	var redAStops, blueAStops [3]bool
-	redAStops[0] = !plc.inputs[plc.getInputPin(red1AStop)]
-	redAStops[1] = !plc.inputs[plc.getInputPin(red2AStop)]
-	redAStops[2] = !plc.inputs[plc.getInputPin(red3AStop)]
-	blueAStops[0] = !plc.inputs[plc.getInputPin(blue1AStop)]
-	blueAStops[1] = !plc.inputs[plc.getInputPin(blue2AStop)]
-	blueAStops[2] = !plc.inputs[plc.getInputPin(blue3AStop)]
+	redAStops[0] = !plc.inputs[red1AStop]
+	redAStops[1] = !plc.inputs[red2AStop]
+	redAStops[2] = !plc.inputs[red3AStop]
+	blueAStops[0] = !plc.inputs[blue1AStop]
+	blueAStops[1] = !plc.inputs[blue2AStop]
+	blueAStops[2] = !plc.inputs[blue3AStop]
 	return redAStops, blueAStops
 }
 
 // Returns whether anything is connected to each station's designated Ethernet port on the SCC.
 func (plc *ModbusPlc) GetEthernetConnected() ([3]bool, [3]bool) {
 	return [3]bool{
-			plc.inputs[plc.getInputPin(redConnected1)],
-			plc.inputs[plc.getInputPin(redConnected2)],
-			plc.inputs[plc.getInputPin(redConnected3)],
+			plc.inputs[redConnected1],
+			plc.inputs[redConnected2],
+			plc.inputs[redConnected3],
 		},
 		[3]bool{
-			plc.inputs[plc.getInputPin(blueConnected1)],
-			plc.inputs[plc.getInputPin(blueConnected2)],
-			plc.inputs[plc.getInputPin(blueConnected3)],
+			plc.inputs[blueConnected1],
+			plc.inputs[blueConnected2],
+			plc.inputs[blueConnected3],
 		}
 }
 
 // Resets the internal state of the PLC to start a new match.
 func (plc *ModbusPlc) ResetMatch() {
-	plc.coils[plc.getCoilPin(matchReset)] = true
+	plc.coils[matchReset] = true
 	plc.matchResetCycles = 0
 
 	// Clear register variables (other than fieldIoConnection) so that any values from pre-match testing don't carry
@@ -331,20 +251,20 @@ func (plc *ModbusPlc) ResetMatch() {
 
 // Sets the on/off state of the stack lights on the scoring table.
 func (plc *ModbusPlc) SetStackLights(red, blue, orange, green bool) {
-	plc.coils[plc.getCoilPin(stackLightRed)] = red
-	plc.coils[plc.getCoilPin(stackLightBlue)] = blue
-	plc.coils[plc.getCoilPin(stackLightOrange)] = orange
-	plc.coils[plc.getCoilPin(stackLightGreen)] = green
+	plc.coils[stackLightRed] = red
+	plc.coils[stackLightBlue] = blue
+	plc.coils[stackLightOrange] = orange
+	plc.coils[stackLightGreen] = green
 }
 
 // Triggers the "match ready" chime if the state is true.
 func (plc *ModbusPlc) SetStackBuzzer(state bool) {
-	plc.coils[plc.getCoilPin(stackLightBuzzer)] = state
+	plc.coils[stackLightBuzzer] = state
 }
 
 // Sets the on/off state of the field reset light.
 func (plc *ModbusPlc) SetFieldResetLight(state bool) {
-	plc.coils[plc.getCoilPin(fieldResetLight)] = state
+	plc.coils[fieldResetLight] = state
 }
 
 func (plc *ModbusPlc) GetCycleState(max, index, duration int) bool {
@@ -378,12 +298,12 @@ func (plc *ModbusPlc) GetCoilNames() []string {
 // Sets the state of the red and blue truss lights. Each array represents the outer, middle, and inner lights,
 // respectively.
 func (plc *ModbusPlc) SetTrussLights(redLights, blueLights [3]bool) {
-	plc.coils[plc.getCoilPin(redTrussLightOuter)] = redLights[0]
-	plc.coils[plc.getCoilPin(redTrussLightMiddle)] = redLights[1]
-	plc.coils[plc.getCoilPin(redTrussLightInner)] = redLights[2]
-	plc.coils[plc.getCoilPin(blueTrussLightOuter)] = blueLights[0]
-	plc.coils[plc.getCoilPin(blueTrussLightMiddle)] = blueLights[1]
-	plc.coils[plc.getCoilPin(blueTrussLightInner)] = blueLights[2]
+	plc.coils[redTrussLightOuter] = redLights[0]
+	plc.coils[redTrussLightMiddle] = redLights[1]
+	plc.coils[redTrussLightInner] = redLights[2]
+	plc.coils[blueTrussLightOuter] = blueLights[0]
+	plc.coils[blueTrussLightMiddle] = blueLights[1]
+	plc.coils[blueTrussLightInner] = blueLights[2]
 }
 func (plc *ModbusPlc) connect() error {
 	address := fmt.Sprintf("%s:%d", plc.address, modbusPort)
@@ -440,6 +360,7 @@ func (plc *ModbusPlc) readInputs() bool {
 	if len(plc.inputs) == 0 {
 		return true
 	}
+
 	inputs, err := plc.client.ReadDiscreteInputs(0, uint16(len(plc.inputs)))
 	if err != nil {
 		log.Printf("PLC error reading inputs: %v", err)
@@ -449,6 +370,7 @@ func (plc *ModbusPlc) readInputs() bool {
 		log.Printf("Insufficient length of PLC inputs: got %d bytes, expected %d bits.", len(inputs), len(plc.inputs))
 		return false
 	}
+
 	copy(plc.inputs[:], byteToBool(inputs, len(plc.inputs)))
 	return true
 }
@@ -478,7 +400,7 @@ func (plc *ModbusPlc) readRegisters() bool {
 
 func (plc *ModbusPlc) writeCoils() bool {
 	// Send a heartbeat to the PLC so that it can disable outputs if the connection is lost.
-	plc.coils[plc.getCoilPin(heartbeat)] = true
+	plc.coils[heartbeat] = true
 
 	coils := boolToByte(plc.coils[:])
 	_, err := plc.client.WriteMultipleCoils(0, uint16(len(plc.coils)), coils)
@@ -488,8 +410,7 @@ func (plc *ModbusPlc) writeCoils() bool {
 	}
 
 	if plc.matchResetCycles > 5 {
-		// Only need a short pulse to reset the internal state of the PLC.
-		plc.coils[plc.getCoilPin(matchReset)] = false
+		plc.coils[matchReset] = false // Only need a short pulse to reset the internal state of the PLC.
 	} else {
 		plc.matchResetCycles++
 	}

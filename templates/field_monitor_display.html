@@ -19,7 +19,7 @@ Display showing robot connection status.
     <link rel="stylesheet" href="/static/css/field_monitor_display.css"/>
   </head>
 
-  <body>
+  <body{{if .TwoVsTwoMode}} class="two-vs-two"{{end}}>
     <div id="matchStatusRow" class="ds-dependent">
       {{if .EventSettings.NetworkSecurityEnabled}}
       <div id="matchName" class="text-start" style="width: 20%; padding-left: 1%;"></div>
@@ -35,9 +35,14 @@ Display showing robot connection status.
       <div id="matchTime" class="text-center" style="width: 10%;"></div>
       <div id="matchState" class="text-end" style="width: 45%; padding-right: 1%;"></div>
     </div>
+    {{if .EventSettings.TwoVsTwoMode}}
+    {{template "row" dict "leftPosition" "1" "rightPosition" "2"}}
+    {{template "row" dict "leftPosition" "2" "rightPosition" "1"}}
+{{else}}
     {{template "row" dict "leftPosition" "1" "rightPosition" "3"}}
     {{template "row" dict "leftPosition" "2" "rightPosition" "2"}}
     {{template "row" dict "leftPosition" "3" "rightPosition" "1"}}
+{{end}}
     <div id="eventStatusRow" class="ds-dependent">
       <div id="leftScore" class="fta-dependent ds-dependent left-score text-center reversible-left"
         style="width:8%; vertical-align:middle;"></div>

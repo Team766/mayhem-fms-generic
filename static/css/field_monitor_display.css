@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright 2018 Team 254. All Rights Reserved.
   Author: pat@patfairbank.com (Patrick Fairbank)
 */
@@ -27,6 +27,35 @@ body {
 }
 .position-row[data-ds="true"][data-preMatch="false"] {
   display: none;
+}
+/* Adjust heights for 2v2 mode */
+.two-vs-two {
+  background-color: #222;  /* Slightly darker background for better contrast */
+}
+.two-vs-two .position-row {
+  height: 45%;
+  border-bottom: #444 solid 20px;
+  margin-bottom: 5px;
+}
+.two-vs-two .position-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+/* Make team boxes larger in 2v2 mode */
+.two-vs-two .team {
+  margin: 0 10px;
+}
+/* Increase font sizes for better visibility */
+.two-vs-two .team-id {
+  font-size: 12vw !important;
+  height: 80% !important;
+}
+.two-vs-two .team-box {
+  font-size: 2.5vw;
+}
+/* Adjust FTA notes position */
+.two-vs-two .team-notes {
+  height: 15%;
 }
 #matchStatusRow {
   height: 6%;
@@ -90,6 +119,13 @@ body {
 .team-id[data-fta="true"] {
   height: 40%;
   font-size: 6vw;
+}
+/* Adjust team ID size for 2v2 mode */
+.two-vs-two .team-id {
+  font-size: 11vw;
+}
+.two-vs-two .team-id[data-fta="true"] {
+  font-size: 8vw;
 }
 .team-id[data-status=no-link], .team-notes[data-status=no-link] {
   background-color: #AAA;
@@ -161,6 +197,67 @@ body {
   justify-content: space-around;
   font-size: 1vw;
   font-family: FuturaLT;
+  padding: 0.2vw;
+  line-height: 1.1;
+}
+
+/* Make stats more compact in 2v2 mode */
+.two-vs-two .team-stats {
+  font-size: 0.9vw;
+  padding: 0.1vw;
+}
+
+/* Team stats container */
+.team-stats {
+  font-size: 0.7vw;  /* Base font size for stats */
+  padding: 0.1vw;
+  line-height: 1.1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+}
+
+/* Stats row layout */
+.team-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 0.1vw 0.2vw;
+  flex: 1;
+}
+
+/* Stat items */
+.team-bandwidth,
+.team-trip-time,
+.team-missed-packets {
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 0.1vw;
+}
+
+/* Stat values */
+.team-bandwidth span,
+.team-trip-time span,
+.team-missed-packets span {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+/* Make stats more compact in 2v2 mode */
+.two-vs-two .team-stats {
+  font-size: 0.6vw;
+}
+
+/* Adjust team boxes in 2v2 mode */
+.two-vs-two .team-box {
+  font-size: 1.2vw;
+  padding: 0.1vw;
 }
 .team-stats-row {
   display: flex;

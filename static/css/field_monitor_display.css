@@ -6,12 +6,22 @@
 html {
   height: 100%;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
 }
 body {
   height: 100%;
   font-family: FuturaLTBold;
   color: #fff;
   background-color: #333;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 .center {
   display: flex;
@@ -19,7 +29,9 @@ body {
   justify-content: center;
 }
 .position-row {
-  height: 29%;
+  flex: 1;
+  min-height: 0;  /* Allow rows to shrink */
+  display: flex;
   border-bottom: #333 solid 10px;
 }
 .position-row[data-ds="true"] {
@@ -43,7 +55,7 @@ body {
 }
 /* Make team boxes larger in 2v2 mode */
 .two-vs-two .team {
-  margin: 0 10px;
+  margin: 0 8px;  /* Reduced from 10px */
 }
 /* Increase font sizes for better visibility */
 .two-vs-two .team-id {
@@ -58,31 +70,53 @@ body {
   height: 15%;
 }
 #matchStatusRow {
-  height: 6%;
+  height: 7%;  /* Increased from 6% */
   display: flex;
   align-items: center;
   justify-content: space-between;
   background-color: #333;
-  font-size: 1.5vw;
+  font-size: 1.4vw;  /* Slightly reduced from 1.5vw */
   text-transform: uppercase;
+  padding: 0 0.5vw;  /* Added padding */
 }
 #matchStatusRow[data-ds="true"][data-preMatch="false"] {
   display: none;
 }
 #eventStatusRow {
   height: 7%;
+  min-height: 30px;  /* Ensure minimum height */
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: space-between;
   background-color: #333;
-  font-size: 1.5vw;
-  text-transform: uppercase;
+  font-size: 1.2vw;
+  padding: 0 1%;
+  position: relative;
+  z-index: 10;
 }
-#eventStatusRow[data-ds="true"] {
-  display: none;
-}
+
+/* Show in all modes */
+#eventStatusRow[data-ds="true"],
 #eventStatusRow[data-fta="false"] {
-  display: none;
+  display: flex;
+}
+
+/* Style the cycle time message */
+#cycleTimeMessage {
+  text-align: center;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Style the early/late message */
+#earlyLateMessage {
+  text-align: right;
+  padding-right: 1%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .left-position, .right-position {
   width: 6%;
@@ -104,6 +138,8 @@ body {
   background-color: #333;
   display: flex;
   flex-direction: column;
+  min-height: 0;  /* Allow team to shrink if needed */
+  overflow: hidden;  /* Prevent content from overflowing */
 }
 .team-left {
   border-right: #333 solid 5px;
@@ -117,8 +153,9 @@ body {
   font-size: 9vw;
 }
 .team-id[data-fta="true"] {
-  height: 40%;
-  font-size: 6vw;
+  height: 38%;  /* Slightly reduced from 40% */
+  font-size: 5.5vw;  /* Reduced from 6vw */
+  margin-top: 0.2vw;  /* Add a small top margin */
 }
 /* Adjust team ID size for 2v2 mode */
 .two-vs-two .team-id {
@@ -171,11 +208,12 @@ body {
   width: 100%;
 }
 .team-notes[data-fta="true"] {
-  height: 40%;
+  height: 35%;  /* Reduced from 40% */
   display: flex;
   justify-content: space-between;
-  padding: 0.5vw;
-  font-size: 1vw;
+  padding: 0.4vw;  /* Reduced from 0.5vw */
+  font-size: 0.9vw;  /* Reduced from 1vw */
+  overflow: hidden;
 }
 .team-notes[data-fta="false"] {
   display: none;

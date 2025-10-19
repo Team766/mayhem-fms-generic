@@ -226,6 +226,11 @@ $(function () {
     blueSide = "right";
   }
 
+  // Set 2v2 mode class if applicable
+  if (window.location.search.includes('twoVsTwoMode=true')) {
+    $('body').addClass('two-vs-two');
+  }
+
   //Read if display to be used in a Driver Station, ignore FTA flag if so.
   const driverStation = urlParams.get("ds");
   if (driverStation === "true") {

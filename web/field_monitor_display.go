@@ -31,7 +31,11 @@ func (web *Web) fieldMonitorDisplayHandler(w http.ResponseWriter, r *http.Reques
 	}
 	data := struct {
 		*model.EventSettings
-	}{web.arena.EventSettings}
+		TwoVsTwoMode bool
+	}{
+		EventSettings: web.arena.EventSettings,
+		TwoVsTwoMode:  web.arena.EventSettings.TwoVsTwoMode,
+	}
 	err = template.ExecuteTemplate(w, "field_monitor_display.html", data)
 	if err != nil {
 		handleWebErr(w, err)
@@ -46,6 +50,7 @@ func (web *Web) fieldMonitorDisplayWebsocketHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Register the display and set up the WebSocket connection
 	display, err := web.registerDisplay(r)
 	if err != nil {
 		handleWebErr(w, err)

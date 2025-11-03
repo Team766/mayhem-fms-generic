@@ -1,46 +1,18 @@
-Cheesy Arena [![Build Status](https://github.com/Team254/cheesy-arena/actions/workflows/test.yml/badge.svg)](https://github.com/Team254/cheesy-arena/actions)
+Mechanical M-Ayhem FMS (Generic Game) - based on [Team 254's Cheesy Arena](https://github.com/Team254/cheesy-arena).
 ============
-A field management system that just works.
-
-For the game-agnostic version, see [Cheesy Arena Lite](https://github.com/Team254/cheesy-arena-lite).
-
-## Key features
-
-**For participants and spectators**
-
-* Same network isolation and security as the official FIRST FMS
-* No-lag realtime scoring
-* Team stack lights and seven-segment display are replaced by an LCD screen, which shows team info before the match and
-  realtime scoring and timer during the match
-* Smooth-scrolling rankings display
-* Direct publishing of schedule, results, and rankings to The Blue Alliance
-
-**For scorekeepers and event staff**
-
-* Runs on Windows, macOS, and Linux
-* No install prerequisites
-* No "pre-start" &ndash; hardware is configured automatically and in the background
-* Flexible and quick match schedule generation
-* Streamlined realtime score entry
-* Reports, results, and logs can be viewed from any computer
-* An arbitrary number of auxiliary displays can be set up using any computer with just a web browser, to show rankings,
-  queueing, field status, etc.
+This repo contains a fork of [Cheesy Arena](https://github.com/Team254/cheesy-arena), to be used as the 
+Field Management System for [Team 766's Mechanical M-Ayhem](https://www.team766.com/mechanical-m-ayhem-1) rookie competition.
+To make year-specific game customization easier, this codebase implements a "generic" game and is meant to be forked and
+customized.  The bulk of the changes implement a generic, two gamepiece game, with each gamepiece meant to be scored in a
+specific structure.  This generic version also adds optional support for 2v2 gameplay, as Mechanical M-Ayhem is currently a
+2v2 game (but may grow to 3v3 in the future).
 
 ## License
 
-Teams may use Cheesy Arena freely for practice, scrimmages, and off-season events. See [LICENSE](LICENSE) for more
+Teams may use M-Ayhem FMS freely for practice, scrimmages, and off-season events. See [LICENSE](LICENSE) for more
 details.
 
 ## Installing
-
-**From a pre-built release**
-
-Download the [latest release](https://github.com/Team254/cheesy-arena/releases). Pre-built packages are available for
-Linux, macOS (x64 and M1), and Windows.
-
-On recent versions of macOS, you may be prevented from running an app from an unidentified developer;
-see [these instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)
-on how to bypass the warning.
 
 **From source**
 
@@ -85,59 +57,12 @@ via SSH and Telnet commands for the new set of teams when each mach is loaded.
 
 ## PLC integration
 
-Cheesy Arena has the ability to integrate with an Allen-Bradley PLC setup similar to the one that FIRST uses, to read
-field sensors and control lights and motors. The PLC hardware travels with the FIRST California fields; contact your FTA
-for more information.
+Mechanical M-Ayhem uses a custom designed Arduino-based PLC, protocol compatible with a subset of the PLC Cheesy Arena uses.
+PLC functionality used by M-Ayhem consists of team e-stops and a-stops and the stack lights showing alliance readiness.
 
-The PLC code can be found [here](https://github.com/ejordan376/Cheesy-PLC).
-
-## Team Sign integration
-
-Cheesy Arena has the ability to integrate with
-the [Cypress Team Signs](https://cypressintegration.com/customsolutions/teamdisplay/) used at official FRC events. See
-the [Configuring Cheesy Arena wiki page](https://github.com/Team254/cheesy-arena/wiki/Configuring-Cheesy-Arena-Settings#team-signs)
-for details configurating the team signs in Cheesy Arena.
-https://github.com/Team254/cheesy-arena/wiki/Configuring-Cheesy-Arena-Settings
-
-## LED hardware
-
-Due to the prohibitive cost of the LEDs and LED controllers used on official fields, for years in which LEDs are
-mandatory for a proper game experience (such as 2018), Cheesy Arena integrates
-with [Advatek](https://www.advateklights.com) controllers and LEDs.
+The PLC code can be found [here](https://github.com/Team766/fakeplc-arduino).
 
 ## Advanced networking
 
 See the [Advanced Networking wiki page](https://github.com/Team254/cheesy-arena/wiki/Advanced-Networking-Concepts) for
 instructions on what equipment to obtain and how to configure it in order to support advanced network security.
-
-## Contributing
-
-Cheesy Arena is far from finished! You can help by:
-
-* Writing a missing feature, and sending a pull request
-* Filing any bugs or feature requests using the [issue tracker](https://github.com/Team254/cheesy-arena/issues)
-* Contributing documentation to the [wiki](https://github.com/Team254/cheesy-arena/wiki)
-* Sending baked goods to [Pat](https://github.com/patfair)
-
-## Acknowledgements
-
-[Several folks](https://github.com/Team254/cheesy-arena/graphs/contributors) have contributed pull requests. Thanks!
-
-In addition, the following individuals have contributed to make Cheesy Arena a reality:
-
-* Tom Bottiglieri
-* James Cerar
-* Kiet Chau
-* Travis Covington
-* Nick Eyre
-* Patrick Fairbank
-* Eugene Fang
-* Thad House
-* Ed Jordan
-* Karthik Kanagasabapathy
-* Ken Mitchell
-* Andrew Nabors
-* Jared Russell
-* Ken Schenke
-* Austin Schuh
-* Colin Wilson

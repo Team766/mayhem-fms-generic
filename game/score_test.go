@@ -24,9 +24,9 @@ func TestScoreSummary(t *testing.T) {
 	assert.Equal(t, 63, redSummary.MatchPoints)
 	assert.Equal(t, 0, redSummary.FoulPoints)
 	assert.Equal(t, 63, redSummary.Score)
-	assert.Equal(t, true, redSummary.LeaveBonusRankingPoint)
-	assert.Equal(t, true, redSummary.Gamepiece1BonusRankingPoint)
-	assert.Equal(t, true, redSummary.ParkBonusRankingPoint)
+	assert.Equal(t, true, redSummary.AutonRankingPoint)
+	assert.Equal(t, true, redSummary.ScoringRankingPoint)
+	assert.Equal(t, true, redSummary.EndgameRankingPoint)
 	assert.Equal(t, 3, redSummary.BonusRankingPoints)
 	assert.Equal(t, 0, redSummary.NumOpponentMajorFouls)
 
@@ -41,9 +41,9 @@ func TestScoreSummary(t *testing.T) {
 	assert.Equal(t, 62, blueSummary.MatchPoints)
 	assert.Equal(t, 34, blueSummary.FoulPoints)
 	assert.Equal(t, 96, blueSummary.Score)
-	assert.Equal(t, false, blueSummary.LeaveBonusRankingPoint)
-	assert.Equal(t, true, blueSummary.Gamepiece1BonusRankingPoint)
-	assert.Equal(t, false, blueSummary.ParkBonusRankingPoint)
+	assert.Equal(t, false, blueSummary.AutonRankingPoint)
+	assert.Equal(t, true, blueSummary.ScoringRankingPoint)
+	assert.Equal(t, false, blueSummary.EndgameRankingPoint)
 	assert.Equal(t, 1, blueSummary.BonusRankingPoints)
 	assert.Equal(t, 5, blueSummary.NumOpponentMajorFouls)
 }
@@ -75,7 +75,7 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score1.Equals(score2))
 }
 
-func TestLeaveBonusRankingPoint(t *testing.T) {
+func TestAutonRankingPoint(t *testing.T) {
 	score := Score{
 		RobotsBypassed: [3]bool{false, false, false},
 		Mayhem: Mayhem{
@@ -83,30 +83,30 @@ func TestLeaveBonusRankingPoint(t *testing.T) {
 		},
 	}
 	summary := score.Summarize(&Score{})
-	assert.True(t, summary.LeaveBonusRankingPoint)
+	assert.True(t, summary.AutonRankingPoint)
 
 	score.Mayhem.LeaveStatuses[1] = false
 	summary = score.Summarize(&Score{})
-	assert.False(t, summary.LeaveBonusRankingPoint)
+	assert.False(t, summary.AutonRankingPoint)
 
 	score.Mayhem.LeaveStatuses[1] = true
 	score.RobotsBypassed[1] = true
 	score.Mayhem.LeaveStatuses[1] = false
 	summary = score.Summarize(&Score{})
-	assert.True(t, summary.LeaveBonusRankingPoint)
+	assert.True(t, summary.AutonRankingPoint)
 }
 
-func TestGamepiece1BonusRankingPoint(t *testing.T) {
+func TestScoringRankingPoint(t *testing.T) {
 	score := Score{Mayhem: Mayhem{AutoGamepiece1Level1Count: 4, TeleopGamepiece1Level2Count: 4}}
 	summary := score.Summarize(&Score{})
-	assert.True(t, summary.Gamepiece1BonusRankingPoint)
+	assert.True(t, summary.ScoringRankingPoint)
 
 	score.Mayhem.TeleopGamepiece1Level2Count = 3
 	summary = score.Summarize(&Score{})
-	assert.False(t, summary.Gamepiece1BonusRankingPoint)
+	assert.False(t, summary.ScoringRankingPoint)
 }
 
-func TestParkBonusRankingPoint(t *testing.T) {
+func TestEndgameRankingPoint(t *testing.T) {
 	score := Score{
 		RobotsBypassed: [3]bool{false, false, false},
 		Mayhem: Mayhem{
@@ -114,15 +114,15 @@ func TestParkBonusRankingPoint(t *testing.T) {
 		},
 	}
 	summary := score.Summarize(&Score{})
-	assert.True(t, summary.ParkBonusRankingPoint)
+	assert.True(t, summary.EndgameRankingPoint)
 
 	score.Mayhem.ParkStatuses[1] = false
 	summary = score.Summarize(&Score{})
-	assert.False(t, summary.ParkBonusRankingPoint)
+	assert.False(t, summary.EndgameRankingPoint)
 
 	score.Mayhem.ParkStatuses[1] = true
 	score.RobotsBypassed[1] = true
 	score.Mayhem.ParkStatuses[1] = false
 	summary = score.Summarize(&Score{})
-	assert.True(t, summary.ParkBonusRankingPoint)
+	assert.True(t, summary.EndgameRankingPoint)
 }

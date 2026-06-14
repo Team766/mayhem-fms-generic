@@ -22,6 +22,7 @@ type EventSettings struct {
 	SelectionRound2Order        string
 	SelectionRound3Order        string
 	SelectionShowUnpickedTeams  bool
+	GreenScreen                 bool
 	TwoVsTwoMode                bool
 	TbaDownloadEnabled          bool
 	TbaPublishingEnabled        bool

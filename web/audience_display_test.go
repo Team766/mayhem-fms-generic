@@ -16,7 +16,7 @@ func TestAudienceDisplay(t *testing.T) {
 	recorder := web.getHttpResponse("/displays/audience")
 	assert.Equal(t, 302, recorder.Code)
 	assert.Contains(t, recorder.Header().Get("Location"), "displayId=100")
-	assert.Contains(t, recorder.Header().Get("Location"), "background=%230f0")
+	assert.Contains(t, recorder.Header().Get("Location"), "background=%23333")
 	assert.Contains(t, recorder.Header().Get("Location"), "reversed=false")
 	assert.Contains(t, recorder.Header().Get("Location"), "overlayLocation=bottom")
 

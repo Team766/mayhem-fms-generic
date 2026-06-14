@@ -14,11 +14,15 @@ import (
 
 // Renders the audience display to be chroma keyed over the video feed.
 func (web *Web) audienceDisplayHandler(w http.ResponseWriter, r *http.Request) {
+	backgroundColor := "#0f0"
+	if !web.arena.EventSettings.GreenScreen {
+		backgroundColor = "#333"
+	}
 	if !web.enforceDisplayConfiguration(
 		w,
 		r,
 		map[string]string{
-			"background": "#0f0", "reversed": "false",
+			"background": backgroundColor, "reversed": "false",
 			"overlayLocation": "bottom",
 		},
 	) {

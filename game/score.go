@@ -66,7 +66,7 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	summary.Score = summary.MatchPoints + summary.FoulPoints
 
 	// Calculate bonus ranking points.
-	// Leave Bonus RP
+	// Auton Bonus RP
 	allRobotsLeft := true
 	for i, left := range score.Mayhem.LeaveStatuses {
 		if !left && !score.RobotsBypassed[i] {
@@ -75,15 +75,15 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 		}
 	}
 	if allRobotsLeft {
-		summary.LeaveBonusRankingPoint = true
+		summary.AutonRankingPoint = true
 	}
 
-	// Gamepiece 1 Bonus RP
+	// Scoring Bonus RP
 	if summary.NumGamepiece1 >= Gamepiece1RPThreshold {
-		summary.Gamepiece1BonusRankingPoint = true
+		summary.ScoringRankingPoint = true
 	}
 
-	// Park Bonus RP
+	// Endgame Bonus RP
 	allRobotsParked := true
 	for i, parked := range score.Mayhem.ParkStatuses {
 		if !parked && !score.RobotsBypassed[i] {
@@ -92,17 +92,17 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 		}
 	}
 	if allRobotsParked {
-		summary.ParkBonusRankingPoint = true
+		summary.EndgameRankingPoint = true
 	}
 
 	// Add up the bonus ranking points.
-	if summary.LeaveBonusRankingPoint {
+	if summary.AutonRankingPoint {
 		summary.BonusRankingPoints++
 	}
-	if summary.Gamepiece1BonusRankingPoint {
+	if summary.ScoringRankingPoint {
 		summary.BonusRankingPoints++
 	}
-	if summary.ParkBonusRankingPoint {
+	if summary.EndgameRankingPoint {
 		summary.BonusRankingPoints++
 	}
 

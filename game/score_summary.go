@@ -16,9 +16,9 @@ type ScoreSummary struct {
 	MatchPoints                 int
 	FoulPoints                  int
 	Score                       int
-	LeaveBonusRankingPoint      bool
-	Gamepiece1BonusRankingPoint bool
-	ParkBonusRankingPoint       bool
+	AutonRankingPoint           bool
+	ScoringRankingPoint         bool
+	EndgameRankingPoint         bool
 	BonusRankingPoints          int
 	NumOpponentMajorFouls       int
 }

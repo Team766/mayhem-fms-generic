@@ -158,6 +158,21 @@ html {
   line-height: 27px;
   color: #fff;
 }
+.score-value {
+  width: 70px;
+  text-align: center;
+  font-family: "FuturaLTBold";
+  font-size: 27px;
+  line-height: 27px;
+  color: #fff;
+}
+.reversible-left .score-field {
+  padding-left: 10px;
+}
+.reversible-right .score-field {
+  flex-direction: row-reverse;
+  padding-right: 10px;
+}
 #matchCircle {
   position: absolute;
   top: -25px;
@@ -347,24 +362,40 @@ html {
   color: #222;
   font-family: "FuturaLT";
   font-size: 24px;
+  line-height: 1.8;
 }
 #leftFinalBreakdown {
   width: 60px;
   padding-right: 10px;
-  align-items: flex-end;
+  text-align: right;
 }
 #rightFinalBreakdown {
   width: 60px;
   padding-left: 10px;
-  align-items: flex-start;
+  text-align: left;
 }
 #centerFinalBreakdown {
   width: 280px;
-  align-items: center;
   text-align: center;
   border-left: 2px solid #333;
   border-right: 2px solid #333;
 }
+#leftFinalBreakdown > div:not(.playoff-hidden-field),
+#leftFinalBreakdown > .playoff-hidden-field > div,
+#rightFinalBreakdown > div:not(.playoff-hidden-field),
+#rightFinalBreakdown > .playoff-hidden-field > div,
+#centerFinalBreakdown > div:not(.playoff-hidden-field),
+#centerFinalBreakdown > .playoff-hidden-field > div {
+  height: 38px;
+  display: flex;
+  align-items: center;
+}
+#leftFinalBreakdown > div:not(.playoff-hidden-field),
+#leftFinalBreakdown > .playoff-hidden-field > div { justify-content: flex-end; }
+#rightFinalBreakdown > div:not(.playoff-hidden-field),
+#rightFinalBreakdown > .playoff-hidden-field > div { justify-content: flex-start; }
+#centerFinalBreakdown > div:not(.playoff-hidden-field),
+#centerFinalBreakdown > .playoff-hidden-field > div { justify-content: center; }
 .final-breakdown-teams {
   flex-grow: 1;
   display: flex;

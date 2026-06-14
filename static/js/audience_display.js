@@ -177,12 +177,12 @@ const handleScorePosted = function (data) {
   $(`#${redSide}FinalGamepiece2Points`).text(data.RedScoreSummary.Gamepiece2Points);
   $(`#${redSide}FinalParkPoints`).text(data.RedScoreSummary.ParkPoints);
   $(`#${redSide}FinalFoulPoints`).text(data.RedScoreSummary.FoulPoints);
-  $(`#${redSide}FinalLeaveRankingPoint`).html(data.RedScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalLeaveRankingPoint`).attr("data-checked", data.RedScoreSummary.LeaveBonusRankingPoint);
-  $(`#${redSide}FinalGamepiece1RankingPoint`).html(data.RedScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.RedScoreSummary.Gamepiece1BonusRankingPoint);
-  $(`#${redSide}FinalParkRankingPoint`).html(data.RedScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalParkRankingPoint`).attr("data-checked", data.RedScoreSummary.ParkBonusRankingPoint);
+  $(`#${redSide}FinalAutonRankingPoint`).html(data.RedScoreSummary.AutonRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalAutonRankingPoint`).attr("data-checked", data.RedScoreSummary.AutonRankingPoint);
+  $(`#${redSide}FinalScoringRankingPoint`).html(data.RedScoreSummary.ScoringRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalScoringRankingPoint`).attr("data-checked", data.RedScoreSummary.ScoringRankingPoint);
+  $(`#${redSide}FinalEndgameRankingPoint`).html(data.RedScoreSummary.EndgameRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${redSide}FinalEndgameRankingPoint`).attr("data-checked", data.RedScoreSummary.EndgameRankingPoint);
   $(`#${redSide}FinalRankingPoints`).html(data.RedRankingPoints);
 
   $(`#${blueSide}FinalScore`).text(data.BlueScoreSummary.Score);
@@ -200,12 +200,12 @@ const handleScorePosted = function (data) {
   $(`#${blueSide}FinalGamepiece2Points`).text(data.BlueScoreSummary.Gamepiece2Points);
   $(`#${blueSide}FinalParkPoints`).text(data.BlueScoreSummary.ParkPoints);
   $(`#${blueSide}FinalFoulPoints`).text(data.BlueScoreSummary.FoulPoints);
-  $(`#${blueSide}FinalLeaveRankingPoint`).html(data.BlueScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalLeaveRankingPoint`).attr("data-checked", data.BlueScoreSummary.LeaveBonusRankingPoint);
-  $(`#${blueSide}FinalGamepiece1RankingPoint`).html(data.BlueScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.BlueScoreSummary.Gamepiece1BonusRankingPoint);
-  $(`#${blueSide}FinalParkRankingPoint`).html(data.BlueScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalParkRankingPoint`).attr("data-checked", data.BlueScoreSummary.ParkBonusRankingPoint);
+  $(`#${blueSide}FinalAutonRankingPoint`).html(data.BlueScoreSummary.AutonRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalAutonRankingPoint`).attr("data-checked", data.BlueScoreSummary.AutonRankingPoint);
+  $(`#${blueSide}FinalScoringRankingPoint`).html(data.BlueScoreSummary.ScoringRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalScoringRankingPoint`).attr("data-checked", data.BlueScoreSummary.ScoringRankingPoint);
+  $(`#${blueSide}FinalEndgameRankingPoint`).html(data.BlueScoreSummary.EndgameRankingPoint ? "&#x2714;" : "&#x2718;");
+  $(`#${blueSide}FinalEndgameRankingPoint`).attr("data-checked", data.BlueScoreSummary.EndgameRankingPoint);
   $(`#${blueSide}FinalRankingPoints`).html(data.BlueRankingPoints);
 
   let matchName = data.Match.LongName;

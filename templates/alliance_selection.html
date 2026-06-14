@@ -45,7 +45,9 @@ UI for controlling the alliance selection process.
             <th>Alliance #</th>
             <th>Captain</th>
             <th>Pick 1</th>
+            {{if not .TwoVsTwoMode}}
             <th>Pick 2</th>
+            {{end}}
             {{if (index .Alliances 0).TeamIds | len | eq 4}}
             <th>Pick 3</th>
             {{end}}

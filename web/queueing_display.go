@@ -94,10 +94,12 @@ func (web *Web) queueingDisplayMatchLoadHandler(w http.ResponseWriter, r *http.R
 		Matches           []model.Match
 		RedOffFieldTeams  [][]int
 		BlueOffFieldTeams [][]int
+		TwoVsTwoMode      bool
 	}{
 		upcomingMatches,
 		redOffFieldTeamsByMatch,
 		blueOffFieldTeamsByMatch,
+		web.arena.EventSettings.TwoVsTwoMode,
 	}
 	err = template.ExecuteTemplate(w, "queueing_display_match_load.html", data)
 	if err != nil {

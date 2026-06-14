@@ -26,6 +26,7 @@ var allianceSelectionTicker *time.Ticker
 // Shows the alliance selection page.
 func (web *Web) allianceSelectionGetHandler(w http.ResponseWriter, r *http.Request) {
 	if !web.userIsAdmin(w, r) {
+		web.renderAllianceSelection(w, r, "You do not have the ability to set up alliances.")
 		return
 	}
 
@@ -117,6 +118,9 @@ func (web *Web) allianceSelectionStartHandler(w http.ResponseWriter, r *http.Req
 	// Create a blank alliance set matching the event configuration.
 	web.arena.AllianceSelectionAlliances = make([]model.Alliance, web.arena.EventSettings.NumPlayoffAlliances)
 	teamsPerAlliance := 3
+	if web.arena.EventSettings.TwoVsTwoMode {
+		teamsPerAlliance = 2
+	}
 	if web.arena.EventSettings.SelectionRound3Order != "" {
 		teamsPerAlliance = 4
 	}
@@ -208,7 +212,12 @@ func (web *Web) allianceSelectionFinalizeHandler(w http.ResponseWriter, r *http.
 		// the left, second pick on the right).
 		alliance.Lineup[0] = alliance.TeamIds[1]
 		alliance.Lineup[1] = alliance.TeamIds[0]
-		alliance.Lineup[2] = alliance.TeamIds[2]
+		if web.arena.EventSettings.TwoVsTwoMode {
+			// There is no third team in 2v2 alliances.
+			alliance.Lineup[2] = alliance.TeamIds[0]
+		} else {
+			alliance.Lineup[2] = alliance.TeamIds[2]
+		}
 
 		err := web.arena.Database.CreateAlliance(&alliance)
 		if err != nil {
@@ -390,17 +399,29 @@ func (web *Web) determineNextCell() (int, int) {
 		}
 	}
 
-	// Check the third column.
-	if web.arena.EventSettings.SelectionRound2Order == "F" {
-		for i, alliance := range web.arena.AllianceSelectionAlliances {
-			if alliance.TeamIds[2] == 0 {
-				return i, 2
+	// The third column (TeamIds[2]) exists whenever an alliance has more than 2 team slots -- i.e. in
+	// 3v3 mode (3 or 4 slots), or in 2v2 mode combined with a fourth-round selection (4 slots). Only a
+	// plain 2v2 alliance (2 slots) has no third column.
+	teamsPerAlliance := 3
+	if web.arena.EventSettings.TwoVsTwoMode {
+		teamsPerAlliance = 2
+	}
+	if web.arena.EventSettings.SelectionRound3Order != "" {
+		teamsPerAlliance = 4
+	}
+	if teamsPerAlliance > 2 {
+		// Check the third column.
+		if web.arena.EventSettings.SelectionRound2Order == "F" {
+			for i, alliance := range web.arena.AllianceSelectionAlliances {
+				if alliance.TeamIds[2] == 0 {
+					return i, 2
+				}
 			}
-		}
-	} else {
-		for i := len(web.arena.AllianceSelectionAlliances) - 1; i >= 0; i-- {
-			if web.arena.AllianceSelectionAlliances[i].TeamIds[2] == 0 {
-				return i, 2
+		} else {
+			for i := len(web.arena.AllianceSelectionAlliances) - 1; i >= 0; i-- {
+				if web.arena.AllianceSelectionAlliances[i].TeamIds[2] == 0 {
+					return i, 2
+				}
 			}
 		}
 	}

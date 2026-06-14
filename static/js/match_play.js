@@ -6,6 +6,7 @@
 var websocket;
 let scoreIsReady;
 let isReplay;
+let twoVsTwoMode;
 const lowBatteryThreshold = 8;
 
 // Sends a websocket message to load the specified match.
@@ -19,14 +20,14 @@ const showResult = function (matchId) {
 }
 
 // Sends a websocket message to load all teams into their respective alliance stations.
-const substituteTeams = function (team, position) {
+const substituteTeams = function () {
   const teams = {
     Red1: getTeamNumber("R1"),
     Red2: getTeamNumber("R2"),
-    Red3: getTeamNumber("R3"),
+    Red3: twoVsTwoMode ? 0 : getTeamNumber("R3"),
     Blue1: getTeamNumber("B1"),
     Blue2: getTeamNumber("B2"),
-    Blue3: getTeamNumber("B3"),
+    Blue3: twoVsTwoMode ? 0 : getTeamNumber("B3"),
   };
 
   websocket.send("substituteTeams", teams);
@@ -281,6 +282,7 @@ const handleArenaStatus = function (data) {
 // Handles a websocket message to update the teams for the current match.
 const handleMatchLoad = function (data) {
   isReplay = data.IsReplay;
+  twoVsTwoMode = data.TwoVsTwoMode;
 
   fetch("/match_play/match_load")
     .then(response => response.text())

@@ -31,7 +31,7 @@ UI for manually editing the result for a match.
     <legend>Autonomous</legend>
     <h6 class="fw-bold mb-2">Bypassed</h6>
     <div class="row mb-3">
-      {{range $i := seq 3}}
+      {{range $i := seq .NumTeamsPerAlliance}}
       <div class="col-lg-2">
         <label class="control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
         <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}RobotsBypassed{{$i}}">
@@ -40,7 +40,7 @@ UI for manually editing the result for a match.
     </div>
     <h6 class="fw-bold mb-2">Leave</h6>
     <div class="row mb-3">
-      {{range $i := seq 3}}
+      {{range $i := seq .NumTeamsPerAlliance}}
       <div class="col-lg-2">
         <label class="control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
         <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}LeaveStatuses{{$i}}">
@@ -106,7 +106,7 @@ UI for manually editing the result for a match.
   <fieldset>
     <legend>Endgame</legend>
     <div class="mb-3">
-      {{range $i := seq 3}}
+      {{range $i := seq .NumTeamsPerAlliance}}
       <div class="row mb-2">
         <label class="col-lg-1 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
         <div class="col-lg-1">
@@ -156,12 +156,14 @@ UI for manually editing the result for a match.
               Team {{"{{../team2}}"}}
             </label>
           </div>
+          {{if not .TwoVsTwoMode}}
           <div class="col-lg-2">
             <label>
               <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team3}}"}}">
               Team {{"{{../team3}}"}}
             </label>
           </div>
+          {{end}}
         </div>
       </div>
     </div>
@@ -187,7 +189,7 @@ Add Foul
 </fieldset>
 <fieldset>
   <legend>Cards</legend>
-  {{range $i := seq 3}}
+  {{range $i := seq .NumTeamsPerAlliance}}
   <div class="row mb-3">
     <label class="col-lg-2 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
     <div class="col-lg-8">

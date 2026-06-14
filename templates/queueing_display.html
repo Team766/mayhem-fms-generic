@@ -13,7 +13,7 @@ Display that shows upcoming matches and timing information.
     <link rel="stylesheet" href="/static/css/cheesy-arena.css"/>
     <link rel="stylesheet" href="/static/css/queueing_display.css"/>
   </head>
-  <body>
+  <body{{if .EventSettings.TwoVsTwoMode}} class="two-vs-two"{{end}}>
     <div id="header" class="row justify-content-center">
       <div class="col-lg-5">Match Queue</div>
       <div class="col-lg-5 text-end">{{.EventSettings.Name}}</div>

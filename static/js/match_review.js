@@ -9,6 +9,7 @@ let matchResult;
 const ALLIANCES = ["red", "blue"];
 const NUM_ROBOTS = 3;
 const SUMMARY_REFRESH_DELAY_MS = 150;
+const RANKING_POINT_SUMMARY_FIELDS = ["AutonRankingPoint", "ScoringRankingPoint", "EndgameRankingPoint"];
 
 let summaryRefreshTimer;
 let latestSummaryRequestId = 0;
@@ -36,6 +37,23 @@ const renderResults = function (alliance) {
   result.score = normalizeScore(result.score);
   result.cards = result.cards || {};
 
+  getInputElement(alliance, "AutoFloor").val(result.score.AutoFloor);
+  getInputElement(alliance, "AutoFirst").val(result.score.AutoFirst);
+  getInputElement(alliance, "AutoTop").val(result.score.AutoTop);
+  getInputElement(alliance, "TeleopFloor").val(result.score.TeleopFloor);
+  getInputElement(alliance, "TeleopFirst").val(result.score.TeleopFirst);
+  getInputElement(alliance, "TeleopTop").val(result.score.TeleopTop);
+  getInputElement(alliance, "TeleopStacked").val(result.score.TeleopStacked);
+  getInputElement(alliance, "Crown").val(result.score.Crown);
+  getInputElement(alliance, "Toss").prop("checked", result.score.Toss);
+
+  $.each(result.teams, function (i, team) {
+    const i1 = i + 1;
+    getInputElement(alliance, `LeaveStatuses${i1}`).prop("checked", result.score.LeaveStatuses[i]);
+    getInputElement(alliance, `AutoBalanceStatuses${i1}`).prop("checked", result.score.AutoBalanceStatuses[i]);
+    getInputElement(alliance, `EndgameStatuses${i1}`).val(result.score.EndgameStatuses[i]);
+  });
+
   renderFouls(alliance);
   renderCards(alliance);
 };
@@ -47,6 +65,33 @@ const updateResults = function (alliance) {
   $.each($("form").serializeArray(), function (k, v) {
     formData[v.name] = v.value;
   });
+
+  result.score.AutoFloor = parseFormInt(formData[`${alliance}AutoFloor`]);
+  result.score.AutoFirst = parseFormInt(formData[`${alliance}AutoFirst`]);
+  result.score.AutoTop = parseFormInt(formData[`${alliance}AutoTop`]);
+  result.score.TeleopFloor = parseFormInt(formData[`${alliance}TeleopFloor`]);
+  result.score.TeleopFirst = parseFormInt(formData[`${alliance}TeleopFirst`]);
+  result.score.TeleopTop = parseFormInt(formData[`${alliance}TeleopTop`]);
+  result.score.TeleopStacked = parseFormInt(formData[`${alliance}TeleopStacked`]);
+  result.score.Crown = parseFormInt(formData[`${alliance}Crown`]);
+  result.score.Toss = formData[`${alliance}Toss`] === "on";
+
+  result.score.LeaveStatuses = [];
+  result.score.AutoBalanceStatuses = [];
+  result.score.EndgameStatuses = [];
+  for (let i = 0; i < NUM_ROBOTS; i++) {
+    const i1 = i + 1;
+    // A station that isn't rendered (e.g. station 3 in 2v2 mode) keeps its prior, already-zero value.
+    if (i < result.teams.length) {
+      result.score.LeaveStatuses[i] = formData[`${alliance}LeaveStatuses${i1}`] === "on";
+      result.score.AutoBalanceStatuses[i] = formData[`${alliance}AutoBalanceStatuses${i1}`] === "on";
+      result.score.EndgameStatuses[i] = parseFormInt(formData[`${alliance}EndgameStatuses${i1}`]);
+    } else {
+      result.score.LeaveStatuses[i] = false;
+      result.score.AutoBalanceStatuses[i] = false;
+      result.score.EndgameStatuses[i] = 0;
+    }
+  }
 
   result.score.Fouls = [];
   for (let i = 0; formData[`${alliance}Foul${i}Index`]; i++) {
@@ -163,9 +208,9 @@ const updateSummaryCard = function (alliance, summary) {
   });
 };
 
-// Returns the form input element having the given parameters.
+// Returns the form input, select, etc. element having the given parameters.
 const getInputElement = function (alliance, name, value) {
-  let selector = `input[name=${alliance}${name}]`;
+  let selector = `[name=${alliance}${name}]`;
   if (value !== undefined) {
     selector += `[value=${value}]`;
   }
@@ -174,8 +219,30 @@ const getInputElement = function (alliance, name, value) {
 
 const normalizeScore = function (score) {
   score = score || {};
+  score.AutoFloor = score.AutoFloor || 0;
+  score.AutoFirst = score.AutoFirst || 0;
+  score.AutoTop = score.AutoTop || 0;
+  score.TeleopFloor = score.TeleopFloor || 0;
+  score.TeleopFirst = score.TeleopFirst || 0;
+  score.TeleopTop = score.TeleopTop || 0;
+  score.TeleopStacked = score.TeleopStacked || 0;
+  score.Crown = score.Crown || 0;
+  score.Toss = !!score.Toss;
+  score.LeaveStatuses = normalizeArray(score.LeaveStatuses, NUM_ROBOTS, false);
+  score.AutoBalanceStatuses = normalizeArray(score.AutoBalanceStatuses, NUM_ROBOTS, false);
+  score.EndgameStatuses = normalizeArray(score.EndgameStatuses, NUM_ROBOTS, 0);
   score.Fouls = score.Fouls || [];
   return score;
+};
+
+const normalizeArray = function (array, length, defaultValue) {
+  array = array || [];
+  for (let i = 0; i < length; i++) {
+    if (array[i] === undefined || array[i] === null) {
+      array[i] = defaultValue;
+    }
+  }
+  return array;
 };
 
 const cloneTemplateElement = function (id) {
@@ -183,6 +250,10 @@ const cloneTemplateElement = function (id) {
 };
 
 const formatSummaryValue = function (field, value) {
+  if (RANKING_POINT_SUMMARY_FIELDS.includes(field)) {
+    return value ? '<span class="score-summary-rp text-success">&#x2611;</span>' :
+      '<span class="score-summary-rp text-danger">&#x2612;</span>';
+  }
   return value;
 };
 

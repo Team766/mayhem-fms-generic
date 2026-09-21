@@ -82,7 +82,12 @@ UI for listing matches and their results.
 {{define "script"}}
 {{end}}
 {{define "rankingPointSymbols"}}
-<span class="match-review-rps nowrap" title="Bonus ranking points">
-  +{{.BonusRankingPoints}} RP
+<span class="match-review-rps nowrap" title="Auton, Scoring, Endgame bonus RPs">
+  <span class="match-review-rp" title="Auton RP">{{template "rankingPointSymbol" .AutonRankingPoint}}</span>
+  <span class="match-review-rp" title="Scoring RP">{{template "rankingPointSymbol" .ScoringRankingPoint}}</span>
+  <span class="match-review-rp" title="Endgame RP">{{template "rankingPointSymbol" .EndgameRankingPoint}}</span>
 </span>
+{{end}}
+{{define "rankingPointSymbol"}}
+{{if .}}<span class="text-success">&#x2611;</span>{{else}}<span class="text-danger">&#x2612;</span>{{end}}
 {{end}}

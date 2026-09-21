@@ -101,6 +101,7 @@ UI for entering and tracking fouls and red/yellow cards.
 </div>
 {{end}}
 {{define "scoreSummary"}}
+{{$teamCount := 3}}{{if .twoVsTwoMode}}{{$teamCount = 2}}{{end}}
 <div id="{{.id}}" class="scoreSummary">
   <div class="placeholder"></div>
   <div class="team-1">0</div>
@@ -108,5 +109,29 @@ UI for entering and tracking fouls and red/yellow cards.
   {{if not .twoVsTwoMode}}
   <div class="team-3">0</div>
   {{end}}
+
+  <div>Leave</div>
+  {{range $i := seq $teamCount}}<div id="{{$.id}}Leave{{$i}}">-</div>{{end}}
+
+  <div>Auto Bal</div>
+  {{range $i := seq $teamCount}}<div id="{{$.id}}AutoBalance{{$i}}">-</div>{{end}}
+
+  <div>Endgame</div>
+  {{range $i := seq $teamCount}}<div id="{{$.id}}Endgame{{$i}}">-</div>{{end}}
+
+  <div>Auto</div>
+  {{range $i := seq $teamCount}}{{if eq $i 1}}<div id="{{$.id}}Auto">-</div>{{else}}<div>&nbsp;</div>{{end}}{{end}}
+
+  <div>Teleop</div>
+  {{range $i := seq $teamCount}}{{if eq $i 1}}<div id="{{$.id}}Teleop">-</div>{{else}}<div>&nbsp;</div>{{end}}{{end}}
+
+  <div>Crown</div>
+  {{range $i := seq $teamCount}}{{if eq $i 1}}<div id="{{$.id}}Crown">-</div>{{else}}<div>&nbsp;</div>{{end}}{{end}}
+
+  <div>Toss</div>
+  {{range $i := seq $teamCount}}{{if eq $i 1}}<div id="{{$.id}}Toss">-</div>{{else}}<div>&nbsp;</div>{{end}}{{end}}
+
+  <div>Shelf</div>
+  {{range $i := seq $teamCount}}{{if eq $i 1}}<div id="{{$.id}}Shelf">-</div>{{else}}<div>&nbsp;</div>{{end}}{{end}}
 </div>
 {{end}}

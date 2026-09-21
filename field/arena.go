@@ -62,7 +62,6 @@ type Arena struct {
 	redSCC           *network.SCCSwitch
 	blueSCC          *network.SCCSwitch
 	Plc              plc.Plc
-	NexusClient      *partner.NexusClient
 	BlackmagicClient *partner.BlackmagicClient
 	CompanionClient  *partner.CompanionClient
 	AllianceStations map[string]*AllianceStation
@@ -221,7 +220,6 @@ func (arena *Arena) LoadSettings() error {
 		return err
 	}
 	arena.Leds.SetUniverseMode(settings.LedUniverseMode)
-	arena.NexusClient = partner.NewNexusClient(settings.EventCode, settings.NexusAutoQueueKey)
 	arena.BlackmagicClient = partner.NewBlackmagicClient(settings.BlackmagicAddresses)
 
 	// Initialize Companion client with event configurations
@@ -335,63 +333,42 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 
 	arena.CurrentMatch = match
 
-	loadedByNexus := false
-	if match.ShouldAllowNexusSubstitution() && arena.EventSettings.NexusEnabled {
-		// Attempt to get the match lineup from Nexus for FRC.
-		lineup, err := arena.NexusClient.GetLineup(match.TbaMatchKey)
-		if err != nil {
-			log.Printf("Failed to load lineup from Nexus: %s", err.Error())
-		} else {
-			err = arena.SubstituteTeams(lineup[0], lineup[1], lineup[2], lineup[3], lineup[4], lineup[5])
-			if err != nil {
-				log.Printf("Failed to substitute teams using Nexus lineup; loading match normally: %s", err.Error())
-			} else {
-				log.Printf(
-					"Successfully loaded lineup for match %s from Nexus: %v", match.TbaMatchKey.String(), *lineup,
-				)
-				loadedByNexus = true
-			}
-		}
+	err := arena.assignTeam(match.Red1, "R1")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Red2, "R2")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Red3, "R3")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue1, "B1")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue2, "B2")
+	if err != nil {
+		return err
+	}
+	err = arena.assignTeam(match.Blue3, "B3")
+	if err != nil {
+		return err
 	}
 
-	if !loadedByNexus {
-		err := arena.assignTeam(match.Red1, "R1")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Red2, "R2")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Red3, "R3")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue1, "B1")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue2, "B2")
-		if err != nil {
-			return err
-		}
-		err = arena.assignTeam(match.Blue3, "B3")
-		if err != nil {
-			return err
-		}
-
-		arena.setupNetwork(
-			[6]*model.Team{
-				arena.AllianceStations["R1"].Team,
-				arena.AllianceStations["R2"].Team,
-				arena.AllianceStations["R3"].Team,
-				arena.AllianceStations["B1"].Team,
-				arena.AllianceStations["B2"].Team,
-				arena.AllianceStations["B3"].Team,
-			},
-			false,
-		)
-	}
+	arena.setupNetwork(
+		[6]*model.Team{
+			arena.AllianceStations["R1"].Team,
+			arena.AllianceStations["R2"].Team,
+			arena.AllianceStations["R3"].Team,
+			arena.AllianceStations["B1"].Team,
+			arena.AllianceStations["B2"].Team,
+			arena.AllianceStations["B3"].Team,
+		},
+		false,
+	)
 
 	// Reset the arena state and realtime scores.
 	arena.soundsPlayed = make(map[*game.MatchSound]struct{})
@@ -536,10 +513,6 @@ func (arena *Arena) StartMatch() error {
 		arena.lastTeamLogTime = time.Time{}
 
 		arena.MatchState = StartMatch
-
-		if arena.EventSettings.NexusAutoQueueEnabled && arena.CurrentMatch.Type != model.Test {
-			go arena.NexusClient.MatchStarted(arena.CurrentMatch.LongName, arena.CurrentMatch.TypeOrder)
-		}
 	}
 	return err
 }
@@ -620,10 +593,6 @@ func (arena *Arena) startTimeout(description string, nextMatchName string, durat
 	arena.LastMatchTimeSec = -1
 	arena.AllianceStationDisplayMode = "timeout"
 	arena.AllianceStationDisplayModeNotifier.Notify()
-
-	if arena.EventSettings.NexusAutoQueueEnabled {
-		go arena.NexusClient.BreakStarted(durationSec)
-	}
 
 	return nil
 }
@@ -753,10 +722,6 @@ func (arena *Arena) Update() {
 	case TimeoutActive:
 		if matchTimeSec >= float64(game.MatchTiming.TimeoutDurationSec) {
 			arena.MatchState = PostTimeout
-
-			if arena.EventSettings.NexusAutoQueueEnabled {
-				go arena.NexusClient.BreakEnded()
-			}
 
 			go func() {
 				// Leave the timer on the screen briefly at the end of the timeout period.
@@ -1034,15 +999,6 @@ func (arena *Arena) preLoadNextMatch() {
 	}
 
 	teamIds := [6]int{nextMatch.Red1, nextMatch.Red2, nextMatch.Red3, nextMatch.Blue1, nextMatch.Blue2, nextMatch.Blue3}
-	if nextMatch.ShouldAllowNexusSubstitution() && arena.EventSettings.NexusEnabled {
-		// Attempt to get the match lineup from Nexus for FRC.
-		lineup, err := arena.NexusClient.GetLineup(nextMatch.TbaMatchKey)
-		if err != nil {
-			log.Printf("Failed to load lineup from Nexus: %s", err.Error())
-		} else {
-			teamIds = *lineup
-		}
-	}
 
 	var teams [6]*model.Team
 	for i, teamId := range teamIds {
@@ -1481,40 +1437,10 @@ func (arena *Arena) positionPostMatchScoreReady(position string) bool {
 	return numPanels > 0 && arena.ScoringPanelRegistry.GetNumScoreCommitted(position) >= numPanels
 }
 
-func (arena *Arena) checkForUpdatedNexusLineup() {
-	if !(arena.EventSettings.NexusEnabled && arena.CurrentMatch.ShouldAllowNexusSubstitution()) {
-		return
-	}
-
-	if arena.MatchState != PreMatch {
-		// Only check for an updated lineup pre-match.
-		return
-	}
-
-	lineup, err := arena.NexusClient.GetLineup(arena.CurrentMatch.TbaMatchKey)
-	if err != nil {
-		log.Printf("Failed to load lineup from Nexus: %s", err.Error())
-		return
-	}
-
-	if !arena.CurrentMatch.IsLineupEqual(lineup[0], lineup[1], lineup[2], lineup[3], lineup[4], lineup[5]) {
-		log.Printf("Got updated lineup from Nexus, substituting")
-		err = arena.SubstituteTeams(lineup[0], lineup[1], lineup[2], lineup[3], lineup[4], lineup[5])
-		if err != nil {
-			log.Printf("Failed to substitute teams using Nexus lineup: %s", err.Error())
-			return
-		}
-		log.Printf(
-			"Successfully updated lineup for match %s from Nexus: %v", arena.CurrentMatch.TbaMatchKey.String(), *lineup,
-		)
-	}
-}
-
 // Performs any actions that need to run at the interval specified by periodicTaskPeriodSec.
 func (arena *Arena) runPeriodicTasks() {
 	arena.updateEarlyLateMessage()
 	arena.purgeDisconnectedDisplays()
-	arena.checkForUpdatedNexusLineup()
 }
 
 // Handles audience display automation from after score post to next match intro.

@@ -48,9 +48,6 @@ type EventSettings struct {
 	SelectionShowUnpickedTeams       bool
 	EventCode                        string
 	AutoAudienceDisplayEnabled       bool
-	NexusEnabled                     bool
-	NexusAutoQueueEnabled            bool
-	NexusAutoQueueKey                string
 	NetworkSecurityEnabled           bool
 	ApAddress                        string
 	ApPassword                       string

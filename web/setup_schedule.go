@@ -110,6 +110,10 @@ func (web *Web) scheduleGeneratePostHandler(w http.ResponseWriter, r *http.Reque
 	teamFirstMatches := make(map[int]string)
 	for _, match := range matches {
 		checkTeam := func(team int) {
+			if team == 0 {
+				// An empty slot (e.g. a 2v2 match's unused third station) is not a team.
+				return
+			}
 			_, ok := teamFirstMatches[team]
 			if !ok {
 				teamFirstMatches[team] = match.ShortName

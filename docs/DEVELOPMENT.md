@@ -76,6 +76,18 @@ replaced (its ids are the vocabulary to remove), and then points `CURRENT` at th
 
 `specs/high_seas_havoc.md` (M-Ayhem 2025) is kept as a second example spec; it has no code in this tree.
 
+### The neutral state (no game)
+
+Right after a regeneration, before `apply-game` runs, the tree has no game. It must still build, pass its
+tests and run a match. "No game" means:
+
+- `game.Score` holds only `Fouls` and `PlayoffDq`. `Summarize()` computes foul points from the opponent's fouls, `NumOpponentMajorFouls`, `MatchPoints = 0`, `Score = FoulPoints`, and no bonus ranking points. No game settings, thresholds or special-case rules.
+- Ranking: win 3 RP, tie 1. Sort by ranking points per match, then match points per match, then the random value. Playoff tie: fewer major fouls committed, otherwise a tie.
+- `game/rule.go` keeps the `Rule` type and lookups with a two-entry list (one minor, one major) so the referee flow stays testable. `game/foul.go` keeps upstream's point values and has no rule-specific exceptions.
+- Match timing is auto, pause, teleop and a warning time before the end; sounds are start, resume, warning, end, abort and the non-match sounds. No shifts.
+- Scoring panels show the match, the foul dialog and Commit; the referee panel shows cards and fouls; the audience overlay shows teams, score and timer; the final score shows the score, a Foul row and ranking points or playoff wins; edit-result has fouls and cards; rankings and reports have Rank, Team, RP, Match points, W-L-T, DQ, Played.
+- The arena has no game hooks, the PLC has only the generic signals, and there is no "Game-Specific" settings fieldset.
+
 Files a game may touch (the seam):
 
 - `game/`: `score.go`, `score_summary.go`, `ranking_fields.go`, `match_timing.go`, `match_sounds.go`, `rule.go` (list), `foul.go` (point values), `test_helpers.go`, and tests.

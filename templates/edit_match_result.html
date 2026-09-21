@@ -95,41 +95,6 @@ UI for manually editing the result for a match.
 <div id="{{.Alliance}}Score" data-alliance="{{.Alliance}}">
   <div class="card card-body bg-{{.Alliance}} mb-3">
     <fieldset>
-      <legend>Autonomous</legend>
-      <h6 class="fw-bold mb-2">Tower</h6>
-      <div class="mb-3">
-        {{template "towerStatusRows" dict "alliance" .Alliance "teams" .Teams "field" "AutoTowerStatuses"}}
-      </div>
-      <h6 class="fw-bold mb-2">Hub</h6>
-      <div class="row mb-3">
-        <label class="col-lg-2 control-label">Won Auto?</label>
-        <div class="col-lg-2">
-          <input type="checkbox" class="ms-3" name="{{.Alliance}}HubWonAuto">
-        </div>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>Fuel</legend>
-      <div class="row mb-3">
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 0 "label" "Auto"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 1 "label" "Transition"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 2 "label" "Shift 1"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 3 "label" "Shift 2"}}
-      </div>
-      <div class="row mb-3">
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 4 "label" "Shift 3"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 5 "label" "Shift 4"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 6 "label" "Endgame"}}
-        {{template "hubShiftCount" dict "alliance" .Alliance "shift" 7 "label" "Post-Match"}}
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>Endgame</legend>
-      <div class="mb-3">
-        {{template "towerStatusRows" dict "alliance" .Alliance "teams" .Teams "field" "EndgameTowerStatuses"}}
-      </div>
-    </fieldset>
-    <fieldset>
       <legend>Fouls</legend>
       <div id="{{.Alliance}}Fouls"></div>
       <button type="button" class="btn btn-secondary btn-sm" onclick="addFoul('{{.Alliance}}');">Add Foul</button>
@@ -155,29 +120,6 @@ UI for manually editing the result for a match.
   {{template "scoreSummaryCard" .}}
 </div>
 {{end}}
-{{define "hubShiftCount"}}
-<label class="col-lg-1 text-end">{{.label}}:</label>
-<div class="col-lg-1">
-  <input type="number" class="form-control input-sm" name="{{.alliance}}HubShiftCount{{.shift}}" min="0">
-</div>
-{{end}}
-{{define "towerStatusRows"}}
-{{range $i, $team := .teams}}
-{{$teamIndex := add $i 1}}
-<div class="row mb-2">
-  <label class="col-lg-1 control-label">Team {{$team}}</label>
-  {{template "towerStatusRadio" dict "alliance" $.alliance "field" $.field "index" $teamIndex "value" 0 "label" "None"}}
-  {{template "towerStatusRadio" dict "alliance" $.alliance "field" $.field "index" $teamIndex "value" 1 "label" "Level 1"}}
-  {{template "towerStatusRadio" dict "alliance" $.alliance "field" $.field "index" $teamIndex "value" 2 "label" "Level 2"}}
-  {{template "towerStatusRadio" dict "alliance" $.alliance "field" $.field "index" $teamIndex "value" 3 "label" "Level 3"}}
-</div>
-{{end}}
-{{end}}
-{{define "towerStatusRadio"}}
-<div class="col-lg-2">
-  <input type="radio" name="{{.alliance}}{{.field}}{{.index}}" value="{{.value}}"> {{.label}}
-</div>
-{{end}}
 {{define "cardRadio"}}
 <div class="col-lg-2">
   <label>
@@ -193,24 +135,12 @@ UI for manually editing the result for a match.
     <tbody>
       <tr>
         {{template "summaryField" dict "label" "Score" "field" "Score" "value" .Summary.Score}}
-        {{template "summaryField" dict "label" "Auto Fuel" "field" "AutoFuelPoints" "value" .Summary.AutoFuelPoints}}
-      </tr>
-      <tr>
-        {{template "summaryField" dict "label" "Auto Tower" "field" "AutoTowerPoints" "value" .Summary.AutoTowerPoints}}
-        {{template "summaryField" dict "label" "Teleop Fuel" "field" "TeleopFuelPoints" "value" .Summary.TeleopFuelPoints}}
-      </tr>
-      <tr>
-        {{template "summaryField" dict "label" "Teleop Tower" "field" "TeleopTowerPoints" "value" .Summary.TeleopTowerPoints}}
         {{template "summaryField" dict "label" "Foul" "field" "FoulPoints" "value" .Summary.FoulPoints}}
       </tr>
       {{if .ShowRankingPoints}}
       <tr>
-        {{template "rankingPointSummaryField" dict "label" "Energized Bonus" "field" "EnergizedBonusRankingPoint" "value" .Summary.EnergizedBonusRankingPoint}}
-        {{template "rankingPointSummaryField" dict "label" "Supercharged Bonus" "field" "SuperchargedBonusRankingPoint" "value" .Summary.SuperchargedBonusRankingPoint}}
-      </tr>
-      <tr>
-        {{template "rankingPointSummaryField" dict "label" "Traversal Bonus" "field" "TraversalBonusRankingPoint" "value" .Summary.TraversalBonusRankingPoint}}
-        {{template "summaryField" dict "label" "Ranking Points" "field" "BonusRankingPoints" "value" .Summary.BonusRankingPoints}}
+        <th scope="row">Ranking Points</th>
+        <td class="text-end font-monospace score-summary-rp" data-summary-field="BonusRankingPoints">{{.Summary.BonusRankingPoints}}</td>
       </tr>
       {{end}}
     </tbody>
@@ -220,10 +150,4 @@ UI for manually editing the result for a match.
 {{define "summaryField"}}
 <th scope="row">{{.label}}</th>
 <td class="text-end font-monospace" data-summary-field="{{.field}}">{{.value}}</td>
-{{end}}
-{{define "rankingPointSummaryField"}}
-<th scope="row">{{.label}}</th>
-<td class="text-end" data-summary-field="{{.field}}">
-  {{if .value}}<span class="score-summary-rp text-success">&#x2611;</span>{{else}}<span class="score-summary-rp text-danger">&#x2612;</span>{{end}}
-</td>
 {{end}}

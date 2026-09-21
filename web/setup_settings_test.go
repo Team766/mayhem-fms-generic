@@ -25,16 +25,14 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Untitled Event")
 	assert.Contains(t, recorder.Body.String(), "8")
-	assert.Contains(t, recorder.Body.String(), "transitionShiftDurationSec")
-	assert.Contains(t, recorder.Body.String(), "shiftDurationSec")
-	assert.Contains(t, recorder.Body.String(), "endgameDurationSec")
+	assert.Contains(t, recorder.Body.String(), "teleopDurationSec")
+	assert.Contains(t, recorder.Body.String(), "warningRemainingDurationSec")
 
 	// Change the settings and check the response.
 	recorder = web.postHttpResponse(
 		"/setup/settings",
 		"name=Chezy Champs&code=CC&playoffType=single&numPlayoffAlliances=16&"+
-			"eventCode=2014cc&transitionShiftDurationSec=12&"+
-			"shiftDurationSec=24&endgameDurationSec=32",
+			"eventCode=2014cc&teleopDurationSec=106&warningRemainingDurationSec=25",
 	)
 	assert.Equal(t, 303, recorder.Code)
 	assert.Equal(t, "/setup/settings#event", recorder.Header().Get("Location"))
@@ -42,10 +40,9 @@ func TestSetupSettings(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Chezy Champs")
 	assert.Contains(t, recorder.Body.String(), "16")
 	assert.Contains(t, recorder.Body.String(), "2014cc")
-	assert.Equal(t, 12, web.arena.EventSettings.TransitionShiftDurationSec)
-	assert.Equal(t, 24, web.arena.EventSettings.ShiftDurationSec)
-	assert.Equal(t, 32, web.arena.EventSettings.EndgameDurationSec)
-	assert.Equal(t, 140, game.GetTeleopDurationSec())
+	assert.Equal(t, 106, web.arena.EventSettings.TeleopDurationSec)
+	assert.Equal(t, 25, web.arena.EventSettings.WarningRemainingDurationSec)
+	assert.Equal(t, 106, game.GetTeleopDurationSec())
 
 	recorder = web.postHttpResponse("/setup/settings", "name=Field Tab Event&activeSettingsTab=field")
 	assert.Equal(t, 303, recorder.Code)

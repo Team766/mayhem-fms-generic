@@ -61,15 +61,13 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 
 	// The widths of the table columns in mm, stored here so that they can be referenced for each row.
 	colWidths := map[string]float64{
-		"Rank":      13,
-		"Team":      20,
-		"RP":        24,
-		"Match":     24,
-		"Auto Fuel": 24,
-		"Tower":     24,
-		"W-L-T":     26,
-		"DQ":        20,
-		"Played":    20,
+		"Rank":   13,
+		"Team":   20,
+		"RP":     24,
+		"Match":  24,
+		"W-L-T":  26,
+		"DQ":     20,
+		"Played": 20,
 	}
 	rowHeight := 6.5
 
@@ -84,8 +82,6 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Team", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["RP"], rowHeight, "RP", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Auto Fuel"], rowHeight, "Auto Fuel", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Tower"], rowHeight, "Tower", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["W-L-T"], rowHeight, "W-L-T", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["DQ"], rowHeight, "DQ", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Played"], rowHeight, "Played", "1", 1, "C", true, 0, "")
@@ -97,10 +93,6 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 		pdf.CellFormat(colWidths["Team"], rowHeight, strconv.Itoa(ranking.TeamId), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["RP"], rowHeight, strconv.Itoa(ranking.RankingPoints), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["Match"], rowHeight, strconv.Itoa(ranking.MatchPoints), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(
-			colWidths["Auto Fuel"], rowHeight, strconv.Itoa(ranking.AutoFuelPoints), "1", 0, "C", false, 0, "",
-		)
-		pdf.CellFormat(colWidths["Tower"], rowHeight, strconv.Itoa(ranking.TowerPoints), "1", 0, "C", false, 0, "")
 		record := fmt.Sprintf("%d-%d-%d", ranking.Wins, ranking.Losses, ranking.Ties)
 		pdf.CellFormat(colWidths["W-L-T"], rowHeight, record, "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["DQ"], rowHeight, strconv.Itoa(ranking.Disqualifications), "1", 0, "C", false, 0, "")

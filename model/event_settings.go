@@ -79,9 +79,6 @@ type EventSettings struct {
 	CompanionTeleopStartPage         int
 	CompanionTeleopStartRow          int
 	CompanionTeleopStartColumn       int
-	CompanionEndgameStartPage        int
-	CompanionEndgameStartRow         int
-	CompanionEndgameStartColumn      int
 	CompanionMatchEndPage            int
 	CompanionMatchEndRow             int
 	CompanionMatchEndColumn          int
@@ -96,12 +93,8 @@ type EventSettings struct {
 	CompanionMatchAbortColumn        int
 	AutoDurationSec                  int
 	PauseDurationSec                 int
-	TransitionShiftDurationSec       int
-	ShiftDurationSec                 int
-	EndgameDurationSec               int
-	EnergizedBonusThreshold          int
-	SuperchargedBonusThreshold       int
-	TraversalBonusThreshold          int
+	TeleopDurationSec                int
+	WarningRemainingDurationSec      int
 }
 
 func (database *Database) GetEventSettings() (*EventSettings, error) {
@@ -116,24 +109,20 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 
 	// Database record doesn't exist yet; create it now.
 	eventSettings := EventSettings{
-		Name:                       "Untitled Event",
-		PlayoffType:                DoubleEliminationPlayoff,
-		NumPlayoffAlliances:        8,
-		SelectionRound2Order:       "L",
-		SelectionRound3Order:       "",
-		SelectionShowUnpickedTeams: true,
-		ApChannel:                  36,
-		SCCUpCommands:              strings.Join(sccDefaultUpCommands, "\n"),
-		SCCDownCommands:            strings.Join(sccDefaultDownCommands, "\n"),
-		CompanionAddress:           "",
-		AutoDurationSec:            game.MatchTiming.AutoDurationSec,
-		PauseDurationSec:           game.MatchTiming.PauseDurationSec,
-		TransitionShiftDurationSec: game.MatchTiming.TransitionShiftDurationSec,
-		ShiftDurationSec:           game.MatchTiming.ShiftDurationSec,
-		EndgameDurationSec:         game.MatchTiming.EndgameDurationSec,
-		EnergizedBonusThreshold:    game.EnergizedBonusThreshold,
-		SuperchargedBonusThreshold: game.SuperchargedBonusThreshold,
-		TraversalBonusThreshold:    game.TraversalBonusThreshold,
+		Name:                        "Untitled Event",
+		PlayoffType:                 DoubleEliminationPlayoff,
+		NumPlayoffAlliances:         8,
+		SelectionRound2Order:        "L",
+		SelectionRound3Order:        "",
+		SelectionShowUnpickedTeams:  true,
+		ApChannel:                   36,
+		SCCUpCommands:               strings.Join(sccDefaultUpCommands, "\n"),
+		SCCDownCommands:             strings.Join(sccDefaultDownCommands, "\n"),
+		CompanionAddress:            "",
+		AutoDurationSec:             game.MatchTiming.AutoDurationSec,
+		PauseDurationSec:            game.MatchTiming.PauseDurationSec,
+		TeleopDurationSec:           game.MatchTiming.TeleopDurationSec,
+		WarningRemainingDurationSec: game.MatchTiming.WarningRemainingDurationSec,
 	}
 
 	if err := database.eventSettingsTable.create(&eventSettings); err != nil {

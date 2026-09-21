@@ -52,7 +52,7 @@ game engine, no build tags or mode flags that switch between games.
 | 2v2 mode | [TwoVTwo.md](TwoVTwo.md) |
 | M-Ayhem Arduino PLC, unmodified | Below |
 | Single-game playoff rounds | A third playoff type: single elimination where every round before the final advances on one win; the final stays best-of-three. Implemented by setting `NumWinsToAdvance = 1` on the non-final matchups; the existing matchup logic then schedules one match and reveals the next only after a tie. No other bracket changes |
-| Per-team station lights | Planned; design in [agents/reference/plc.md](agents/reference/plc.md) section 4 |
+| Per-team station lights | Planned; design notes in [agents/reference/plc.md](agents/reference/plc.md), which also has the PLC bench test |
 
 ### PLC
 

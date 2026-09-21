@@ -1,9 +1,9 @@
 # 2v2 mode
 
 M-Ayhem is played 2v2 some years and 3v3 others. The base supports both, chosen per event. This page is the
-design that [agents/sync-upstream.md](agents/sync-upstream.md) re-applies onto each new upstream. What the
-2025 code did, file by file, is in [agents/reference/two-v-two.md](agents/reference/two-v-two.md); this
-design deliberately differs from it.
+design that [agents/sync-upstream.md](agents/sync-upstream.md) re-applies onto each new upstream. It deliberately
+differs from the 2025 implementation (`mayhem-fms-2025`), which tested the mode in about sixty places and stored a
+2v2 match three different ways.
 
 ## The idea
 

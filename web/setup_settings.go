@@ -162,12 +162,8 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.CompanionMatchAbortColumn, _ = strconv.Atoi(r.PostFormValue("companionMatchAbortColumn"))
 	eventSettings.AutoDurationSec, _ = strconv.Atoi(r.PostFormValue("autoDurationSec"))
 	eventSettings.PauseDurationSec, _ = strconv.Atoi(r.PostFormValue("pauseDurationSec"))
-	eventSettings.TransitionShiftDurationSec, _ = strconv.Atoi(r.PostFormValue("transitionShiftDurationSec"))
-	eventSettings.ShiftDurationSec, _ = strconv.Atoi(r.PostFormValue("shiftDurationSec"))
-	eventSettings.EndgameDurationSec, _ = strconv.Atoi(r.PostFormValue("endgameDurationSec"))
-	eventSettings.EnergizedBonusThreshold, _ = strconv.Atoi(r.PostFormValue("energizedBonusThreshold"))
-	eventSettings.SuperchargedBonusThreshold, _ = strconv.Atoi(r.PostFormValue("superchargedBonusThreshold"))
-	eventSettings.TraversalBonusThreshold, _ = strconv.Atoi(r.PostFormValue("traversalBonusThreshold"))
+	eventSettings.TeleopDurationSec, _ = strconv.Atoi(r.PostFormValue("teleopDurationSec"))
+	eventSettings.WarningRemainingDurationSec, _ = strconv.Atoi(r.PostFormValue("warningRemainingDurationSec"))
 
 	err := web.arena.Database.UpdateEventSettings(eventSettings)
 	if err != nil {

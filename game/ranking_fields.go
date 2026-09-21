@@ -10,8 +10,6 @@ import "math/rand"
 type RankingFields struct {
 	RankingPoints     int
 	MatchPoints       int
-	AutoFuelPoints    int
-	TowerPoints       int
 	Random            float64
 	Wins              int
 	Losses            int
@@ -32,9 +30,6 @@ type Rankings []Ranking
 var RankingRandomFloat64 = rand.Float64
 
 func GetWinRankingPoints() int {
-	if TraversalBonusThreshold == 0 {
-		return 2
-	}
 	return 3
 }
 
@@ -64,8 +59,6 @@ func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentSco
 
 	// Assign tiebreaker points.
 	fields.MatchPoints += ownScore.MatchPoints
-	fields.AutoFuelPoints += ownScore.AutoFuelPoints
-	fields.TowerPoints += ownScore.AutoTowerPoints + ownScore.TeleopTowerPoints
 }
 
 // Helper function to implement the required interface for Sort.
@@ -81,13 +74,7 @@ func (rankings Rankings) Less(i, j int) bool {
 	// Use cross-multiplication to keep it in integer math.
 	if a.RankingPoints*b.Played == b.RankingPoints*a.Played {
 		if a.MatchPoints*b.Played == b.MatchPoints*a.Played {
-			if a.AutoFuelPoints*b.Played == b.AutoFuelPoints*a.Played {
-				if a.TowerPoints*b.Played == b.TowerPoints*a.Played {
-					return a.Random > b.Random
-				}
-				return a.TowerPoints*b.Played > b.TowerPoints*a.Played
-			}
-			return a.AutoFuelPoints*b.Played > b.AutoFuelPoints*a.Played
+			return a.Random > b.Random
 		}
 		return a.MatchPoints*b.Played > b.MatchPoints*a.Played
 	}

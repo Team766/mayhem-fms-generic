@@ -14,8 +14,6 @@ import (
 	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/plc"
 	"log"
-	"math"
-	"math/rand"
 	"net"
 	"reflect"
 	"sort"
@@ -37,7 +35,6 @@ const (
 	scheduledBreakDelaySec   = 5
 	earlyLateThresholdMin    = 2.5
 	MaxMatchGapMin           = 20
-	hubLightWarningSec       = 3
 )
 
 // Progression of match states.
@@ -95,14 +92,12 @@ type Arena struct {
 	ShowLowerThird                    bool
 	MuteMatchSounds                   bool
 	matchAborted                      bool
-	matchStopTime                     time.Time
 	soundsPlayed                      map[*game.MatchSound]struct{}
 	breakDescription                  string
 	breakNextMatchName                string
 	preloadedTeams                    *[6]*model.Team
 	NextFoulId                        int
 	DriverStationUdpSocket            *net.UDPConn
-	redWonAuto                        bool
 }
 
 type AllianceStation struct {
@@ -261,15 +256,10 @@ func (arena *Arena) LoadSettings() error {
 
 	game.MatchTiming.AutoDurationSec = settings.AutoDurationSec
 	game.MatchTiming.PauseDurationSec = settings.PauseDurationSec
-	game.MatchTiming.TransitionShiftDurationSec = settings.TransitionShiftDurationSec
-	game.MatchTiming.ShiftDurationSec = settings.ShiftDurationSec
-	game.MatchTiming.EndgameDurationSec = settings.EndgameDurationSec
+	game.MatchTiming.TeleopDurationSec = settings.TeleopDurationSec
+	game.MatchTiming.WarningRemainingDurationSec = settings.WarningRemainingDurationSec
 	game.UpdateMatchSounds()
 	arena.MatchTimingNotifier.Notify()
-
-	game.EnergizedBonusThreshold = settings.EnergizedBonusThreshold
-	game.SuperchargedBonusThreshold = settings.SuperchargedBonusThreshold
-	game.TraversalBonusThreshold = settings.TraversalBonusThreshold
 
 	// Reconstruct the playoff tournament in memory.
 	if err = arena.CreatePlayoffTournament(); err != nil {
@@ -360,7 +350,6 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 	arena.ScoringPanelRegistry.resetScoreCommitted()
 	arena.Plc.ResetMatch()
 	arena.NextFoulId = 1
-	arena.redWonAuto = false
 
 	// Notify any listeners about the new match.
 	arena.MatchLoadNotifier.Notify()
@@ -515,7 +504,6 @@ func (arena *Arena) AbortMatch() error {
 	arena.PlaySound("abort")
 	arena.MatchState = PostMatch
 	arena.matchAborted = true
-	arena.matchStopTime = time.Now()
 	arena.SetAudienceDisplayMode("blank")
 	go arena.BlackmagicClient.StopRecording()
 	go arena.CompanionClient.SendEvent(partner.EventMatchAbort)
@@ -634,7 +622,6 @@ func (arena *Arena) Update() {
 	enabled := false
 	sendDsPacket := false
 	matchTimeSec := arena.MatchTimeSec()
-	currentTime := time.Now()
 	switch arena.MatchState {
 	case PreMatch:
 		auto = true
@@ -670,7 +657,6 @@ func (arena *Arena) Update() {
 		auto = false
 		enabled = false
 		if matchTimeSec >= game.GetDurationToTeleopStart().Seconds() {
-			arena.handleAutoWinner()
 			arena.MatchState = TeleopPeriod
 			auto = false
 			enabled = true
@@ -737,18 +723,6 @@ func (arena *Arena) Update() {
 
 	oldRedScore := arena.RedRealtimeScore.CurrentScore
 	oldBlueScore := arena.BlueRealtimeScore.CurrentScore
-	oldRedActiveRemainingSec := arena.RedRealtimeScore.ActiveRemainingSec
-	redActiveRemaining, redActiveDuration := arena.RedRealtimeScore.CurrentScore.Hub.GetActiveShiftTiming(
-		arena.MatchStartTime, currentTime,
-	)
-	arena.RedRealtimeScore.ActiveRemainingSec = int(math.Ceil(redActiveRemaining.Seconds()))
-	arena.RedRealtimeScore.ActiveDurationSec = int(math.Ceil(redActiveDuration.Seconds()))
-	oldBlueActiveRemainingSec := arena.BlueRealtimeScore.ActiveRemainingSec
-	blueActiveRemaining, blueActiveDuration := arena.BlueRealtimeScore.CurrentScore.Hub.GetActiveShiftTiming(
-		arena.MatchStartTime, currentTime,
-	)
-	arena.BlueRealtimeScore.ActiveRemainingSec = int(math.Ceil(blueActiveRemaining.Seconds()))
-	arena.BlueRealtimeScore.ActiveDurationSec = int(math.Ceil(blueActiveDuration.Seconds()))
 
 	// Handle field sensors/lights/actuators.
 	arena.handlePlcInputOutput()
@@ -757,9 +731,7 @@ func (arena *Arena) Update() {
 	arena.logTeamSnapshots()
 
 	if !oldRedScore.Equals(&arena.RedRealtimeScore.CurrentScore) ||
-		!oldBlueScore.Equals(&arena.BlueRealtimeScore.CurrentScore) ||
-		oldRedActiveRemainingSec != arena.RedRealtimeScore.ActiveRemainingSec ||
-		oldBlueActiveRemainingSec != arena.BlueRealtimeScore.ActiveRemainingSec {
+		!oldBlueScore.Equals(&arena.BlueRealtimeScore.CurrentScore) {
 		arena.RealtimeScoreNotifier.Notify()
 	}
 
@@ -769,18 +741,18 @@ func (arena *Arena) Update() {
 
 // Checks if the endgame warning period has started and triggers the Companion event if so.
 func (arena *Arena) checkEndgameStart(matchTimeSec float64) {
-	// Only check during teleop period
+	// Only check during teleop period.
 	if arena.MatchState != TeleopPeriod {
 		return
 	}
 
-	// Calculate the time when endgame warning should start
+	// Calculate the time when the endgame warning should start.
 	endgameStartTime := float64(
-		game.MatchTiming.AutoDurationSec + game.MatchTiming.PauseDurationSec +
-			game.GetTeleopDurationSec() - game.MatchTiming.EndgameDurationSec,
+		game.MatchTiming.AutoDurationSec + game.MatchTiming.PauseDurationSec + game.GetTeleopDurationSec() -
+			game.MatchTiming.WarningRemainingDurationSec,
 	)
 
-	// Check if we've crossed the endgame threshold and haven't already triggered it
+	// Check if we've crossed the endgame threshold and haven't already triggered it.
 	if matchTimeSec >= endgameStartTime && arena.LastMatchTimeSec < endgameStartTime {
 		go arena.CompanionClient.SendEvent(partner.EventEndgameStart)
 	}
@@ -1165,29 +1137,6 @@ func (arena *Arena) getAssignedAllianceStation(teamId int) string {
 	return ""
 }
 
-// handleAutoWinner determines which alliance "won" the autonomous period and triggers downstream effects.
-func (arena *Arena) handleAutoWinner() {
-	// Calculate auto winner and propagate the result.
-	redAutoFuel := arena.RedRealtimeScore.CurrentScore.Hub.GetShiftCount(game.ShiftAuto, true)
-	blueAutoFuel := arena.BlueRealtimeScore.CurrentScore.Hub.GetShiftCount(game.ShiftAuto, true)
-	if redAutoFuel == blueAutoFuel {
-		arena.redWonAuto = rand.Intn(2) == 1
-	} else {
-		arena.redWonAuto = redAutoFuel > blueAutoFuel
-	}
-	arena.RedRealtimeScore.CurrentScore.Hub.WonAuto = arena.redWonAuto
-	arena.BlueRealtimeScore.CurrentScore.Hub.WonAuto = !arena.redWonAuto
-
-	// Populate the game data; it'll get automatically sent to the team driver stations in the next loop.
-	gameData := "B"
-	if arena.redWonAuto {
-		gameData = "R"
-	}
-	for _, allianceStation := range arena.AllianceStations {
-		allianceStation.GameData = gameData
-	}
-}
-
 // Updates the score given new input information from the field PLC, and actuates PLC outputs accordingly.
 func (arena *Arena) handlePlcInputOutput() {
 	if !arena.Plc.IsEnabled() {
@@ -1251,70 +1200,6 @@ func (arena *Arena) handlePlcInputOutput() {
 	case AutoPeriod, PausePeriod, TeleopPeriod:
 		arena.Plc.SetStackBuzzer(false)
 		arena.Plc.SetStackLights(!redAllianceReady, !blueAllianceReady, false, true)
-	}
-
-	matchStartTime := arena.MatchStartTime
-	currentTime := time.Now()
-	redHubCount, blueHubCount := arena.Plc.GetHubCounts()
-	arena.RedRealtimeScore.CurrentScore.Hub.UpdateState(redHubCount, matchStartTime, currentTime)
-	arena.BlueRealtimeScore.CurrentScore.Hub.UpdateState(blueHubCount, matchStartTime, currentTime)
-
-	// Run the hub motors for extra time after the match ends or is aborted to help exhaust balls, but stop them
-	// immediately while the field e-stop is pressed.
-	motorGracePeriod := (game.ScoringGracePeriodSec + game.MotorsOnExtraPeriodSec) * time.Second
-	var motorCutoff time.Time
-	if arena.matchAborted {
-		motorCutoff = arena.matchStopTime.Add(motorGracePeriod)
-	} else {
-		motorCutoff = matchStartTime.Add(game.GetDurationToTeleopEnd() + motorGracePeriod)
-	}
-	motorsOn := (arena.MatchState == AutoPeriod || arena.MatchState == PausePeriod ||
-		arena.MatchState == TeleopPeriod ||
-		arena.MatchState == PostMatch && currentTime.Before(motorCutoff)) &&
-		!arena.Plc.GetFieldEStop()
-	arena.Plc.SetHubMotors(motorsOn, motorsOn)
-
-	redHubLight, blueHubLight := arena.getHubLightStates(currentTime)
-	arena.Plc.SetHubLights(redHubLight, blueHubLight)
-}
-
-func (arena *Arena) getHubLightStates(currentTime time.Time) (bool, bool) {
-	switch arena.MatchState {
-	case AutoPeriod, PausePeriod:
-		return true, true
-	case TeleopPeriod:
-		redHub := &arena.RedRealtimeScore.CurrentScore.Hub
-		blueHub := &arena.BlueRealtimeScore.CurrentScore.Hub
-		shift, _, _, ok := redHub.GetCurrentShiftTiming(arena.MatchStartTime, currentTime)
-		if !ok {
-			return false, false
-		}
-
-		blinkOn := arena.Plc.GetCycleState(2, 0, 5)
-		if shift == game.ShiftTransition {
-			if redHub.WonAuto {
-				return blinkOn, true
-			}
-			if blueHub.WonAuto {
-				return true, blinkOn
-			}
-			return true, true
-		}
-
-		warningDuration := time.Duration(hubLightWarningSec) * time.Second
-		redActiveRemaining, _ := redHub.GetActiveShiftTiming(arena.MatchStartTime, currentTime)
-		blueActiveRemaining, _ := blueHub.GetActiveShiftTiming(arena.MatchStartTime, currentTime)
-		redLight := redActiveRemaining > 0
-		blueLight := blueActiveRemaining > 0
-		if redLight && redActiveRemaining <= warningDuration {
-			redLight = blinkOn
-		}
-		if blueLight && blueActiveRemaining <= warningDuration {
-			blueLight = blinkOn
-		}
-		return redLight, blueLight
-	default:
-		return false, false
 	}
 }
 

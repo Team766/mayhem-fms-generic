@@ -226,37 +226,6 @@ main {
   gap: 16px;
 }
 
-#tower-controls {
-  flex: 1 1 0%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-.tower-section {
-  flex: 1 1 0%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.tower-section h1 {
-  margin: 0;
-  color: var(--text-active);
-  font-size: 20pt;
-  font-weight: bold;
-}
-
-.tower-team-controls {
-  flex: 1 1 0%;
-  min-height: 0;
-  display: flex;
-  justify-content: space-evenly;
-  gap: 18px;
-}
-
 #panel-actions {
   height: 88px;
   display: flex;
@@ -277,61 +246,6 @@ main {
 
 #commit:disabled {
   visibility: hidden;
-}
-
-.tower-input {
-  border-radius: var(--button-border-radius);
-  color: var(--text-active);
-  overflow: clip;
-  flex: 1 1 0%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: var(--alliance-action);
-  padding: 8px;
-}
-
-.tower-input .team-num {
-  flex: 1 1 0%;
-  min-height: 38px;
-  align-content: center;
-  padding: 0 0.2em;
-  border-radius: var(--button-border-radius);
-  background-color: var(--alliance-highlight);
-  color: var(--text-active);
-  font-size: clamp(20pt, 6vh, 36pt);
-  font-weight: bold;
-}
-
-.tower-input-button {
-  flex: 1 1 0%;
-  min-height: 0;
-  align-content: center;
-  border-radius: var(--button-border-radius);
-  padding: 0 0.2em;
-  background-color: var(--neutral-action);
-  color: var(--text-active);
-  font-size: clamp(14pt, 3.8vh, 24pt);
-  font-weight: bold;
-}
-
-.tower-input-button:disabled {
-  background-color: var(--neutral-inactive);
-  color: var(--text-inactive);
-}
-
-.tower-input:has(.tower-input-button:disabled) {
-  background-color: var(--alliance-inactive);
-}
-
-.tower-input:has(.tower-input-button:disabled) .team-num {
-  background-color: var(--alliance-inactive);
-  color: var(--text-inactive);
-}
-
-.tower-input-button[data-selected="true"] {
-  background-color: var(--alliance-highlight);
 }
 
 #fouls-button {

@@ -245,37 +245,3 @@ h3 {
 #scoreSummary .placeholder {
   visibility: hidden;
 }
-
-#scoreSummary .wide-row {
-  grid-column: span 3;
-}
-
-#scoreSummary .label {
-  text-align: right;
-  padding-right: 0.35vw;
-}
-
-#scoreSummary .tower-status {
-  min-width: 4.8vw;
-  padding: 0.05vw 0.2vw;
-  border-radius: 0.25vw;
-  color: #fff;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-#scoreSummary .tower-status[data-status="0"] {
-  background-color: #555;
-}
-
-#scoreSummary .tower-status[data-status="1"] {
-  background-color: #c1a313;
-}
-
-#scoreSummary .tower-status[data-status="2"] {
-  background-color: #286fbd;
-}
-
-#scoreSummary .tower-status[data-status="3"] {
-  background-color: #2a8c55;
-}

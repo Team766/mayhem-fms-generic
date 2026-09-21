@@ -16,36 +16,6 @@ Display that can be shown on a screen supplemental to one with the audience disp
   </head>
   <body>
     <div id="overlayCentering">
-      <div id="matchOverlayAux">
-        <div class="score-aux reversible-left" id="leftScoreAux">
-          <div class="score-fuel">
-            <span id="leftFuelNumerator"></span>
-            <span id="leftFuelDenominator"></span>
-          </div>
-          <div class="score-hub-active" id="leftHubActive">
-            <svg width="70" height="100">
-              <circle class="progress-guide" cx="35" cy="50" r="25" fill="none" stroke="white" stroke-width="2"/>
-              <circle class="active-progress" cx="35" cy="50" r="25" fill="none" stroke="white" stroke-width="5"
-                stroke-dasharray="158 158" stroke-dashoffset="5" transform="rotate(90, 35, 50)"/>
-              <text class="progress-time" x="35" y="52" text-anchor="middle" dominant-baseline="middle" fill="white"></text>
-            </svg>
-          </div>
-        </div>
-        <div class="score-aux reversible-right" id="rightScoreAux">
-          <div class="score-hub-active" id="rightHubActive">
-            <svg width="70" height="100">
-              <circle class="progress-guide" cx="35" cy="50" r="25" fill="none" stroke="white" stroke-width="2"/>
-              <circle class="active-progress" cx="35" cy="50" r="25" fill="none" stroke="white" stroke-width="5"
-                stroke-dasharray="158 158" stroke-dashoffset="-5" transform="rotate(90, 35, 50)"/>
-              <text class="progress-time" x="35" y="52" text-anchor="middle" dominant-baseline="middle" fill="white"></text>
-            </svg>
-          </div>
-          <div class="score-fuel">
-            <span id="rightFuelNumerator"></span>
-            <span id="rightFuelDenominator"></span>
-          </div>
-        </div>
-      </div>
       <div id="matchOverlayContainer">
         <div class="playoff-alliance" id="leftPlayoffAlliance"></div>
         <div id="matchOverlay">
@@ -61,12 +31,10 @@ Display that can be shown on a screen supplemental to one with the audience disp
                 <img class="avatar" id="leftTeam2Avatar" src=""/>
                 <img class="avatar" id="leftTeam3Avatar" src=""/>
               </div>
-              <div class="score-fields"></div>
               <div class="score-number" id="leftScoreNumber"></div>
             </div>
             <div class="score score-right reversible-right">
               <div class="score-number" id="rightScoreNumber"></div>
-              <div class="score-fields"></div>
               <div class="avatars">
                 <img class="avatar" id="rightTeam1Avatar" src=""/>
                 <img class="avatar" id="rightTeam2Avatar" src=""/>

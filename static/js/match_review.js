@@ -8,13 +8,7 @@ let matchResult;
 
 const ALLIANCES = ["red", "blue"];
 const NUM_ROBOTS = 3;
-const NUM_HUB_SHIFTS = 8;
 const SUMMARY_REFRESH_DELAY_MS = 150;
-const RANKING_POINT_SUMMARY_FIELDS = [
-  "EnergizedBonusRankingPoint",
-  "SuperchargedBonusRankingPoint",
-  "TraversalBonusRankingPoint",
-];
 
 let summaryRefreshTimer;
 let latestSummaryRequestId = 0;
@@ -42,18 +36,6 @@ const renderResults = function (alliance) {
   result.score = normalizeScore(result.score);
   result.cards = result.cards || {};
 
-  getInputElement(alliance, "HubWonAuto").prop("checked", result.score.Hub.WonAuto);
-  for (let i = 0; i < NUM_HUB_SHIFTS; i++) {
-    getInputElement(alliance, `HubShiftCount${i}`).val(result.score.Hub.ShiftCounts[i]);
-  }
-
-  for (let i = 0; i < NUM_ROBOTS; i++) {
-    const i1 = i + 1;
-
-    getInputElement(alliance, `AutoTowerStatuses${i1}`, result.score.AutoTowerStatuses[i]).prop("checked", true);
-    getInputElement(alliance, `EndgameTowerStatuses${i1}`, result.score.EndgameTowerStatuses[i]).prop("checked", true);
-  }
-
   renderFouls(alliance);
   renderCards(alliance);
 };
@@ -65,22 +47,6 @@ const updateResults = function (alliance) {
   $.each($("form").serializeArray(), function (k, v) {
     formData[v.name] = v.value;
   });
-
-  result.score.AutoTowerStatuses = [];
-  result.score.Hub = {
-    WonAuto: formData[`${alliance}HubWonAuto`] === "on",
-    ShiftCounts: [],
-  };
-  result.score.EndgameTowerStatuses = [];
-  for (let i = 0; i < NUM_HUB_SHIFTS; i++) {
-    result.score.Hub.ShiftCounts[i] = parseFormInt(formData[`${alliance}HubShiftCount${i}`]);
-  }
-  for (let i = 0; i < NUM_ROBOTS; i++) {
-    const i1 = i + 1;
-
-    result.score.AutoTowerStatuses[i] = parseFormInt(formData[`${alliance}AutoTowerStatuses${i1}`]);
-    result.score.EndgameTowerStatuses[i] = parseFormInt(formData[`${alliance}EndgameTowerStatuses${i1}`]);
-  }
 
   result.score.Fouls = [];
   for (let i = 0; formData[`${alliance}Foul${i}Index`]; i++) {
@@ -208,23 +174,8 @@ const getInputElement = function (alliance, name, value) {
 
 const normalizeScore = function (score) {
   score = score || {};
-  score.AutoTowerStatuses = normalizeArray(score.AutoTowerStatuses, NUM_ROBOTS, 0);
-  score.EndgameTowerStatuses = normalizeArray(score.EndgameTowerStatuses, NUM_ROBOTS, 0);
-  score.Hub = score.Hub || {};
-  score.Hub.WonAuto = !!score.Hub.WonAuto;
-  score.Hub.ShiftCounts = normalizeArray(score.Hub.ShiftCounts, NUM_HUB_SHIFTS, 0);
   score.Fouls = score.Fouls || [];
   return score;
-};
-
-const normalizeArray = function (array, length, defaultValue) {
-  array = array || [];
-  for (let i = 0; i < length; i++) {
-    if (array[i] === undefined || array[i] === null) {
-      array[i] = defaultValue;
-    }
-  }
-  return array;
 };
 
 const cloneTemplateElement = function (id) {
@@ -232,10 +183,6 @@ const cloneTemplateElement = function (id) {
 };
 
 const formatSummaryValue = function (field, value) {
-  if (RANKING_POINT_SUMMARY_FIELDS.includes(field)) {
-    return value ? '<span class="score-summary-rp text-success">&#x2611;</span>' :
-      '<span class="score-summary-rp text-danger">&#x2612;</span>';
-  }
   return value;
 };
 

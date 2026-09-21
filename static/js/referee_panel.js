@@ -132,18 +132,6 @@ const handleMatchTime = function (data) {
   $("#teamTitle").text(title)
 };
 
-const towerStatusNames = [
-  "None",
-  "Level 1",
-  "Level 2",
-  "Level 3",
-];
-
-const setTowerStatus = function (selector, status) {
-  $(selector).text(towerStatusNames[status]);
-  $(selector).attr("data-status", status);
-};
-
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
   for (const [teamId, card] of Object.entries(Object.assign(data.RedCards, data.BlueCards))) {
@@ -160,22 +148,6 @@ const handleRealtimeScore = function (data) {
       .then(svg => $("#foulList").html(svg));
   }
 
-  for (alliance of ["red", "blue"]) {
-    let score;
-    if (alliance === "red") {
-      score = data.Red.Score;
-    } else {
-      score = data.Blue.Score;
-    }
-
-    let scoreRoot = `${alliance}ScoreSummary`;
-    setTowerStatus(`#${scoreRoot} .team-1-auto-tower`, score.AutoTowerStatuses[0]);
-    setTowerStatus(`#${scoreRoot} .team-2-auto-tower`, score.AutoTowerStatuses[1]);
-    setTowerStatus(`#${scoreRoot} .team-3-auto-tower`, score.AutoTowerStatuses[2]);
-    setTowerStatus(`#${scoreRoot} .team-1-endgame-tower`, score.EndgameTowerStatuses[0]);
-    setTowerStatus(`#${scoreRoot} .team-2-endgame-tower`, score.EndgameTowerStatuses[1]);
-    setTowerStatus(`#${scoreRoot} .team-3-endgame-tower`, score.EndgameTowerStatuses[2]);
-  }
 }
 
 // Handles a websocket message to update the scoring commit status.

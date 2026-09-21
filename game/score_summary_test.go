@@ -36,13 +36,7 @@ func TestScoreSummaryDetermineMatchStatus(t *testing.T) {
 
 	redScoreSummary.Score = 12
 	redScoreSummary.NumOpponentMajorFouls = 11
-	redScoreSummary.AutoFuelPoints = 11
-	redScoreSummary.AutoTowerPoints = 5
-	redScoreSummary.TeleopTowerPoints = 6
 	blueScoreSummary.NumOpponentMajorFouls = 10
-	blueScoreSummary.AutoFuelPoints = 10
-	blueScoreSummary.AutoTowerPoints = 4
-	blueScoreSummary.TeleopTowerPoints = 6
 	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
 	assertMatchStatus(RedWonMatch, "TIEBREAK: MAJOR FOULS", redScoreSummary, blueScoreSummary, true)
 
@@ -51,22 +45,6 @@ func TestScoreSummaryDetermineMatchStatus(t *testing.T) {
 	assertMatchStatus(BlueWonMatch, "TIEBREAK: MAJOR FOULS", redScoreSummary, blueScoreSummary, true)
 
 	redScoreSummary.NumOpponentMajorFouls = 12
-	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
-	assertMatchStatus(RedWonMatch, "TIEBREAK: AUTO FUEL", redScoreSummary, blueScoreSummary, true)
-
-	blueScoreSummary.AutoFuelPoints = 12
-	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
-	assertMatchStatus(BlueWonMatch, "TIEBREAK: AUTO FUEL", redScoreSummary, blueScoreSummary, true)
-
-	redScoreSummary.AutoFuelPoints = 12
-	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
-	assertMatchStatus(RedWonMatch, "TIEBREAK: TOWER POINTS", redScoreSummary, blueScoreSummary, true)
-
-	blueScoreSummary.TeleopTowerPoints = 8
-	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
-	assertMatchStatus(BlueWonMatch, "TIEBREAK: TOWER POINTS", redScoreSummary, blueScoreSummary, true)
-
-	redScoreSummary.TeleopTowerPoints = 7
 	assertMatchStatus(TieMatch, "", redScoreSummary, blueScoreSummary, false)
 	assertMatchStatus(TieMatch, "TRUE TIE", redScoreSummary, blueScoreSummary, true)
 

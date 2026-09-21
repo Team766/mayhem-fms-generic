@@ -457,37 +457,6 @@ UI for configuring event settings.
               </div>
             </fieldset>
             <fieldset class="mb-4">
-              <legend>Nexus</legend>
-              <p>Automatically populate practice and playoff match lineups from Nexus. Uses the event code
-                configured on the event tab.</p>
-              <p>When enabled, Nexus is the source of truth for lineups and they can not
-                be overridden by the scorekeeper. To make changes, update the lineup in Nexus or disable this setting.</p>
-              <div class="row mb-5">
-                <label class="col-lg-8 control-label" for="nexusEnabled">Enable Nexus lineups</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="nexusEnabled" name="nexusEnabled" {{if .NexusEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <p><b>Nexus AutoQueue</b>: The queuing status in Nexus can be automatically updated when match scores are
-                committed. To generate an AutoQueue key, the event code must be set and you must log in with a Nexus
-                account that has the lead queuer role.</p>
-              <div class="row mb-3">
-                <label class="col-lg-8 control-label" for="nexusAutoQueueEnabled">Enable Nexus AutoQueue</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="nexusAutoQueueEnabled" name="nexusAutoQueueEnabled" {{if .NexusAutoQueueEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Nexus AutoQueue key</label>
-                <div class="col-lg-6">
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="nexusAutoQueueKeyInput" name="nexusAutoQueueKey" value="{{.NexusAutoQueueKey}}">
-                    {{if .EventCode}}<a class="btn btn-outline-primary" href="{{.NexusBaseUrl}}/event/{{.EventCode}}/auto-queue?fms=true" target="_blank" rel="opener">Generate</a>{{end}}
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-            <fieldset class="mb-4">
               <legend>Match Video Recording</legend>
               <p>
                 If you are using a Blackmagic HyperDeck device to record match video, enter the device IP address(es)
@@ -781,17 +750,6 @@ UI for configuring event settings.
         }
       });
     });
-  });
-
-  // Handle Nexus AutoQueue key generation.
-  window.addEventListener('message', (event) => {
-    if(event.origin !== '{{.NexusBaseUrl}}') return;
-
-    const key = event.data;
-    if(key) {
-      $('#nexusAutoQueueKeyInput').val(key);
-      $('#settingsForm').submit();
-    }
   });
 </script>
 {{end}}

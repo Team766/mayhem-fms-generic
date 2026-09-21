@@ -62,8 +62,6 @@ type EventSettings struct {
 	SCCUpCommands                    string
 	SCCDownCommands                  string
 	PlcAddress                       string
-	LedControllerAddress             string
-	LedUniverseMode                  string
 	AdminPassword                    string
 	UseLiteUdpPort                   bool
 	BlackmagicAddresses              string
@@ -127,7 +125,6 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		ApChannel:                  36,
 		SCCUpCommands:              strings.Join(sccDefaultUpCommands, "\n"),
 		SCCDownCommands:            strings.Join(sccDefaultDownCommands, "\n"),
-		LedUniverseMode:            "single",
 		CompanionAddress:           "",
 		AutoDurationSec:            game.MatchTiming.AutoDurationSec,
 		PauseDurationSec:           game.MatchTiming.PauseDurationSec,

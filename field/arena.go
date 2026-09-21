@@ -8,7 +8,6 @@ package field
 import (
 	"fmt"
 	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/led"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/network"
 	"github.com/Team254/cheesy-arena/partner"
@@ -38,6 +37,7 @@ const (
 	scheduledBreakDelaySec   = 5
 	earlyLateThresholdMin    = 2.5
 	MaxMatchGapMin           = 20
+	hubLightWarningSec       = 3
 )
 
 // Progression of match states.
@@ -66,7 +66,6 @@ type Arena struct {
 	CompanionClient  *partner.CompanionClient
 	AllianceStations map[string]*AllianceStation
 	Displays         map[string]*Display
-	Leds             *led.Controller
 	ScoringPanelRegistry
 	ArenaNotifiers
 	MatchState
@@ -134,8 +133,6 @@ func NewArena(dbPath string) (*Arena, error) {
 	arena.AllianceStations["B3"] = new(AllianceStation)
 
 	arena.Displays = make(map[string]*Display)
-
-	arena.Leds = led.NewController()
 
 	var err error
 	arena.Database, err = model.OpenDatabase(dbPath)
@@ -206,10 +203,6 @@ func (arena *Arena) LoadSettings() error {
 		sccDownCommands,
 	)
 	arena.Plc.SetAddress(settings.PlcAddress)
-	if err = arena.Leds.SetAddress(settings.LedControllerAddress); err != nil {
-		return err
-	}
-	arena.Leds.SetUniverseMode(settings.LedUniverseMode)
 	arena.BlackmagicClient = partner.NewBlackmagicClient(settings.BlackmagicAddresses)
 
 	// Initialize Companion client with event configurations
@@ -621,10 +614,6 @@ func (arena *Arena) SetAllianceStationDisplayMode(mode string) {
 	if arena.AllianceStationDisplayMode != mode {
 		arena.AllianceStationDisplayMode = mode
 		arena.AllianceStationDisplayModeNotifier.Notify()
-
-		if mode == "logo" {
-			arena.Leds.SetMode(led.RedMode, led.BlueMode)
-		}
 	}
 }
 
@@ -763,10 +752,6 @@ func (arena *Arena) Update() {
 
 	// Handle field sensors/lights/actuators.
 	arena.handlePlcInputOutput()
-
-	// Update the hub LEDs after PLC input so that a field e-stop abort is reflected in the same cycle, before
-	// lastMatchState is updated (otherwise the end-of-match lighting transition would be missed).
-	arena.updateHubLeds(currentTime)
 
 	// Log after PLC input so each sample includes the latest physical DS Ethernet state.
 	arena.logTeamSnapshots()
@@ -1252,7 +1237,6 @@ func (arena *Arena) handlePlcInputOutput() {
 			arena.FieldVolunteers = false
 			arena.FieldReset = false
 			arena.Plc.SetFieldResetLight(false)
-			arena.Leds.SetMode(led.OffMode, led.OffMode)
 			if arena.CurrentMatch.FieldReadyAt.IsZero() {
 				arena.CurrentMatch.FieldReadyAt = time.Now()
 			}
@@ -1371,7 +1355,6 @@ func (arena *Arena) SignalVolunteers() {
 	arena.AllianceStationDisplayMode = "signalCount"
 	arena.AllianceStationDisplayModeNotifier.Notify()
 	arena.Plc.SetFieldResetLight(false)
-	arena.Leds.SetMode(led.PurpleMode, led.PurpleMode)
 }
 
 // Set the field lights to green, if not in a match.
@@ -1389,7 +1372,6 @@ func (arena *Arena) SignalReset() {
 	arena.AllianceStationDisplayMode = "fieldReset"
 	arena.AllianceStationDisplayModeNotifier.Notify()
 	arena.Plc.SetFieldResetLight(true)
-	arena.Leds.SetMode(led.GreenMode, led.GreenMode)
 }
 
 func (arena *Arena) handleSounds(matchTimeSec float64) {

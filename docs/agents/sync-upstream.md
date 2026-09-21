@@ -43,7 +43,7 @@ There are two modes. Pick by distance from the checkpoint.
 3. **Strip the season game and LEDs** down to the neutral seam. One commit, same pull request; the PR should be almost entirely deletions. The seam file allowlist is in `docs/DEVELOPMENT.md`; everything game-specific outside it (arena hooks, PLC game I/O, LED package, settings fields, sounds) goes.
 4. **Apply the base features**, one pull request each, from `docs/DEVELOPMENT.md` "Feature list":
    1. 2v2 mode, following `docs/TwoVTwo.md` (invariants first, then touchpoints; new upstream screens need handling too).
-   2. M-Ayhem PLC wire map.
+   2. M-Ayhem Arduino PLC compatibility (`docs/DEVELOPMENT.md`, "PLC"): remove the FTA-ready start condition and badge, keep the signal-address guard test passing.
    3. Any other listed feature.
    Carry the previous base's implementation forward where it still fits; re-implement against the new upstream code where it does not. Port the feature's tests with it.
 5. **Hand off to `apply-game`** with the current year's spec. Separate pull request.
@@ -53,7 +53,7 @@ There are two modes. Pick by distance from the checkpoint.
 
 1. List the range: `git log --reverse --date=short --format='%n%h %ad %s' --name-only <checkpoint>..<upstream ref>`, with the checkpoint from `UPSTREAM.md`.
 2. Classify every commit: **port** (game-agnostic), **skip-game** (touches only the season game, LEDs, or a stripped integration), **partial** (mixed: port the generic half). Write the table into the PR description and the skips into `UPSTREAM.md`.
-3. Port in upstream order, one commit per upstream commit where practical, message `Port upstream <sha>: <subject>`. For each ported commit ask: does it add a screen, a loop over alliance stations, or a PLC signal? If so it needs 2v2 handling (`docs/TwoVTwo.md`) or a wire-map entry.
+3. Port in upstream order, one commit per upstream commit where practical, message `Port upstream <sha>: <subject>`. For each ported commit ask: does it add a screen, a loop over alliance stations, or a PLC signal? If so it needs 2v2 handling (`docs/TwoVTwo.md`), or a check against the Arduino's fixed addresses (`plc/mayhem_arduino_test.go`).
 4. Verify, then move the checkpoint to the last commit you **reviewed** (not the last you ported).
 
 If classification shows the season game was swapped or more than about a third of the commits are `partial`, stop and switch to `regenerate`.
@@ -66,7 +66,7 @@ All must pass before the checkpoint moves. Paste the results into the PR.
 - Nothing stripped is left: `git grep -n -i -E 'twitch|nexus|tbaclient|tbapublish|teamsign|team_sign|ledcontroller|/api/scores|FoulPointsAgainst|cheesy-arena-lite|<this season game words>' -- '*.go' '*.html' '*.js' '*.css' ':!docs' ':!specs' ':!static/js/lib'` prints nothing except `TbaMatchKey`. Take the season's game words from upstream's `game/score.go` for the release you synced to.
 - Diff review against upstream: `git diff <upstream sha> -- . ':!docs' ':!specs'` contains only strip-list deletions, feature-list additions and placeholder-game seam files. Anything else is a defect.
 - 2v2 checklist and 3v3 flip-back check from `docs/TwoVTwo.md`.
-- PLC unit tests, including the wire-map guard test. Bench test with the Arduino when hardware is available; say so if it was not run.
+- PLC unit tests, including the Arduino signal-address guard test. Bench test with the Arduino when hardware is available; say so if it was not run.
 - Run the server (`go build && ./cheesy-arena -dev`), play one placeholder-game match end to end in 3v3 and one in 2v2: scoring panels, referee foul, commit, audience final score, rankings, edit result. Attach screenshots.
 
 ## Report

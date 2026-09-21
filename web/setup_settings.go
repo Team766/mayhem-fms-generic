@@ -114,9 +114,6 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.SelectionShowUnpickedTeams = r.PostFormValue("selectionShowUnpickedTeams") == "on"
 	eventSettings.EventCode = r.PostFormValue("eventCode")
 	eventSettings.AutoAudienceDisplayEnabled = r.PostFormValue("autoAudienceDisplayEnabled") == "on"
-	eventSettings.NexusEnabled = r.PostFormValue("nexusEnabled") == "on"
-	eventSettings.NexusAutoQueueEnabled = r.PostFormValue("nexusAutoQueueEnabled") == "on"
-	eventSettings.NexusAutoQueueKey = r.PostFormValue("nexusAutoQueueKey")
 	eventSettings.NetworkSecurityEnabled = r.PostFormValue("networkSecurityEnabled") == "on"
 	eventSettings.ApAddress = r.PostFormValue("apAddress")
 	eventSettings.ApPassword = r.PostFormValue("apPassword")
@@ -389,8 +386,7 @@ func (web *Web) renderSettingsWithStatus(
 		*model.EventSettings
 		ErrorMessage      string
 		ActiveSettingsTab string
-		NexusBaseUrl      string
-	}{web.arena.EventSettings, errorMessage, activeSettingsTab, web.arena.NexusClient.BaseUrl}
+	}{web.arena.EventSettings, errorMessage, activeSettingsTab}
 	if statusCode != http.StatusOK {
 		w.WriteHeader(statusCode)
 	}

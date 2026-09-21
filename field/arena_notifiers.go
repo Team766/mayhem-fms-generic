@@ -203,9 +203,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		}
 	}
 
-	// Don't allow manual substitution of practice/playoff teams when they would be automatically overwritten by Nexus.
-	var allowManualSubstitution = arena.CurrentMatch.ShouldAllowSubstitution() &&
-		!(arena.EventSettings.NexusEnabled && arena.CurrentMatch.ShouldAllowNexusSubstitution())
+	var allowManualSubstitution = arena.CurrentMatch.ShouldAllowSubstitution()
 
 	return &struct {
 		Match              *model.Match

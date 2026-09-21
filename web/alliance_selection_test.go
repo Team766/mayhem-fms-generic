@@ -103,6 +103,61 @@ func TestAllianceSelection(t *testing.T) {
 	assert.False(t, team.YellowCard)
 }
 
+func TestAllianceSelectionTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	web.arena.EventSettings.PlayoffType = model.SingleEliminationPlayoff
+	web.arena.EventSettings.NumPlayoffAlliances = 2
+	web.arena.EventSettings.SelectionRound3Order = "L" // Must not push 2v2 alliances to four teams.
+	for i := 1; i <= 4; i++ {
+		web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+	}
+
+	// Starting alliance selection in 2v2 creates alliances of two, with no third or backup round.
+	recorder := web.postHttpResponse("/alliance_selection/start", "")
+	assert.Equal(t, 303, recorder.Code)
+	if assert.Equal(t, 2, len(web.arena.AllianceSelectionAlliances)) {
+		assert.Equal(t, 2, len(web.arena.AllianceSelectionAlliances[0].TeamIds))
+	}
+
+	// Autofocus should never advance past the second (last) column.
+	nextRow, nextCol := web.determineNextCell()
+	assert.Equal(t, 0, nextRow)
+	assert.Equal(t, 0, nextCol)
+
+	recorder = web.postHttpResponse(
+		"/alliance_selection", "selection0_0=101&selection0_1=102&selection1_0=103&selection1_1=104",
+	)
+	assert.Equal(t, 303, recorder.Code)
+	nextRow, nextCol = web.determineNextCell()
+	assert.Equal(t, -1, nextRow)
+	assert.Equal(t, -1, nextCol)
+
+	// Finalizing must leave the third lineup slot at 0 and create playoff matches with no third team.
+	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
+	assert.Equal(t, 303, recorder.Code)
+	alliances, err := web.arena.Database.GetAllAlliances()
+	assert.Nil(t, err)
+	if assert.Equal(t, 2, len(alliances)) {
+		assert.Equal(t, []int{101, 102}, alliances[0].TeamIds)
+		assert.Equal(t, [3]int{102, 101, 0}, alliances[0].Lineup)
+	}
+	matches, err := web.arena.Database.GetMatchesByType(model.Playoff, false)
+	assert.Nil(t, err)
+	if assert.NotEmpty(t, matches) {
+		var sawRealTeam bool
+		for _, match := range matches {
+			assert.Equal(t, 0, match.Red3)
+			assert.Equal(t, 0, match.Blue3)
+			if match.Red1 != 0 || match.Red2 != 0 || match.Blue1 != 0 || match.Blue2 != 0 {
+				sawRealTeam = true
+			}
+		}
+		assert.True(t, sawRealTeam, "expected at least one playoff match to already have real teams assigned")
+	}
+}
+
 func TestAllianceSelectionErrors(t *testing.T) {
 	web := setupTestWeb(t)
 

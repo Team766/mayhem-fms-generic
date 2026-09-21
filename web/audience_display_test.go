@@ -104,7 +104,9 @@ func TestAudienceDisplayWebsocket(t *testing.T) {
 			Fouls: []game.Foul{{FoulId: 1, IsMajor: false}, {FoulId: 2, IsMajor: false}, {FoulId: 3, IsMajor: false}},
 		},
 		BlueScore: &game.Score{
-			Fouls: []game.Foul{{FoulId: 4, IsMajor: true}},
+			// Worth the same 15 points as red's three minor fouls, so the match is tied and the major-foul
+			// tiebreaker decides it.
+			Fouls: []game.Foul{{FoulId: 4, IsMajor: true}, {FoulId: 5, IsMajor: false}},
 		},
 		RedCards:  map[string]string{},
 		BlueCards: map[string]string{},

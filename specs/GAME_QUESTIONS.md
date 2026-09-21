@@ -38,6 +38,8 @@ Status: `open`, `answered` (spec updated), `n/a`.
 | 30 | Is this export the final post-kickoff manual? It still says values may change before the September kickoff. | numbers as exported on 2026-09-20 |  | open |
 | 31 | Logos (`game-logo.png`, `blinds-logo.png`) are not supplied. | keep the existing logos until supplied |  | open |
 | 32 | G401's text is cut off in the manual ("during AUTO and"). | the shortened text in section 6. |  | open |
+| 33 | MA2604 (hoarding) is a major foul that repeats every 10 seconds. A long hoard could swing a match by 30 points or more. Is that intended, or should repeats be capped or be minor? | as written in the manual: major (10), a separate foul for each repeat |  | open |
+| 34 | The Toss cue plays 20 s before the end and needs a sound. Who supplies `toss.wav`? | placeholder: a copy of the stock resume sound |  | open |
 
 ## Event format (not part of the game spec)
 

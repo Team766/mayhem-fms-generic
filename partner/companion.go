@@ -24,7 +24,6 @@ const (
 	EventShowOverlay       CompanionEvent = "showOverlay"
 	EventMatchStart        CompanionEvent = "matchStart"
 	EventTeleopStart       CompanionEvent = "teleopStart"
-	EventEndgameStart      CompanionEvent = "endgameStart"
 	EventMatchEnd          CompanionEvent = "matchEnd"
 	EventShowFinalScore    CompanionEvent = "showFinalScore"
 	EventAllianceSelection CompanionEvent = "allianceSelection"

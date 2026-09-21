@@ -19,7 +19,6 @@ func TestUniqueMatchSounds(t *testing.T) {
 			"start",
 			"end",
 			"resume",
-			"shift_change",
 			"warning",
 			"abort",
 			"match_result",
@@ -29,7 +28,7 @@ func TestUniqueMatchSounds(t *testing.T) {
 		},
 		matchSoundNames(uniqueSounds),
 	)
-	assert.Len(t, uniqueSounds, 10)
+	assert.Len(t, uniqueSounds, 9)
 	assert.Same(t, MatchSounds[0], uniqueSounds[0])
 	assert.Same(t, MatchSounds[1], uniqueSounds[1])
 	assert.Same(t, MatchSounds[3], uniqueSounds[3])

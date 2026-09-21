@@ -9,18 +9,12 @@ import (
 func TestGetTeleopDurationSec(t *testing.T) {
 	assert.Equal(t, 140, GetTeleopDurationSec())
 
-	originalTransitionShiftDurationSec := MatchTiming.TransitionShiftDurationSec
-	originalShiftDurationSec := MatchTiming.ShiftDurationSec
-	originalEndgameDurationSec := MatchTiming.EndgameDurationSec
+	originalTeleopDurationSec := MatchTiming.TeleopDurationSec
 	defer func() {
-		MatchTiming.TransitionShiftDurationSec = originalTransitionShiftDurationSec
-		MatchTiming.ShiftDurationSec = originalShiftDurationSec
-		MatchTiming.EndgameDurationSec = originalEndgameDurationSec
+		MatchTiming.TeleopDurationSec = originalTeleopDurationSec
 	}()
 
-	MatchTiming.TransitionShiftDurationSec = 8
-	MatchTiming.ShiftDurationSec = 20
-	MatchTiming.EndgameDurationSec = 18
+	MatchTiming.TeleopDurationSec = 106
 
 	assert.Equal(t, 106, GetTeleopDurationSec())
 }

@@ -8,11 +8,9 @@ package field
 import "github.com/Team254/cheesy-arena/game"
 
 type RealtimeScore struct {
-	CurrentScore       game.Score
-	Cards              map[string]string
-	FoulsCommitted     bool
-	ActiveRemainingSec int
-	ActiveDurationSec  int
+	CurrentScore   game.Score
+	Cards          map[string]string
+	FoulsCommitted bool
 }
 
 func NewRealtimeScore() *RealtimeScore {

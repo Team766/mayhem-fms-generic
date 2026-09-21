@@ -6,23 +6,13 @@
 package game
 
 type ScoreSummary struct {
-	AutoFuelPoints                int
-	AutoTowerPoints               int
-	TeleopFuelPoints              int
-	TeleopTowerPoints             int
-	NumFuel                       int
-	NumFuelPostMatch              int
-	NumFuelGoal                   int
-	MatchPoints                   int
-	PostMatchPoints               int
-	FoulPoints                    int
-	Score                         int
-	PlayoffDq                     bool
-	EnergizedBonusRankingPoint    bool
-	SuperchargedBonusRankingPoint bool
-	TraversalBonusRankingPoint    bool
-	BonusRankingPoints            int
-	NumOpponentMajorFouls         int
+	MatchPoints           int
+	PostMatchPoints       int
+	FoulPoints            int
+	Score                 int
+	PlayoffDq             bool
+	BonusRankingPoints    int
+	NumOpponentMajorFouls int
 }
 
 type MatchStatus int
@@ -62,16 +52,6 @@ func DetermineMatchStatus(
 			redScoreSummary.NumOpponentMajorFouls, blueScoreSummary.NumOpponentMajorFouls,
 		); status != TieMatch {
 			return status, "TIEBREAK: MAJOR FOULS"
-		}
-		status := comparePoints(redScoreSummary.AutoFuelPoints, blueScoreSummary.AutoFuelPoints)
-		if status != TieMatch {
-			return status, "TIEBREAK: AUTO FUEL"
-		}
-		if status = comparePoints(
-			redScoreSummary.AutoTowerPoints+redScoreSummary.TeleopTowerPoints,
-			blueScoreSummary.AutoTowerPoints+blueScoreSummary.TeleopTowerPoints,
-		); status != TieMatch {
-			return status, "TIEBREAK: TOWER POINTS"
 		}
 		return TieMatch, "TRUE TIE"
 	}

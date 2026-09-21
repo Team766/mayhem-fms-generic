@@ -35,8 +35,16 @@ Display shown on the audience screen overlayed over the video.
                 {{end}}
               </div>
               <div class="score-number" id="leftScoreNumber"></div>
+              <div class="score-number score-stats">
+                <div><span id="leftTreasure"></span> Treasure</div>
+                <div><span id="leftShelf"></span> Shelf</div>
+              </div>
             </div>
             <div class="score score-right reversible-right">
+              <div class="score-number score-stats">
+                <div><span id="rightTreasure"></span> Treasure</div>
+                <div><span id="rightShelf"></span> Shelf</div>
+              </div>
               <div class="score-number" id="rightScoreNumber"></div>
               <div class="avatars">
                 <img class="avatar" id="rightTeam1Avatar" src=""/>
@@ -123,27 +131,51 @@ Display shown on the audience screen overlayed over the video.
               </div>
             </div>
             <div class="final-breakdown" id="leftFinalBreakdown">
+              <div id="leftFinalLeavePoints"></div>
+              <div id="leftFinalAutoBalancePoints"></div>
+              <div id="leftFinalAutoTreasurePoints"></div>
+              <div id="leftFinalTeleopTreasurePoints"></div>
+              <div id="leftFinalEndgamePoints"></div>
+              <div id="leftFinalTossPoints"></div>
               <div id="leftFinalFoulPoints"></div>
               <div class="playoff-hidden-field">
-                <div id="leftFinalRankingPoints"></div>
+                <div id="leftFinalAutonRankingPoint"></div>
+                <div id="leftFinalScoringRankingPoint"></div>
+                <div id="leftFinalEndgameRankingPoint"></div>
               </div>
               <div class="playoff-only-field">
                 <div id="leftFinalWins"></div>
               </div>
             </div>
             <div class="final-breakdown" id="centerFinalBreakdown">
+              <div>Leave</div>
+              <div>Auto Balance</div>
+              <div>Auto Treasure</div>
+              <div>Teleop Treasure</div>
+              <div>Endgame</div>
+              <div>Toss</div>
               <div>Foul</div>
               <div class="playoff-hidden-field">
-                <div>Ranking Points</div>
+                <div>Auton RP</div>
+                <div>Scoring RP</div>
+                <div>Endgame RP</div>
               </div>
               <div class="playoff-only-field">
                 <div>Wins</div>
               </div>
             </div>
             <div class="final-breakdown" id="rightFinalBreakdown">
+              <div id="rightFinalLeavePoints"></div>
+              <div id="rightFinalAutoBalancePoints"></div>
+              <div id="rightFinalAutoTreasurePoints"></div>
+              <div id="rightFinalTeleopTreasurePoints"></div>
+              <div id="rightFinalEndgamePoints"></div>
+              <div id="rightFinalTossPoints"></div>
               <div id="rightFinalFoulPoints"></div>
               <div class="playoff-hidden-field">
-                <div id="rightFinalRankingPoints"></div>
+                <div id="rightFinalAutonRankingPoint"></div>
+                <div id="rightFinalScoringRankingPoint"></div>
+                <div id="rightFinalEndgameRankingPoint"></div>
               </div>
               <div class="playoff-only-field">
                 <div id="rightFinalWins"></div>

@@ -155,8 +155,9 @@ func TestCommitTiebreak(t *testing.T) {
 	match, _ = web.arena.Database.GetMatchById(1)
 	assert.Equal(t, game.TieMatch, match.Status)
 
-	// Change the score to still be equal nominally but trigger the tiebreaker criteria.
-	matchResult.BlueScore.Fouls = []game.Foul{{FoulId: 7, IsMajor: true}}
+	// Change the score to still be equal nominally but trigger the tiebreaker criteria. Blue's one major and one minor
+	// foul are worth the same 10 + 5 = 15 points as red's three minor fouls, but only blue committed a major foul.
+	matchResult.BlueScore.Fouls = []game.Foul{{FoulId: 7, IsMajor: true}, {FoulId: 8, IsMajor: false}}
 
 	// Sanity check that the test scores are equal; they will need to be updated accordingly for each new game.
 	assert.Equal(

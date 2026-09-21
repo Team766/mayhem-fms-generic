@@ -64,7 +64,7 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 		"Rank":   13,
 		"Team":   20,
 		"RP":     24,
-		"Match":  24,
+		"Score":  24,
 		"W-L-T":  26,
 		"DQ":     20,
 		"Played": 20,
@@ -81,7 +81,7 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 	pdf.CellFormat(colWidths["Rank"], rowHeight, "Rank", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Team", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["RP"], rowHeight, "RP", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["Score"], rowHeight, "Score", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["W-L-T"], rowHeight, "W-L-T", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["DQ"], rowHeight, "DQ", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Played"], rowHeight, "Played", "1", 1, "C", true, 0, "")
@@ -92,7 +92,7 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 		pdf.SetFont("Arial", "", 10)
 		pdf.CellFormat(colWidths["Team"], rowHeight, strconv.Itoa(ranking.TeamId), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["RP"], rowHeight, strconv.Itoa(ranking.RankingPoints), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(colWidths["Match"], rowHeight, strconv.Itoa(ranking.MatchPoints), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths["Score"], rowHeight, strconv.Itoa(ranking.ScorePoints), "1", 0, "C", false, 0, "")
 		record := fmt.Sprintf("%d-%d-%d", ranking.Wins, ranking.Losses, ranking.Ties)
 		pdf.CellFormat(colWidths["W-L-T"], rowHeight, record, "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["DQ"], rowHeight, strconv.Itoa(ranking.Disqualifications), "1", 0, "C", false, 0, "")
@@ -453,7 +453,7 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 	pdf.SetFillColor(220, 220, 220)
 	pdf.CellFormat(tableWidth, rowHeight, "Match Schedule - "+web.arena.EventSettings.Name, "", 1, "C", false, 0, "")
 	pdf.CellFormat(colWidths["Time"], rowHeight, "Time", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["Score"], rowHeight, "Score", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Red 1", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Red 2", "1", 0, "C", true, 0, "")
 	if !twoVsTwo {
@@ -901,7 +901,7 @@ func (web *Web) cyclePdfReportHandler(w http.ResponseWriter, r *http.Request) {
 	pdf.CellFormat(
 		195, rowHeight, matchType.String()+" Cycle Time - "+web.arena.EventSettings.Name, "", 1, "C", false, 0, "",
 	)
-	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["Score"], rowHeight, "Score", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Time"], rowHeight, "Scheduled Time", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Time2"], rowHeight, "Ready", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Time2"], rowHeight, "Started", "1", 0, "C", true, 0, "")

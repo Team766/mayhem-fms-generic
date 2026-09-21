@@ -18,26 +18,40 @@ import (
 )
 
 const (
-	schedulesDir  = "schedules"
-	TeamsPerMatch = 6
+	schedulesDir       = "schedules"
+	TeamsPerMatch      = 6
+	TeamsPerMatch2v2   = 4
+	twoVsTwoFilePrefix = "2p_"
 )
 
 var schedulePerm = rand.Perm
 
-// Creates a random schedule for the given parameters and returns it as a list of matches.
+// Creates a random schedule for the given parameters and returns it as a list of matches. In 2v2 mode, the
+// schedule is loaded from a "2p_"-prefixed template with four teams per match; the third slot of each
+// alliance is left at team 0 with no surrogate flag.
 func BuildRandomSchedule(
-	teams []model.Team, scheduleBlocks []model.ScheduleBlock, matchType model.MatchType,
+	teams []model.Team, scheduleBlocks []model.ScheduleBlock, matchType model.MatchType, twoVsTwo bool,
 ) ([]model.Match, error) {
 	// Load the anonymized, pre-randomized match schedule for the given number of teams and matches per team.
+	teamsPerMatch := TeamsPerMatch
+	if twoVsTwo {
+		teamsPerMatch = TeamsPerMatch2v2
+	}
 	numTeams := len(teams)
 	numMatches := countMatches(scheduleBlocks)
-	matchesPerTeam := int(float32(numMatches*TeamsPerMatch) / float32(numTeams))
+	matchesPerTeam := int(float32(numMatches*teamsPerMatch) / float32(numTeams))
 
 	// Adjust the number of matches to remove any excess from non-perfect block scheduling.
-	numMatches = int(math.Ceil(float64(numTeams) * float64(matchesPerTeam) / TeamsPerMatch))
+	numMatches = int(math.Ceil(float64(numTeams) * float64(matchesPerTeam) / float64(teamsPerMatch)))
 
+	filePrefix := ""
+	if twoVsTwo {
+		filePrefix = twoVsTwoFilePrefix
+	}
 	file, err := os.Open(
-		fmt.Sprintf("%s/%d_%d.csv", filepath.Join(model.BaseDir, schedulesDir), numTeams, matchesPerTeam),
+		fmt.Sprintf(
+			"%s/%s%d_%d.csv", filepath.Join(model.BaseDir, schedulesDir), filePrefix, numTeams, matchesPerTeam,
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("No schedule template exists for %d teams and %d matches", numTeams, matchesPerTeam)
@@ -80,18 +94,14 @@ func BuildRandomSchedule(
 		} else {
 			return nil, fmt.Errorf("invalid match type %q", matchType)
 		}
-		matches[i].Red1 = teams[teamShuffle[anonMatch[0]-1]].Id
-		matches[i].Red1IsSurrogate = anonMatch[1] == 1
-		matches[i].Red2 = teams[teamShuffle[anonMatch[2]-1]].Id
-		matches[i].Red2IsSurrogate = anonMatch[3] == 1
-		matches[i].Red3 = teams[teamShuffle[anonMatch[4]-1]].Id
-		matches[i].Red3IsSurrogate = anonMatch[5] == 1
-		matches[i].Blue1 = teams[teamShuffle[anonMatch[6]-1]].Id
-		matches[i].Blue1IsSurrogate = anonMatch[7] == 1
-		matches[i].Blue2 = teams[teamShuffle[anonMatch[8]-1]].Id
-		matches[i].Blue2IsSurrogate = anonMatch[9] == 1
-		matches[i].Blue3 = teams[teamShuffle[anonMatch[10]-1]].Id
-		matches[i].Blue3IsSurrogate = anonMatch[11] == 1
+		matches[i].Red1, matches[i].Red1IsSurrogate = scheduleTeam(teams, teamShuffle, anonMatch[0], anonMatch[1])
+		matches[i].Red2, matches[i].Red2IsSurrogate = scheduleTeam(teams, teamShuffle, anonMatch[2], anonMatch[3])
+		matches[i].Red3, matches[i].Red3IsSurrogate = scheduleTeam(teams, teamShuffle, anonMatch[4], anonMatch[5])
+		matches[i].Blue1, matches[i].Blue1IsSurrogate = scheduleTeam(teams, teamShuffle, anonMatch[6], anonMatch[7])
+		matches[i].Blue2, matches[i].Blue2IsSurrogate = scheduleTeam(teams, teamShuffle, anonMatch[8], anonMatch[9])
+		matches[i].Blue3, matches[i].Blue3IsSurrogate = scheduleTeam(
+			teams, teamShuffle, anonMatch[10], anonMatch[11],
+		)
 		matches[i].TbaMatchKey.MatchNumber = i + 1
 	}
 
@@ -105,6 +115,15 @@ func BuildRandomSchedule(
 	}
 
 	return matches, nil
+}
+
+// Resolves one anonymized (team-index, surrogate-flag) column pair to a real team ID and surrogate flag. A
+// team index of 0 (the empty third slot of a 2v2 template) resolves to team 0 with no surrogate flag.
+func scheduleTeam(teams []model.Team, teamShuffle []int, teamIndex, surrogateFlag int) (int, bool) {
+	if teamIndex == 0 {
+		return 0, false
+	}
+	return teams[teamShuffle[teamIndex-1]].Id, surrogateFlag == 1
 }
 
 // Returns the total number of matches that can be run within the given schedule blocks.

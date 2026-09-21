@@ -383,8 +383,12 @@ func (web *Web) scheduleCsvReportHandler(w http.ResponseWriter, r *http.Request)
 		handleWebErr(w, err)
 		return
 	}
+	data := struct {
+		Matches      []model.Match
+		TwoVsTwoMode bool
+	}{matches, web.arena.EventSettings.TwoVsTwoMode}
 	var buf bytes.Buffer
-	err = template.ExecuteTemplate(&buf, "schedule.csv", matches)
+	err = template.ExecuteTemplate(&buf, "schedule.csv", data)
 	if err != nil {
 		handleWebErr(w, err)
 		return
@@ -422,14 +426,24 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 		handleWebErr(w, err)
 		return
 	}
+	twoVsTwo := web.arena.EventSettings.TwoVsTwoMode
+	teamsPerMatch := tournament.TeamsPerMatch
+	if twoVsTwo {
+		teamsPerMatch = tournament.TeamsPerMatch2v2
+	}
 	matchesPerTeam := 0
 	if len(teams) > 0 {
-		matchesPerTeam = len(matches) * tournament.TeamsPerMatch / len(teams)
+		matchesPerTeam = len(matches) * teamsPerMatch / len(teams)
 	}
 
 	// The widths of the table columns in mm, stored here so that they can be referenced for each row.
 	colWidths := map[string]float64{"Time": 35, "Match": 40, "Team": 20}
 	rowHeight := 6.5
+	numTeamCols := 6
+	if twoVsTwo {
+		numTeamCols = 4
+	}
+	tableWidth := colWidths["Time"] + colWidths["Match"] + float64(numTeamCols)*colWidths["Team"]
 
 	pdf := newReportPdf()
 	pdf.AddPage()
@@ -437,15 +451,23 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 	// Render table header row.
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetFillColor(220, 220, 220)
-	pdf.CellFormat(195, rowHeight, "Match Schedule - "+web.arena.EventSettings.Name, "", 1, "C", false, 0, "")
+	pdf.CellFormat(tableWidth, rowHeight, "Match Schedule - "+web.arena.EventSettings.Name, "", 1, "C", false, 0, "")
 	pdf.CellFormat(colWidths["Time"], rowHeight, "Time", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Red 1", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Red 2", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Team"], rowHeight, "Red 3", "1", 0, "C", true, 0, "")
+	if !twoVsTwo {
+		pdf.CellFormat(colWidths["Team"], rowHeight, "Red 3", "1", 0, "C", true, 0, "")
+	}
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Blue 1", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Team"], rowHeight, "Blue 2", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Team"], rowHeight, "Blue 3", "1", 1, "C", true, 0, "")
+	blue2LineBreak := 1
+	if !twoVsTwo {
+		blue2LineBreak = 0
+	}
+	pdf.CellFormat(colWidths["Team"], rowHeight, "Blue 2", "1", blue2LineBreak, "C", true, 0, "")
+	if !twoVsTwo {
+		pdf.CellFormat(colWidths["Team"], rowHeight, "Blue 3", "1", 1, "C", true, 0, "")
+	}
 	pdf.SetFont("Arial", "", 10)
 	for _, match := range matches {
 		// Render break if there is one before this match.
@@ -454,7 +476,10 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 			formattedTime := scheduledBreak.Time.Local().Format("Mon 1/02 03:04 PM")
 			description := fmt.Sprintf("%s (%d minutes)", scheduledBreak.Description, scheduledBreak.DurationSec/60)
 			pdf.CellFormat(colWidths["Time"], rowHeight, formattedTime, "1", 0, "C", false, 0, "")
-			pdf.CellFormat(colWidths["Match"]+6*colWidths["Team"], rowHeight, description, "1", 1, "C", false, 0, "")
+			pdf.CellFormat(
+				colWidths["Match"]+float64(numTeamCols)*colWidths["Team"], rowHeight, description, "1", 1, "C",
+				false, 0, "",
+			)
 			breakIndex++
 		}
 
@@ -462,8 +487,9 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 		borderStr := "1"
 		alignStr := "CM"
 		surrogate := false
-		if match.Red1IsSurrogate || match.Red2IsSurrogate || match.Red3IsSurrogate ||
-			match.Blue1IsSurrogate || match.Blue2IsSurrogate || match.Blue3IsSurrogate {
+		matchHasSurrogate := match.Red1IsSurrogate || match.Red2IsSurrogate || match.Blue1IsSurrogate ||
+			match.Blue2IsSurrogate || (!twoVsTwo && (match.Red3IsSurrogate || match.Blue3IsSurrogate))
+		if matchHasSurrogate {
 			// If the match contains surrogates, the row needs to be taller to fit some text beneath team numbers.
 			height = 5.0
 			borderStr = "LTR"
@@ -494,10 +520,20 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 		pdf.CellFormat(colWidths["Match"], height, match.LongName, borderStr, 0, alignStr, false, 0, "")
 		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Red1), borderStr, 0, alignStr, false, 0, "")
 		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Red2), borderStr, 0, alignStr, false, 0, "")
-		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Red3), borderStr, 0, alignStr, false, 0, "")
+		if !twoVsTwo {
+			pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Red3), borderStr, 0, alignStr, false, 0, "")
+		}
 		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Blue1), borderStr, 0, alignStr, false, 0, "")
-		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Blue2), borderStr, 0, alignStr, false, 0, "")
-		pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Blue3), borderStr, 1, alignStr, false, 0, "")
+		lastColLineBreak := 1
+		if !twoVsTwo {
+			lastColLineBreak = 0
+		}
+		pdf.CellFormat(
+			colWidths["Team"], height, formatTeam(match.Blue2), borderStr, lastColLineBreak, alignStr, false, 0, "",
+		)
+		if !twoVsTwo {
+			pdf.CellFormat(colWidths["Team"], height, formatTeam(match.Blue3), borderStr, 1, alignStr, false, 0, "")
+		}
 		if surrogate {
 			// Render the text that indicates which teams are surrogates.
 			height := 4.0
@@ -510,25 +546,30 @@ func (web *Web) schedulePdfReportHandler(w http.ResponseWriter, r *http.Request)
 			pdf.CellFormat(
 				colWidths["Team"], height, surrogateText(match.Red2IsSurrogate), "LBR", 0, "CT", false, 0, "",
 			)
-			pdf.CellFormat(
-				colWidths["Team"], height, surrogateText(match.Red3IsSurrogate), "LBR", 0, "CT", false, 0, "",
-			)
+			if !twoVsTwo {
+				pdf.CellFormat(
+					colWidths["Team"], height, surrogateText(match.Red3IsSurrogate), "LBR", 0, "CT", false, 0, "",
+				)
+			}
 			pdf.CellFormat(
 				colWidths["Team"], height, surrogateText(match.Blue1IsSurrogate), "LBR", 0, "CT", false, 0, "",
 			)
 			pdf.CellFormat(
-				colWidths["Team"], height, surrogateText(match.Blue2IsSurrogate), "LBR", 0, "CT", false, 0, "",
+				colWidths["Team"], height, surrogateText(match.Blue2IsSurrogate), "LBR", lastColLineBreak, "CT",
+				false, 0, "",
 			)
-			pdf.CellFormat(
-				colWidths["Team"], height, surrogateText(match.Blue3IsSurrogate), "LBR", 1, "CT", false, 0, "",
-			)
+			if !twoVsTwo {
+				pdf.CellFormat(
+					colWidths["Team"], height, surrogateText(match.Blue3IsSurrogate), "LBR", 1, "CT", false, 0, "",
+				)
+			}
 			pdf.SetFont("Arial", "", 10)
 		}
 	}
 
 	if matchType != model.Playoff {
 		// Render some summary info at the bottom.
-		pdf.CellFormat(195, 10, fmt.Sprintf("Matches Per Team: %d", matchesPerTeam), "", 1, "L", false, 0, "")
+		pdf.CellFormat(tableWidth, 10, fmt.Sprintf("Matches Per Team: %d", matchesPerTeam), "", 1, "L", false, 0, "")
 	}
 
 	addTimeGeneratedFooter(pdf)

@@ -4,6 +4,7 @@
 package web
 
 import (
+	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,26 @@ func TestQueueingDisplay(t *testing.T) {
 	recorder := web.getHttpResponse("/displays/queueing?displayId=1")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Queueing Display - Untitled Event - Cheesy Arena")
+}
+
+func TestQueueingDisplayMatchLoadTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	match := model.Match{
+		Type: model.Practice, TypeOrder: 1, Red1: 101, Red2: 102, Red3: 103, Blue1: 104, Blue2: 105, Blue3: 106,
+	}
+	web.arena.Database.CreateMatch(&match)
+	web.arena.LoadMatch(&match)
+
+	recorder := web.getHttpResponse("/displays/queueing/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "103")
+	assert.Contains(t, recorder.Body.String(), "106")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/displays/queueing/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "103")
+	assert.NotContains(t, recorder.Body.String(), "106")
 }
 
 func TestQueueingDisplayWebsocket(t *testing.T) {

@@ -95,6 +95,10 @@ func (web *Web) matchReviewEditGetHandler(w http.ResponseWriter, r *http.Request
 		handleWebErr(w, err)
 		return
 	}
+	if web.arena.EventSettings.TwoVsTwoMode && (match.Red3 != 0 || match.Blue3 != 0) {
+		handleWebErr(w, fmt.Errorf("match %s has a third robot, which is not allowed in 2v2 mode", match.LongName))
+		return
+	}
 
 	template, err := web.parseFiles("templates/edit_match_result.html", "templates/base.html")
 	if err != nil {
@@ -106,16 +110,22 @@ func (web *Web) matchReviewEditGetHandler(w http.ResponseWriter, r *http.Request
 		handleWebErr(w, err)
 		return
 	}
+	redTeams := []int{match.Red1, match.Red2}
+	blueTeams := []int{match.Blue1, match.Blue2}
+	if !web.arena.EventSettings.TwoVsTwoMode {
+		redTeams = append(redTeams, match.Red3)
+		blueTeams = append(blueTeams, match.Blue3)
+	}
 	alliances := []MatchReviewEditAlliance{
 		{
 			Alliance:          "red",
-			Teams:             []int{match.Red1, match.Red2, match.Red3},
+			Teams:             redTeams,
 			Summary:           matchResult.RedScoreSummary(),
 			ShowRankingPoints: match.Type != model.Playoff,
 		},
 		{
 			Alliance:          "blue",
-			Teams:             []int{match.Blue1, match.Blue2, match.Blue3},
+			Teams:             blueTeams,
 			Summary:           matchResult.BlueScoreSummary(),
 			ShowRankingPoints: match.Type != model.Playoff,
 		},

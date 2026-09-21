@@ -4,7 +4,6 @@
 package web
 
 import (
-	"bytes"
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
@@ -13,7 +12,6 @@ import (
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 	"time"
 )
@@ -106,17 +104,6 @@ func TestCommitMatch(t *testing.T) {
 	assert.Equal(t, 3, matchResult.PlayNumber)
 	match, _ = web.arena.Database.GetMatchById(1)
 	assert.Equal(t, game.TieMatch, match.Status)
-
-	// Verify TBA publishing by checking the log for the expected failure messages.
-	web.arena.TbaClient.BaseUrl = "fakeUrl"
-	web.arena.EventSettings.TbaPublishingEnabled = true
-	var writer bytes.Buffer
-	log.SetOutput(&writer)
-	err = web.commitMatchScore(match, matchResult, true)
-	assert.Nil(t, err)
-	time.Sleep(time.Millisecond * 100) // Allow some time for the asynchronous publishing to happen.
-	assert.Contains(t, writer.String(), "Failed to publish matches")
-	assert.Contains(t, writer.String(), "Failed to publish rankings")
 }
 
 func TestCommitTiebreak(t *testing.T) {

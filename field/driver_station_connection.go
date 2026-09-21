@@ -516,7 +516,7 @@ func (arena *Arena) serveDriverStations(listener net.Listener) {
 
 		// Write event code here. We need to strip any numbers off the front if it has it.
 		// We also need to limit to 62 characters.
-		eventName := arena.EventSettings.TbaEventCode
+		eventName := arena.EventSettings.EventCode
 		if len(eventName) > 0 {
 			trimIndex := 0
 			for trimIndex < len(eventName) && eventName[trimIndex] >= '0' && eventName[trimIndex] <= '9' {

@@ -65,14 +65,6 @@ type EventSettings struct {
 	LedControllerAddress             string
 	LedUniverseMode                  string
 	AdminPassword                    string
-	TeamSignRed1Id                   int
-	TeamSignRed2Id                   int
-	TeamSignRed3Id                   int
-	TeamSignRedTimerId               int
-	TeamSignBlue1Id                  int
-	TeamSignBlue2Id                  int
-	TeamSignBlue3Id                  int
-	TeamSignBlueTimerId              int
 	UseLiteUdpPort                   bool
 	BlackmagicAddresses              string
 	CompanionAddress                 string

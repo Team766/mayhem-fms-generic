@@ -11,24 +11,64 @@ UI for entering realtime scores.
   <div class="screen-title">{{.Position.Title}} - <span id="matchName">&nbsp;</span></div>
 </header>
 <main>
+  {{$teamCount := 3}}{{if .TwoVsTwoMode}}{{$teamCount = 2}}{{end}}
+  {{if .Position.ShowsNear}}
+  <section id="nearControls">
+    <h2>Auto</h2>
+    <div class="counter-group">
+      {{template "counterRow" dict "id" "auto_floor" "label" "Auto Floor"}}
+      {{template "counterRow" dict "id" "auto_first" "label" "Auto First"}}
+      {{template "counterRow" dict "id" "auto_top" "label" "Auto Top"}}
+    </div>
+    <h2>Teleop + Endgame</h2>
+    <div class="counter-group">
+      {{template "counterRow" dict "id" "teleop_floor" "label" "Floor"}}
+      {{template "counterRow" dict "id" "teleop_first" "label" "First"}}
+      {{template "counterRow" dict "id" "teleop_top" "label" "Top"}}
+      {{template "counterRow" dict "id" "teleop_stacked" "label" "Stacked"}}
+    </div>
+  </section>
+  {{end}}
+  {{if .Position.ShowsFar}}
+  <section id="farControls">
+    <h2>Auto</h2>
+    <div class="robot-group">
+      {{range $i := seq $teamCount}}
+      <div class="robot-control">
+        <div class="robot-team" id="team-{{$i}}">&nbsp;</div>
+        <button id="leave-{{$i}}" class="toggle-button scoring-button" ontouchstart disabled
+          onclick="toggleLeave({{$i}});">Leave</button>
+        <button id="auto_balance-{{$i}}" class="toggle-button scoring-button" ontouchstart disabled
+          onclick="toggleAutoBalance({{$i}});">Auto Balance</button>
+      </div>
+      {{end}}
+    </div>
+    <h2>Endgame</h2>
+    <div class="robot-group">
+      {{range $i := seq $teamCount}}
+      <div class="robot-control">
+        <div class="robot-team" id="endgameTeam-{{$i}}">&nbsp;</div>
+        <div id="endgame-{{$i}}" class="endgame-button-group" data-value="0">
+          <button class="endgame-button scoring-button" ontouchstart disabled
+            onclick="setEndgame({{$i}}, 0);">None</button>
+          <button class="endgame-button scoring-button" ontouchstart disabled
+            onclick="setEndgame({{$i}}, 1);">Park</button>
+          <button class="endgame-button scoring-button" ontouchstart disabled
+            onclick="setEndgame({{$i}}, 2);">Balance</button>
+        </div>
+      </div>
+      {{end}}
+    </div>
+    <h2>The Toss</h2>
+    <div class="toss-group">
+      <button id="toss" class="toggle-button scoring-button" ontouchstart disabled onclick="toggleToss();">Toss</button>
+    </div>
+  </section>
+  {{end}}
   <div id="panel-actions">
     <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
-    <button id="fouls-button" class="scoring-button" onclick="showFoulsDialog();" ontouchstart disabled>Fouls</button>
   </div>
 </main>
-
-<dialog id="fouls-dialog" onclick="closeFoulsDialogIfOutside(event);">
-  <div class="dialog-container">
-    <div class="dialog-banner">Add Fouls</div>
-    <div id="foul-container">
-      {{template "foulButton" (dict "id" "foul-blue-minor" "color" "blue" "label" "Blue" "isMajor" false)}}
-      {{template "foulButton" (dict "id" "foul-red-minor" "color" "red" "label" "Red" "isMajor" false)}}
-      {{template "foulButton" (dict "id" "foul-blue-major" "color" "blue" "label" "Blue Major" "isMajor" true)}}
-      {{template "foulButton" (dict "id" "foul-red-major" "color" "red" "label" "Red Major" "isMajor" true)}}
-    </div>
-    <button class="dialog-close" autofocus onclick="closeFoulsDialog();" ontouchstart>Close</button>
-  </div>
-</dialog>
 {{end}}
 
 {{define "head"}}
@@ -41,12 +81,12 @@ UI for entering realtime scores.
 <script src="/static/js/scoring_panel.js"></script>
 {{end}}
 
-{{define "foulButton"}}
-<button id="{{.id}}" class="foul-button {{.color}} scoring-button" ontouchstart onclick="addFoul('{{.color}}', {{.isMajor}});">
-  <div class="foul-button-label">{{.label}}</div>
-  <div class="foul-button-counters">
-    <span class="fouls-local">0</span> / <span class="fouls-global">0</span>
-  </div>
-</button>
+{{define "counterRow"}}
+<div class="counter-row">
+  <div class="counter-label">{{.label}}</div>
+  <button class="counter-button scoring-button" ontouchstart disabled onclick="adjustCounter('{{.id}}', -1);">&minus;</button>
+  <div class="counter-value" id="value-{{.id}}">0</div>
+  <button class="counter-button scoring-button" ontouchstart disabled onclick="adjustCounter('{{.id}}', 1);">+</button>
+  <button id="crown-{{.id}}" class="crown-button scoring-button" ontouchstart disabled onclick="toggleCrown('{{.id}}');">Crown</button>
+</div>
 {{end}}
-

@@ -46,11 +46,7 @@ type EventSettings struct {
 	SelectionRound2Order             string
 	SelectionRound3Order             string
 	SelectionShowUnpickedTeams       bool
-	TbaDownloadEnabled               bool
-	TbaPublishingEnabled             bool
-	TbaEventCode                     string
-	TbaSecretId                      string
-	TbaSecret                        string
+	EventCode                        string
 	AutoAudienceDisplayEnabled       bool
 	NexusEnabled                     bool
 	NexusAutoQueueEnabled            bool
@@ -139,7 +135,6 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		SelectionRound2Order:       "L",
 		SelectionRound3Order:       "",
 		SelectionShowUnpickedTeams: true,
-		TbaDownloadEnabled:         true,
 		ApChannel:                  36,
 		SCCUpCommands:              strings.Join(sccDefaultUpCommands, "\n"),
 		SCCDownCommands:            strings.Join(sccDefaultDownCommands, "\n"),

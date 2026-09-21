@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/partner"
 	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/websocket"
 	"io"
@@ -18,6 +17,9 @@ import (
 	"os"
 	"strconv"
 )
+
+// Directory containing team avatar image files.
+const AvatarsDir = "static/img/avatars"
 
 type MatchResultWithSummary struct {
 	model.MatchResult
@@ -225,9 +227,9 @@ func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	avatarPath := fmt.Sprintf("%s/%d.png", partner.AvatarsDir, teamId)
+	avatarPath := fmt.Sprintf("%s/%d.png", AvatarsDir, teamId)
 	if _, err := os.Stat(avatarPath); os.IsNotExist(err) {
-		avatarPath = fmt.Sprintf("%s/0.png", partner.AvatarsDir)
+		avatarPath = fmt.Sprintf("%s/0.png", AvatarsDir)
 	}
 
 	http.ServeFile(w, r, avatarPath)

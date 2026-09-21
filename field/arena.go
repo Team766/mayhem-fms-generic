@@ -62,7 +62,6 @@ type Arena struct {
 	redSCC           *network.SCCSwitch
 	blueSCC          *network.SCCSwitch
 	Plc              plc.Plc
-	TbaClient        *partner.TbaClient
 	NexusClient      *partner.NexusClient
 	BlackmagicClient *partner.BlackmagicClient
 	CompanionClient  *partner.CompanionClient
@@ -222,8 +221,7 @@ func (arena *Arena) LoadSettings() error {
 		return err
 	}
 	arena.Leds.SetUniverseMode(settings.LedUniverseMode)
-	arena.TbaClient = partner.NewTbaClient(settings.TbaEventCode, settings.TbaSecretId, settings.TbaSecret)
-	arena.NexusClient = partner.NewNexusClient(settings.TbaEventCode, settings.NexusAutoQueueKey)
+	arena.NexusClient = partner.NewNexusClient(settings.EventCode, settings.NexusAutoQueueKey)
 	arena.BlackmagicClient = partner.NewBlackmagicClient(settings.BlackmagicAddresses)
 
 	// Initialize Companion client with event configurations

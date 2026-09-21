@@ -73,6 +73,36 @@ func TestAnnouncerDisplayScorePosted(t *testing.T) {
 	}
 }
 
+// Verifies that the score-posted template renders the game's own vocabulary (not just the match name), including
+// the crown location and the ranking points, for a realistic score.
+func TestAnnouncerDisplayScorePostedGameFields(t *testing.T) {
+	web := setupTestWeb(t)
+	match := model.Match{Type: model.Qualification, LongName: "Qual 17", Status: game.RedWonMatch}
+	web.arena.SavedMatch = &match
+	web.arena.SavedMatchResult = &model.MatchResult{
+		RedScore: &game.Score{
+			AutoFirst:           1,
+			TeleopTop:           2,
+			Crown:               game.CrownTeleopTop,
+			LeaveStatuses:       [3]bool{true, true, false},
+			AutoBalanceStatuses: [3]bool{true, false, false},
+			EndgameStatuses:     [3]game.EndgameStatus{game.EndgameBalance, game.EndgamePark, game.EndgameNone},
+			Toss:                true,
+		},
+		BlueScore: &game.Score{},
+		RedCards:  map[string]string{},
+		BlueCards: map[string]string{},
+	}
+
+	recorder := web.getHttpResponse("/displays/announcer/score_posted")
+	assert.Equal(t, 200, recorder.Code)
+	body := recorder.Body.String()
+	assert.Contains(t, body, "Auto Treasure")
+	assert.Contains(t, body, "Teleop Top +10") // The crown's location and bonus.
+	assert.Contains(t, body, "Endgame RP")
+	assert.Contains(t, body, "Yes") // Red balanced a robot, so it earns the Endgame RP.
+}
+
 func TestAnnouncerDisplayWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

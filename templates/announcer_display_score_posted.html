@@ -35,9 +35,57 @@
 {{define "alliance_match_result"}}
 <h4>Score</h4>
 <div class="row justify-content-center">
+  <div class="col-sm-6">Leave</div>
+  <div class="col-sm-4">{{.summary.LeavePoints}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Auto Balance</div>
+  <div class="col-sm-4">{{.summary.AutoBalancePoints}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Auto Treasure</div>
+  <div class="col-sm-4">{{.summary.AutoTreasurePoints}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Teleop Treasure</div>
+  <div class="col-sm-4">{{.summary.TeleopTreasurePoints}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Crown</div>
+  <div class="col-sm-4">
+    {{if .summary.Crown}}{{.summary.Crown.String}} +{{.summary.CrownBonusPoints}}{{else}}-{{end}}
+  </div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Endgame</div>
+  <div class="col-sm-4">{{.summary.EndgamePoints}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Toss</div>
+  <div class="col-sm-4">{{.summary.TossPoints}}</div>
+</div>
+<div class="row justify-content-center">
   <div class="col-sm-6">Foul Points</div>
   <div class="col-sm-4">{{.summary.FoulPoints}}</div>
 </div>
+{{if ne .matchType playoffMatch}}
+<div class="row justify-content-center">
+  <div class="col-sm-6">Auton RP</div>
+  <div class="col-sm-4">
+    {{if .summary.AutonRankingPoint}}Yes{{if .summary.AutonRankingPointByFoul}} (foul){{end}}{{else}}No{{end}}
+  </div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Scoring RP</div>
+  <div class="col-sm-4">{{if .summary.ScoringRankingPoint}}Yes{{else}}No{{end}}</div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-sm-6">Endgame RP</div>
+  <div class="col-sm-4">
+    {{if .summary.EndgameRankingPoint}}Yes{{if .summary.EndgameRankingPointByFoul}} (foul){{end}}{{else}}No{{end}}
+  </div>
+</div>
+{{end}}
 <div class="row justify-content-center mt-3">
   <div class="col-sm-6"><b>Final Score</b></div>
   <div class="col-sm-4"><b>{{.summary.Score}}</b></div>

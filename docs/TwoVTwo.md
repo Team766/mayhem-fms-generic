@@ -8,8 +8,8 @@ design deliberately differs from it.
 ## The idea
 
 **A 2v2 match is a match whose third team slots are 0.** Upstream already copes with an empty slot (a
-practice match with five teams): the station has no team, and the operator bypasses it. So almost nothing
-needs to know about a "mode". Two kinds of code change:
+practice match with five teams): the station has no team, and the operator bypasses it. So match play itself
+never needs to know about a "mode". Three kinds of code change:
 
 1. **Generators** decide how many teams go into a match. They read the event setting.
 2. **The arena** looks at the match in front of it: a station is *empty* when its team is 0, whatever the mode.

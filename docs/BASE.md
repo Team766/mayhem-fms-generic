@@ -1,0 +1,96 @@
+# The M-Ayhem base
+
+This repository is Team 766's base for the Mechanical M-Ayhem field management system. It is
+[Team254/cheesy-arena](https://github.com/Team254/cheesy-arena) **minus** a strip list, **plus** a short
+feature list, with a small placeholder game. Each year's FMS is this base with that year's game applied.
+
+- How the base is kept current: [agents/sync-upstream.md](agents/sync-upstream.md). Checkpoint: [`UPSTREAM.md`](../UPSTREAM.md).
+- How a year's game is applied: [agents/apply-game.md](agents/apply-game.md), from a spec ([agents/game-spec-format.md](agents/game-spec-format.md)).
+- Detailed, dated inventories behind this page: [agents/reference/](agents/reference/).
+
+## Why it works this way
+
+Earlier attempts: a fork of Cheesy Arena Lite (2024; Lite was dormant and lagged), a hand-maintained generic
+fork (2025; merging a year of upstream hit 39 conflicted files, all in game code upstream rewrites every
+January), a config-to-code generator and then a runtime YAML game engine (2026; thousands of lines of
+machinery to avoid about a thousand lines of yearly edits, and still unable to express the real game).
+Team 254 now maintains Lite by having an agent port game-agnostic upstream changes from a recorded
+checkpoint. This base does the same, and adds a second playbook for the game.
+
+## Strip list (removed completely: code, settings, templates, routes, JS, tests)
+
+| Removed | Notes |
+|---------|-------|
+| The Blue Alliance | Publishing and team-info download. Keep `model.TbaMatchKey` (inert, threaded through `playoff/`), team avatars (`static/img/avatars`, avatar API; move `AvatarsDir` out of `partner/`) |
+| Nexus | Lineups and auto-queue |
+| Team signs | `field/team_sign.go` and settings |
+| Twitch display | Handler, template, JS, display type |
+| Upstream's season game | Scoring model, arena hooks, game PLC I/O, game settings, sounds, artwork |
+| LED/DMX | `led/`, `field/arena_leds.go`, settings, field-testing UI. *Assumption, confirm with maintainers* |
+
+## Keep list (as upstream, even though Lite removed some)
+
+Fouls, the rules list and the full referee flow; per-position scoring panels; cards and playoff DQ;
+playoffs and alliance selection; every display; reports; match logs; awards, lower thirds, sponsor slides;
+network (AP, switch); PLC generic signals and the field-testing page; Companion and Blackmagic clients;
+driver-station protocol code exactly as upstream.
+
+## Never reintroduce
+
+The identifier lists are in [agents/reference/strip-list.md](agents/reference/strip-list.md) section 5 and are
+enforced by `scripts/agents/check-leftovers.sh base`. In short: nothing from the strip list, nothing
+Lite-specific (`/api/scores`, points-only `Score`, renamed match-state strings, Lite naming), no generic
+game engine, no build tags or mode flags that switch between games.
+
+## Feature list (added on top of upstream)
+
+| Feature | Contract |
+|---------|----------|
+| 2v2 mode | [TwoVTwo.md](TwoVTwo.md) |
+| M-Ayhem PLC wire map | Below |
+| Green-screen and M-Ayhem display tweaks | Carried from `mayhem-fms-2025`; list each in the sync PR |
+| Per-team station lights | Planned; design in [agents/reference/plc.md](agents/reference/plc.md) section 4 |
+
+### PLC
+
+The field uses Team 766's Arduino Modbus PLC (`fakeplc-arduino`), not upstream's Allen-Bradley program.
+Upstream renumbers and grows its signal tables when season I/O changes, which breaks a fixed firmware: as of
+September 2026 unmodified upstream reads more registers than the Arduino serves, requires an `ftaReady`
+input it never sets, and sees station-3 stops as permanently pressed.
+
+Contract: a **frozen, documented M-Ayhem wire map** keyed by signal name, applied only at the wire boundary
+(`readInputs`, `readRegisters`, `writeCoils`), selected by an event setting, with a guard test that pins
+every wire index. The `Plc` interface and arena logic stay upstream's. Signals the hardware lacks read as
+healthy. Firmware changes that go with it are listed in the PLC reference, section 3.1. No remapping layer
+shipped in 2025; do not resurrect the accessor-level remap or `plc/mayhem_plc.go`.
+
+## Placeholder game and the game seam
+
+The base carries **High Seas Havoc** (M-Ayhem 2025), installed by `apply-game` from
+[`specs/high_seas_havoc.md`](../specs/high_seas_havoc.md). It keeps every screen exercised end to end, gives
+the 2v2 tests something to score, and is the regression test for the game playbook: re-applying its spec
+to the base must be a no-op.
+
+Files a game may touch (the seam):
+
+- `game/`: `score.go`, `score_summary.go`, `ranking_fields.go`, `match_timing.go`, `match_sounds.go`, `rule.go` (list), `foul.go` (point values), `test_helpers.go`, and tests.
+- Entry: `web/scoring_panel.go` (commands, positions), `templates/scoring_panel.html`, `static/js/scoring_panel.js`, `static/css/scoring_panel.css`; status rows in `templates/referee_panel.html` and `static/js/referee_panel.js`; `templates/edit_match_result.html`, `templates/match_review.html`, `static/js/match_review.js`, game parts of `web/match_review.go`.
+- Score consumers (**all of them, every time**): `templates/audience_display.html`, `static/js/audience_display.js`, `static/js/display_shared.js`, `templates/wall_display.html`, `static/js/wall_display.js`, `templates/announcer_display_score_posted.html`, `static/js/announcer_display.js`, `static/js/alliance_station_display.js`, `templates/rankings_display.html`, `static/js/rankings_display.js`, ranking columns in `web/reports.go` and `templates/rankings.csv`, RP symbols in `templates/match_review.html`.
+- Settings: the "Game-Specific" fieldset in `templates/setup_settings.html` with its `EventSettings` fields and `LoadSettings()` lines, only for thresholds the spec marks tunable.
+- Fixture fallout in `tournament/`, `web/`, `model/`, `field/` tests.
+- Assets: `static/img/game-logo.png`, `static/img/blinds-logo.png`, sounds named by the spec.
+
+Anything else changed by a game is a defect unless the PR calls it out.
+
+## Files the base owns (survive a regeneration untouched)
+
+`docs/BASE.md`, `docs/TwoVTwo.md`, `docs/agents/`, `specs/`, `scripts/agents/`, `UPSTREAM.md`, the M-Ayhem
+section of `AGENTS.md`, `.claude/skills/` (thin wrappers), `README.md` identity, `schedules/2p_*.csv`.
+
+## Open decisions
+
+1. LEDs: strip (assumed) or keep.
+2. ArmorBlock `redIoLink`/`blueIoLink` inputs block match start when the PLC is enabled: generic field hardware, or strip with the season game?
+3. Keep driver-station game-data plumbing with an empty payload (recommended) or remove as Lite did.
+4. Keep a neutral event-code setting for the driver-station event-name packet once TBA settings are gone.
+5. Which firmware was flashed at M-Ayhem 2025 (assumed `plc-cheesy-arena-compat`).

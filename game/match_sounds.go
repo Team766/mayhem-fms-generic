@@ -60,6 +60,14 @@ func UpdateMatchSounds() {
 			),
 		},
 		{
+			"toss",
+			"wav",
+			float64(
+				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + GetTeleopDurationSec() -
+					MatchTiming.TossRemainingDurationSec,
+			),
+		},
+		{
 			"end",
 			"wav",
 			float64(MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + GetTeleopDurationSec()),

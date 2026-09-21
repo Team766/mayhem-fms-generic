@@ -240,6 +240,7 @@ h3 {
   column-gap: 0.35vw;
   row-gap: 0.25vw;
   align-items: center;
+  font-size: 1vw;
 }
 #refereePanel.two-v-two #scoreSummary > div {
   grid-template-columns: 7.5vw repeat(2, 5.2vw);

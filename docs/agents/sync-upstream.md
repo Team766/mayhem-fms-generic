@@ -33,25 +33,25 @@ There are two modes. Pick by distance from the checkpoint.
 3. **Strip completely.** A removed integration leaves no settings fields, template sections, routes, JS, tests or enum values behind.
 4. **Never reintroduce** anything on the "never reintroduce" list in `docs/BASE.md`, and do not copy Lite-specific behaviour (list in `docs/agents/reference/strip-list.md` section 3). Lite is a map of *where* game content lives, not a source of code.
 5. **PLC signal order is an interface.** The generic inputs, registers and coils keep upstream's order. Season I/O and M-Ayhem I/O go after the generic block. After any enum change run `go generate ./...`.
-6. **The placeholder game is not your job here.** In `regenerate` mode you stop with the upstream season game stripped to the neutral seam described in `docs/BASE.md`; `apply-game` then installs the placeholder from `specs/high_seas_havoc.md`. In `port` mode you leave the game files alone.
+6. **The game is not your job here.** In `regenerate` mode you stop with upstream's season game stripped to the neutral seam described in `docs/BASE.md`; `apply-game` then installs the current year's spec. In `port` mode you leave the game files alone.
 7. Work on a new branch. Do not push, open PRs, or delete branches unless asked.
 
 ## Procedure: `regenerate`
 
-1. **Branch.** Create the work branch from the base branch. Replace the tree's tracked content with the chosen upstream tree, keeping everything listed under "Files the base owns" in `docs/BASE.md` (docs, specs, playbooks, scripts, `UPSTREAM.md`, `AGENTS.md` additions, M-Ayhem assets). Commit this as one mechanical commit: `Import upstream <tag> (<sha>)`. Nothing else goes in that commit, so reviewers can skip it.
-2. **Strip integrations**, one commit each, in this order: TBA, Nexus, team signs, Twitch. Use the call-site lists in `reference/strip-list.md` section 2, but re-derive them with `git grep` because upstream moves. Build and run tests after each.
-3. **Strip the season game and LEDs** down to the neutral seam. One commit. The seam file allowlist is in `docs/BASE.md`; everything game-specific outside it (arena hooks, PLC game I/O, LED package, settings fields, sounds) goes.
-4. **Apply the base features**, one commit each, from `docs/BASE.md` "Feature list":
+1. **Branch.** Create the work branch from the base branch. Replace the tree's tracked content with the chosen upstream tree, keeping everything listed under "Files the base owns" in `docs/BASE.md` (docs, specs, playbooks, `UPSTREAM.md`, `AGENTS.md` additions, M-Ayhem assets). Commit this as one mechanical commit: `Import upstream <tag> (<sha>)`. Nothing else goes in that commit, so reviewers can skip it.
+2. **Strip integrations**, one commit each within a single strip pull request, in this order: TBA, Nexus, team signs, Twitch. Use the call-site lists in `reference/strip-list.md` section 2, but re-derive them with `git grep` because upstream moves. Build and run tests after each.
+3. **Strip the season game and LEDs** down to the neutral seam. One commit, same pull request; the PR should be almost entirely deletions. The seam file allowlist is in `docs/BASE.md`; everything game-specific outside it (arena hooks, PLC game I/O, LED package, settings fields, sounds) goes.
+4. **Apply the base features**, one pull request each, from `docs/BASE.md` "Feature list":
    1. 2v2 mode, following `docs/TwoVTwo.md` (invariants first, then touchpoints; new upstream screens need handling too).
    2. M-Ayhem PLC wire map.
    3. Any other listed feature.
    Carry the previous base's implementation forward where it still fits; re-implement against the new upstream code where it does not. Port the feature's tests with it.
-5. **Hand off to `apply-game`** with `specs/high_seas_havoc.md` to install the placeholder game. Separate commit(s).
+5. **Hand off to `apply-game`** with the current year's spec. Separate pull request.
 6. **Verify** (next section), then update `UPSTREAM.md`: checkpoint sha, date, upstream tag, mode, and the skip list.
 
 ## Procedure: `port`
 
-1. List the range: `scripts/agents/upstream-range.sh` prints `checkpoint..<upstream ref>` with touched paths.
+1. List the range: `git log --reverse --date=short --format='%n%h %ad %s' --name-only <checkpoint>..<upstream ref>`, with the checkpoint from `UPSTREAM.md`.
 2. Classify every commit: **port** (game-agnostic), **skip-game** (touches only the season game, LEDs, or a stripped integration), **partial** (mixed: port the generic half). Write the table into the PR description and the skips into `UPSTREAM.md`.
 3. Port in upstream order, one commit per upstream commit where practical, message `Port upstream <sha>: <subject>`. For each ported commit ask: does it add a screen, a loop over alliance stations, or a PLC signal? If so it needs 2v2 handling (`docs/TwoVTwo.md`) or a wire-map entry.
 4. Verify, then move the checkpoint to the last commit you **reviewed** (not the last you ported).
@@ -63,8 +63,8 @@ If classification shows the season game was swapped or more than about a third o
 All must pass before the checkpoint moves. Paste the results into the PR.
 
 - `go generate ./... && go fmt ./... && go vet ./... && go build ./... && go test ./...`
-- `scripts/agents/check-leftovers.sh base` returns nothing (season-game, LED, TBA, Nexus, team-sign, Twitch and Lite vocabulary).
-- Diff review against upstream: `git diff <upstream sha> -- . ':!docs' ':!specs' ':!scripts'` contains only strip-list deletions, feature-list additions and placeholder-game seam files. Anything else is a defect.
+- Nothing stripped is left: `git grep -n -i -E 'twitch|nexus|tbaclient|tbapublish|teamsign|team_sign|ledcontroller|/api/scores|FoulPointsAgainst|cheesy-arena-lite|<this season game words>' -- '*.go' '*.html' '*.js' '*.css' ':!docs' ':!specs' ':!static/js/lib'` prints nothing except `TbaMatchKey`. Take the season's game words from upstream's `game/score.go` for the release you synced to.
+- Diff review against upstream: `git diff <upstream sha> -- . ':!docs' ':!specs'` contains only strip-list deletions, feature-list additions and placeholder-game seam files. Anything else is a defect.
 - 2v2 checklist and 3v3 flip-back check from `docs/TwoVTwo.md`.
 - PLC unit tests, including the wire-map guard test. Bench test with the Arduino when hardware is available; say so if it was not run.
 - Run the server (`go build && ./cheesy-arena -dev`), play one placeholder-game match end to end in 3v3 and one in 2v2: scoring panels, referee foul, commit, audience final score, rankings, edit result. Attach screenshots.

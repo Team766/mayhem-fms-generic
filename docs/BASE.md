@@ -26,7 +26,7 @@ checkpoint. This base does the same, and adds a second playbook for the game.
 | Team signs | `field/team_sign.go` and settings |
 | Twitch display | Handler, template, JS, display type |
 | Upstream's season game | Scoring model, arena hooks, game PLC I/O, game settings, sounds, artwork |
-| LED/DMX | `led/`, `field/arena_leds.go`, settings, field-testing UI. *Assumption, confirm with maintainers* |
+| LED/DMX | `led/`, `field/arena_leds.go`, settings, field-testing UI. This is 2026 upstream code that drives DMX lighting on that season's field element; it is not the team signs |
 
 ## Keep list (as upstream, even though Lite removed some)
 
@@ -38,7 +38,7 @@ driver-station protocol code exactly as upstream.
 ## Never reintroduce
 
 The identifier lists are in [agents/reference/strip-list.md](agents/reference/strip-list.md) section 5 and are
-enforced by `scripts/agents/check-leftovers.sh base`. In short: nothing from the strip list, nothing
+checked by the leftover grep in `agents/sync-upstream.md`. In short: nothing from the strip list, nothing
 Lite-specific (`/api/scores`, points-only `Score`, renamed match-state strings, Lite naming), no generic
 game engine, no build tags or mode flags that switch between games.
 
@@ -48,12 +48,11 @@ game engine, no build tags or mode flags that switch between games.
 |---------|----------|
 | 2v2 mode | [TwoVTwo.md](TwoVTwo.md) |
 | M-Ayhem PLC wire map | Below |
-| Green-screen and M-Ayhem display tweaks | Carried from `mayhem-fms-2025`; list each in the sync PR |
 | Per-team station lights | Planned; design in [agents/reference/plc.md](agents/reference/plc.md) section 4 |
 
 ### PLC
 
-The field uses Team 766's Arduino Modbus PLC (`fakeplc-arduino`), not upstream's Allen-Bradley program.
+The field uses Team 766's Arduino Modbus PLC (`fakeplc-arduino`, branch `plc-cheesy-arena-compat` as flashed for M-Ayhem 2025), not upstream's Allen-Bradley program.
 Upstream renumbers and grows its signal tables when season I/O changes, which breaks a fixed firmware: as of
 September 2026 unmodified upstream reads more registers than the Arduino serves, requires an `ftaReady`
 input it never sets, and sees station-3 stops as permanently pressed.
@@ -64,12 +63,14 @@ every wire index. The `Plc` interface and arena logic stay upstream's. Signals t
 healthy. Firmware changes that go with it are listed in the PLC reference, section 3.1. No remapping layer
 shipped in 2025; do not resurrect the accessor-level remap or `plc/mayhem_plc.go`.
 
-## Placeholder game and the game seam
+## The current game and the game seam
 
-The base carries **High Seas Havoc** (M-Ayhem 2025), installed by `apply-game` from
-[`specs/high_seas_havoc.md`](../specs/high_seas_havoc.md). It keeps every screen exercised end to end, gives
-the 2v2 tests something to score, and is the regression test for the game playbook: re-applying its spec
-to the base must be a no-op.
+The tree always carries exactly one game: the current year's. Its spec is checked in under `specs/`, and
+`specs/CURRENT` names it. `apply-game` takes the new spec, reads the `CURRENT` spec to learn what is being
+replaced (its ids are the vocabulary to remove), and then points `CURRENT` at the new spec. Old specs stay in
+`specs/` as history and examples. There is no separate placeholder game and no maintained word list.
+
+`specs/high_seas_havoc.md` (M-Ayhem 2025) is kept as a second example spec; it has no code in this tree.
 
 Files a game may touch (the seam):
 
@@ -84,13 +85,11 @@ Anything else changed by a game is a defect unless the PR calls it out.
 
 ## Files the base owns (survive a regeneration untouched)
 
-`docs/BASE.md`, `docs/TwoVTwo.md`, `docs/agents/`, `specs/`, `scripts/agents/`, `UPSTREAM.md`, the M-Ayhem
+`docs/BASE.md`, `docs/TwoVTwo.md`, `docs/agents/`, `specs/`, `UPSTREAM.md`, the M-Ayhem
 section of `AGENTS.md`, `.claude/skills/` (thin wrappers), `README.md` identity, `schedules/2p_*.csv`.
 
 ## Open decisions
 
-1. LEDs: strip (assumed) or keep.
-2. ArmorBlock `redIoLink`/`blueIoLink` inputs block match start when the PLC is enabled: generic field hardware, or strip with the season game?
-3. Keep driver-station game-data plumbing with an empty payload (recommended) or remove as Lite did.
-4. Keep a neutral event-code setting for the driver-station event-name packet once TBA settings are gone.
-5. Which firmware was flashed at M-Ayhem 2025 (assumed `plc-cheesy-arena-compat`).
+1. ArmorBlock `redIoLink`/`blueIoLink` inputs block match start when the PLC is enabled: generic field hardware, or strip with the season game?
+2. Keep driver-station game-data plumbing with an empty payload (recommended) or remove as Lite did.
+3. Keep a neutral event-code setting for the driver-station event-name packet once TBA settings are gone.

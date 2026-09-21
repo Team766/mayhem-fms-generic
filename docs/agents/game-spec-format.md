@@ -2,8 +2,11 @@
 
 A game spec is one Markdown file that tells [apply-game.md](apply-game.md) what this year's game is. It is
 read by a person or an LLM, never parsed by the FMS, so it can say things in prose that a config schema
-cannot. Small YAML blocks are used where exact names and numbers matter. Start from
-[`specs/high_seas_havoc.md`](../../specs/high_seas_havoc.md).
+cannot. Small YAML blocks are used where exact names and numbers matter. Start from the spec that
+`specs/CURRENT` names, or from [`specs/high_seas_havoc.md`](../../specs/high_seas_havoc.md).
+
+Specs are named `specs/<year>_<name>.md` and are never deleted: the newest one is the game in the tree,
+and `apply-game` reads it next year to know what to replace.
 
 Put assets next to it in a folder of the same name: `game-logo.png`, `blinds-logo.png` (600x600), any
 replacement sounds, the rules text.

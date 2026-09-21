@@ -3,8 +3,8 @@
 Replace the game that is currently in the tree with the game described by a **game spec**.
 
 This is a playbook for a coding agent (any LLM) or a careful human. It is phase 2 of two; phase 1 is
-[sync-upstream.md](sync-upstream.md). The spec format is in [game-spec-format.md](game-spec-format.md);
-`specs/high_seas_havoc.md` is the worked example and is also the placeholder game that lives in the base.
+[sync-upstream.md](sync-upstream.md). The spec format is in [game-spec-format.md](game-spec-format.md).
+`specs/CURRENT` names the spec of the game that is in the tree now.
 
 ## The idea
 
@@ -13,8 +13,9 @@ templates and JS that name the game's elements. There is no runtime config, no c
 generic engine. The spec is the durable artifact; when the base moves to a new upstream, the same spec is
 applied again.
 
-The playbook replaces *whatever game is present*: the placeholder, last year's game, or (when the base is
-being regenerated) what is left of upstream's season game. It never needs a spec for the old game.
+The playbook replaces the game that is present. Normally that is last year's game, described by the spec
+that `specs/CURRENT` names. When the base has just been regenerated there is no game (upstream's was
+stripped) and `CURRENT` is empty.
 
 ## Inputs
 
@@ -35,7 +36,7 @@ being regenerated) what is left of upstream's season game. It never needs a spec
 
 1. **Read the spec fully. List open questions first.** Ambiguities in ranking points, tiebreak direction, what counts toward a threshold, and what each screen shows are cheap to settle now and expensive after 40 files. If the operator is available, ask; otherwise choose, and flag it.
 2. **Derive two vocabularies.**
-   - *Outgoing*: identifiers, JSON fields, display strings, CSS ids and asset names of the game being replaced (for the placeholder this list is at the end of `docs/agents/reference/game-surface-2025.md`; otherwise build it from `game/score.go`, `score_summary.go` and the templates).
+   - *Outgoing*: the ids and display names in the `specs/CURRENT` spec, plus the Go, JSON and CSS names the code derived from them (read `game/score.go` and `score_summary.go`). Nothing is kept between years; the list is rebuilt from the old spec each time.
    - *Incoming*: the names you will use, from the spec's ids. Put both in the PR description.
 3. **Model and math** (`game/`): `Score`, `ScoreSummary`, `Summarize()`, `Equals()`, ranking fields and sort order, `DetermineMatchStatus` playoff tiebreakers, foul point constants, the rules list, match timing and sounds if the spec changes them. Write the tests in the same commit:
    - one table-driven test per scoring element and phase;
@@ -47,9 +48,10 @@ being regenerated) what is left of upstream's season game. It never needs a spec
 4. **Entry** : scoring panel (`web/scoring_panel.go` commands, template, JS, CSS, near/far split per the spec), referee panel status rows, edit-match-result form and `match_review.js`. Every spec element must be enterable live *and* editable after the match.
 5. **Display and reporting**: audience overlay and final-score breakdown, wall display and `display_shared.js`, announcer score-posted template, alliance-station display, rankings display, rankings CSV and PDF columns, match review RP symbols, settings page game section (only if the spec declares tunable thresholds). Install assets from the spec's folder (`static/img/game-logo.png`, `blinds-logo.png`, sounds).
 6. **Completeness checks.**
-   - `scripts/agents/check-leftovers.sh game <outgoing-vocabulary-file>` returns nothing.
+   - No outgoing vocabulary is left: `git grep -n -i -E '<word1>|<word2>|...' -- '*.go' '*.html' '*.js' '*.css' '*.csv' ':!specs' ':!docs'` prints nothing (explain any hit you keep).
    - `git grep -n 'ScoreSummary\.\|\.Score\.' -- static/js templates` : every hit names a field that exists in the new structs.
    - `git diff --stat <base>` touches only seam files (plus `specs/`). Explain any exception.
+   - Set `specs/CURRENT` to the new spec's file name.
 7. **Verify.**
    - `go generate ./... && go fmt ./... && go vet ./... && go build ./... && go test ./...`
    - Run the server (`go build && ./cheesy-arena -dev`) and play each worked example from the spec through the real UI: enter it on the scoring panels, add the fouls on the referee panel, commit, and compare the audience final score, RPs and rankings with the spec's expected numbers. Do it once in each alliance size the spec declares. Then edit the result and confirm the summary recomputes. Attach screenshots of every screen in the spec's "Screens" section.

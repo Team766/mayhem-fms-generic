@@ -1028,3 +1028,128 @@ func TestSignalReset(t *testing.T) {
 	assert.True(t, arena.FieldReset)
 	assert.Equal(t, "fieldReset", arena.AllianceStationDisplayMode)
 }
+
+func TestTwoVsTwoActiveStations(t *testing.T) {
+	arena := setupTestArena(t)
+
+	assert.Equal(t, []string{"R1", "R2", "R3", "B1", "B2", "B3"}, arena.activeStations())
+
+	arena.EventSettings.TwoVsTwoMode = true
+	assert.Equal(t, []string{"R1", "R2", "B1", "B2"}, arena.activeStations())
+}
+
+func TestTwoVsTwoCheckCanStartMatch(t *testing.T) {
+	arena := setupTestArena(t)
+	arena.EventSettings.TwoVsTwoMode = true
+
+	// R3/B3 must never block the match from starting, whether or not they are bypassed, and without a PLC.
+	err := arena.checkCanStartMatch()
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "not all robots are connected or bypassed (R1, R2, B1, B2)")
+		assert.NotContains(t, err.Error(), "R3")
+		assert.NotContains(t, err.Error(), "B3")
+	}
+	arena.AllianceStations["R1"].Bypass = true
+	arena.AllianceStations["R2"].Bypass = true
+	arena.AllianceStations["B1"].Bypass = true
+	arena.AllianceStations["B2"].Bypass = true
+	assert.Nil(t, arena.checkCanStartMatch())
+}
+
+func TestTwoVsTwoLoadMatchRejectsThirdTeam(t *testing.T) {
+	arena := setupTestArena(t)
+	arena.EventSettings.TwoVsTwoMode = true
+	arena.Database.CreateTeam(&model.Team{Id: 101})
+	arena.Database.CreateTeam(&model.Team{Id: 104})
+
+	match := model.Match{Type: model.Practice, Red1: 101, Red3: 103, Blue1: 104}
+	err := arena.LoadMatch(&match)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "a third robot is not allowed in 2v2 mode")
+	}
+
+	match = model.Match{Type: model.Practice, Red1: 101, Blue1: 104, Blue3: 106}
+	err = arena.LoadMatch(&match)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "a third robot is not allowed in 2v2 mode")
+	}
+
+	match = model.Match{Type: model.Practice, Red1: 101, Blue1: 104}
+	assert.Nil(t, arena.LoadMatch(&match))
+	assert.Nil(t, arena.AllianceStations["R3"].Team)
+	assert.Nil(t, arena.AllianceStations["B3"].Team)
+}
+
+func TestTwoVsTwoSubstituteTeamsRejectsThirdTeam(t *testing.T) {
+	arena := setupTestArena(t)
+	arena.EventSettings.TwoVsTwoMode = true
+	arena.Database.CreateTeam(&model.Team{Id: 101})
+	arena.Database.CreateTeam(&model.Team{Id: 104})
+
+	match := model.Match{Type: model.Practice, Red1: 101, Blue1: 104}
+	arena.Database.CreateMatch(&match)
+	assert.Nil(t, arena.LoadMatch(&match))
+
+	err := arena.SubstituteTeams(101, 0, 103, 104, 0, 0)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "a third robot is not allowed in 2v2 mode")
+	}
+	err = arena.SubstituteTeams(101, 0, 0, 104, 0, 106)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "a third robot is not allowed in 2v2 mode")
+	}
+	assert.Nil(t, arena.SubstituteTeams(101, 0, 0, 104, 0, 0))
+}
+
+// Verifies that in 2v2, R3/B3 -- unlinked and never bypassed -- do not stop the readiness stack light from
+// going green or the match from starting, and that their E-stops are ignored; and that the same E-stop press
+// is NOT ignored once back in 3v3.
+func TestTwoVsTwoPlcReadyAndEStop(t *testing.T) {
+	arena := setupTestArena(t)
+	arena.EventSettings.TwoVsTwoMode = true
+	var plc FakePlc
+	plc.isEnabled = true
+	plc.ftaReady = true
+	arena.Plc = &plc
+
+	arena.Database.CreateTeam(&model.Team{Id: 254})
+	arena.Database.CreateTeam(&model.Team{Id: 148})
+	arena.Database.CreateTeam(&model.Team{Id: 100})
+	arena.Database.CreateTeam(&model.Team{Id: 200})
+	// lastPacketTime is set to now so that Update()'s driver station packet send doesn't immediately time out
+	// and clear RobotLinked back out from under the test.
+	assert.Nil(t, arena.assignTeam(254, "R1"))
+	arena.AllianceStations["R1"].DsConn = &DriverStationConnection{TeamId: 254, RobotLinked: true, lastPacketTime: time.Now()}
+	arena.AllianceStations["R1"].aStopReset = true
+	assert.Nil(t, arena.assignTeam(148, "R2"))
+	arena.AllianceStations["R2"].DsConn = &DriverStationConnection{TeamId: 148, RobotLinked: true, lastPacketTime: time.Now()}
+	arena.AllianceStations["R2"].aStopReset = true
+	assert.Nil(t, arena.assignTeam(100, "B1"))
+	arena.AllianceStations["B1"].DsConn = &DriverStationConnection{TeamId: 100, RobotLinked: true, lastPacketTime: time.Now()}
+	arena.AllianceStations["B1"].aStopReset = true
+	assert.Nil(t, arena.assignTeam(200, "B2"))
+	arena.AllianceStations["B2"].DsConn = &DriverStationConnection{TeamId: 200, RobotLinked: true, lastPacketTime: time.Now()}
+	arena.AllianceStations["B2"].aStopReset = true
+
+	// R3/B3 are unlinked and never bypassed; readiness must still reach green and the match must be startable.
+	plc.cycleState = true
+	arena.Update()
+	assert.Equal(t, [4]bool{false, false, false, true}, plc.stackLights)
+	assert.Nil(t, arena.checkCanStartMatch())
+	assert.False(t, arena.AllianceStations["R3"].Bypass)
+	assert.False(t, arena.AllianceStations["B3"].Bypass)
+
+	// R3/B3 E-stops are ignored in 2v2.
+	plc.redEStops[2] = true
+	plc.blueEStops[2] = true
+	arena.Update()
+	assert.False(t, arena.AllianceStations["R3"].EStop)
+	assert.False(t, arena.AllianceStations["B3"].EStop)
+	assert.Nil(t, arena.checkCanStartMatch())
+
+	// The same E-stop press is NOT ignored in 3v3.
+	arena.EventSettings.TwoVsTwoMode = false
+	arena.Update()
+	assert.True(t, arena.AllianceStations["R3"].EStop)
+	assert.True(t, arena.AllianceStations["B3"].EStop)
+}

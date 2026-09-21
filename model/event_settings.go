@@ -46,6 +46,7 @@ type EventSettings struct {
 	SelectionRound2Order             string
 	SelectionRound3Order             string
 	SelectionShowUnpickedTeams       bool
+	TwoVsTwoMode                     bool
 	EventCode                        string
 	AutoAudienceDisplayEnabled       bool
 	NetworkSecurityEnabled           bool

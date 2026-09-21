@@ -2,7 +2,7 @@
 
 The field's PLC is Team 766's Arduino Mega running `fakeplc-arduino/fakeplc-mega` (branch `plc-cheesy-arena-compat`, as
 flashed for M-Ayhem 2025). It is a Modbus TCP server at 10.0.100.15:502 with fixed addresses that match upstream's
-generic signal order. The FMS's PLC code is upstream's; see `docs/DEVELOPMENT.md`, "PLC", for the contract and
+generic signal order. The FMS's PLC code is upstream's; see [DEVELOPMENT.md](DEVELOPMENT.md), "PLC", for the contract and
 `plc/mayhem_arduino_test.go` for the address guard. Written September 2026; trust the firmware and the code over this page.
 
 ## Bench test

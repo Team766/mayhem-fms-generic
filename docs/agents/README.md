@@ -12,7 +12,6 @@ reviewed against the base. A typical year: `sync-upstream` to the latest upstrea
 write `specs/<year>_<name>.md`, `apply-game`, iterate on the spec as the rules settle, then freeze a
 release branch for the event.
 
-Background and contracts: [../DEVELOPMENT.md](../DEVELOPMENT.md), [../TwoVTwo.md](../TwoVTwo.md). Dated inventories that
-the playbooks cite: [reference/](reference/).
+Background and contracts: [../DEVELOPMENT.md](../DEVELOPMENT.md), [../TwoVTwo.md](../TwoVTwo.md), [../ArduinoPlc.md](../ArduinoPlc.md).
 
 Tool wrappers (`.claude/skills/`) only point here. Add an equivalent pointer for another tool if it needs one; keep the content in these files.

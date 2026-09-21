@@ -44,7 +44,7 @@ the default, or "upstream"). Derivation: [agents/reference/plc.md](agents/refere
 | 6 | `stackLightBuzzer` | accepted, ignored | |
 | 7 | `fieldResetLight` | accepted, ignored | |
 | 8-15 | reserved (15 = future `stationLightsActive`) | -- | -- |
-| 16-33 | reserved (future per-station lights, reference section 4) | -- | -- |
+| 16-31 | reserved (future per-station lights need 18 coils, so that feature must raise the coil table size here and in the firmware together) | -- | -- |
 | 34-63 | reserved | -- | -- |
 
 ## Rules
@@ -57,3 +57,7 @@ the default, or "upstream"). Derivation: [agents/reference/plc.md](agents/refere
   `plc/mayhem_wire_map_test.go` fails if a future upstream addition has neither.
 - Arduino-side firmware changes this map assumes are in [agents/reference/plc.md](agents/reference/plc.md)
   section 3.1.
+
+## Table sizes
+
+The FMS reads 32 discrete inputs and 8 holding registers and writes 32 coils, which is exactly what the `fakeplc-mega` firmware serves. A Modbus request that runs past the end of a table is rejected as a whole and the PLC shows as unhealthy, so these sizes change only together with the firmware.

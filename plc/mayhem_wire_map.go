@@ -14,11 +14,13 @@ package plc
 
 // Fixed sizes of the tables exchanged with the Arduino over the wire. These are independent of
 // inputCount/registerCount/coilCount (upstream's own enum lengths), so upstream growing its I/O tables in a
-// future year cannot change what is sent to, or expected back from, this specific piece of hardware.
+// future year cannot change what is sent to, or expected back from, this specific piece of hardware. They must
+// never exceed what the firmware serves (fakeplc-mega configures 32 discrete inputs, 8 holding registers and 32
+// coils): a Modbus request past the end of a table is rejected as a whole, which would mark the PLC unhealthy.
 const (
 	mayhemWireInputCount    = 32
-	mayhemWireRegisterCount = 16
-	mayhemWireCoilCount     = 64
+	mayhemWireRegisterCount = 8
+	mayhemWireCoilCount     = 32
 )
 
 // wireMap translates between upstream's logical input/register/coil identifiers and fixed physical wire
@@ -51,7 +53,7 @@ type wireMap struct {
 
 // MayhemWireMap is the frozen wire map for the M-Ayhem Arduino PLC. It implements only what the firmware
 // (fakeplc-mega, branch plc-cheesy-arena-compat) actually wires up: discrete inputs 0-19, holding register 0, and
-// coils 0-7. Everything else -- including the per-station light coils reserved at wire coils 16-33 for the
+// coils 0-7. Everything else -- including the per-station light coils reserved from wire coil 16 up for the
 // feature described in docs/agents/reference/plc.md section 4 -- is deliberately left unimplemented rather than
 // guessed at.
 var MayhemWireMap = &wireMap{

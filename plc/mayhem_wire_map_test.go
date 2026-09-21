@@ -14,8 +14,8 @@ import (
 // docs/agents/reference/plc.md section 3.2, so that an accidental edit to the map fails loudly.
 func TestMayhemWireMapFrozenIndices(t *testing.T) {
 	assert.Equal(t, uint16(32), MayhemWireMap.inputCount)
-	assert.Equal(t, uint16(16), MayhemWireMap.registerCount)
-	assert.Equal(t, uint16(64), MayhemWireMap.coilCount)
+	assert.Equal(t, uint16(8), MayhemWireMap.registerCount)
+	assert.Equal(t, uint16(32), MayhemWireMap.coilCount)
 
 	assert.Equal(
 		t,

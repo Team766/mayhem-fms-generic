@@ -4,7 +4,7 @@ Two playbooks keep this FMS current. They are plain Markdown so any coding agent
 
 | Playbook | Use it when | Input | Output |
 |----------|-------------|-------|--------|
-| [sync-upstream.md](sync-upstream.md) | Upstream Cheesy Arena has changes you want | An upstream tag or commit | The base, regenerated or ported, with `UPSTREAM.md` moved |
+| [sync-upstream.md](sync-upstream.md) | Upstream Cheesy Arena has changes you want | An upstream tag or commit | The base, regenerated or updated, with `UPSTREAM.md` moved |
 | [apply-game.md](apply-game.md) | You have this year's rules | A game spec ([format](game-spec-format.md)) and assets | A branch with the game implemented and verified |
 
 Always two phases with a commit between them: first the base, reviewed against upstream; then the game,

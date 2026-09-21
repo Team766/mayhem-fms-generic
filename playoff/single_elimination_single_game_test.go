@@ -1,4 +1,4 @@
-// Copyright 2026 Team 254. All Rights Reserved.
+// Copyright 2026 Team 766. All Rights Reserved.
 
 package playoff
 

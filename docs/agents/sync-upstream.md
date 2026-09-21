@@ -18,7 +18,7 @@ There are two modes. Pick by distance from the checkpoint.
 | Mode | When | What happens |
 |------|------|--------------|
 | `regenerate` | First time, after upstream's January game swap, or when the checkpoint is more than ~40 commits or one release behind | Start from a clean upstream tree and re-apply the strip list and the feature list |
-| `port` | Routine catch-up during a season | Review `checkpoint..upstream`, port the game-agnostic commits, skip the rest |
+| `update` | Routine catch-up during a season | Review `checkpoint..upstream`, bring over the game-agnostic commits, skip the rest |
 
 ## Inputs
 
@@ -33,7 +33,7 @@ There are two modes. Pick by distance from the checkpoint.
 3. **Strip completely.** A removed integration leaves no settings fields, template sections, routes, JS, tests or enum values behind.
 4. **Never reintroduce** anything on the "never reintroduce" list in `docs/DEVELOPMENT.md`, and do not copy Lite-specific behaviour (list in `docs/agents/reference/strip-list.md` section 3). Lite is a map of *where* game content lives, not a source of code.
 5. **PLC signal order is an interface.** The generic inputs, registers and coils keep upstream's order. Season I/O and M-Ayhem I/O go after the generic block. After any enum change run `go generate ./...`.
-6. **The game is not your job here.** In `regenerate` mode you stop with upstream's season game stripped to the neutral seam described in `docs/DEVELOPMENT.md`; `apply-game` then installs the current year's spec. In `port` mode you leave the game files alone.
+6. **The game is not your job here.** In `regenerate` mode you stop with upstream's season game stripped to the neutral seam described in `docs/DEVELOPMENT.md`; `apply-game` then installs the current year's spec. In `update` mode you leave the game files alone.
 7. Work on a new branch. Do not push, open PRs, or delete branches unless asked.
 
 ## Procedure: `regenerate`
@@ -49,21 +49,25 @@ There are two modes. Pick by distance from the checkpoint.
 5. **Hand off to `apply-game`** with the current year's spec. Separate pull request.
 6. **Verify** (next section), then update `UPSTREAM.md`: checkpoint sha, date, upstream tag, mode, and the skip list.
 
-## Procedure: `port`
+## Procedure: `update`
 
 1. List the range: `git log --reverse --date=short --format='%n%h %ad %s' --name-only <checkpoint>..<upstream ref>`, with the checkpoint from `UPSTREAM.md`.
-2. Classify every commit: **port** (game-agnostic), **skip-game** (touches only the season game, LEDs, or a stripped integration), **partial** (mixed: port the generic half). Write the table into the PR description and the skips into `UPSTREAM.md`.
+2. Classify every commit: **port** (game-agnostic), **skip-game** (touches only the season game, LEDs, or a stripped integration), **partial** (mixed: bring over the generic half). Write the table into the PR description and the skips into `UPSTREAM.md`. A skipped generic fix is silent, so skips get extra checks:
+   - **Judge by hunk, not by file.** A commit is `skip-game` only if every hunk is game-only code. `field/arena.go`, the scoring and referee panel scripts, the display scripts and the settings page mix game and generic code; a generic fix can ride inside a commit that looks like a game commit.
+   - **Cross-check against Lite.** Team 254's cheesy-arena-lite ports the same upstream range (its checkpoint is in its `UPSTREAM.md`). If Lite brought over a commit you skipped, look again.
+   - **Challenge pass.** Have a second, cheaper model or a person read the skip list and argue why each skipped commit might be generic. Re-check anything it flags.
+   - The yearly `regenerate` starts from a clean upstream tree, so a generic fix that was wrongly skipped is lost for one season at most.
 3. Port in upstream order, one commit per upstream commit where practical, message `Port upstream <sha>: <subject>`. For each ported commit ask: does it add a screen, a loop over alliance stations, or a PLC signal? If so it needs 2v2 handling (`docs/TwoVTwo.md`), or a check against the Arduino's fixed addresses (`plc/mayhem_arduino_test.go`).
 4. Verify, then move the checkpoint to the last commit you **reviewed** (not the last you ported).
 
-If classification shows the season game was swapped or more than about a third of the commits are `partial`, stop and switch to `regenerate`.
+If classification shows upstream's season game was swapped or more than about a third of the commits are `partial`, stop and switch to `regenerate`.
 
 ## Verification gates
 
 All must pass before the checkpoint moves. Paste the results into the PR.
 
 - `go generate ./... && go fmt ./... && go vet ./... && go build ./... && go test ./...`
-- Nothing stripped is left: `git grep -n -i -E 'twitch|nexus|tbaclient|tbapublish|teamsign|team_sign|ledcontroller|/api/scores|FoulPointsAgainst|cheesy-arena-lite|<this season game words>' -- '*.go' '*.html' '*.js' '*.css' ':!docs' ':!specs' ':!static/js/lib'` prints nothing except `TbaMatchKey`. Take the season's game words from upstream's `game/score.go` for the release you synced to.
+- Nothing stripped is left: `git grep -n -i -E 'twitch|nexus|tbaclient|tbapublish|teamsign|team_sign|ledcontroller|/api/scores|FoulPointsAgainst|cheesy-arena-lite|<this season game words>' -- '*.go' '*.html' '*.js' '*.css' ':!docs' ':!specs' ':!static/js/lib' ':!static/css/lib'` prints nothing except `TbaMatchKey` (the vendored icon font has a `.bi-twitch` glyph, hence the last exclusion). Take the season's game words from upstream's `game/score.go` for the release you synced to.
 - Diff review against upstream: `git diff <upstream sha> -- . ':!docs' ':!specs'` contains only strip-list deletions, feature-list additions and placeholder-game seam files. Anything else is a defect.
 - 2v2 checklist and 3v3 flip-back check from `docs/TwoVTwo.md`.
 - PLC unit tests, including the Arduino signal-address guard test. Bench test with the Arduino when hardware is available; say so if it was not run.

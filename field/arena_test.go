@@ -90,10 +90,8 @@ func TestArenaCheckCanStartMatch(t *testing.T) {
 	var plc FakePlc
 	plc.isEnabled = true
 	arena.Plc = &plc
-	err = arena.checkCanStartMatch()
-	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "cannot start match: FTA ready switch is not active")
-	}
+	// The M-Ayhem field has no FTA ready switch, so that input never blocks a match start.
+	assert.Nil(t, arena.checkCanStartMatch())
 	plc.ftaReady = true
 	assert.Nil(t, arena.checkCanStartMatch())
 }

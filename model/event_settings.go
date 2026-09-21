@@ -100,6 +100,8 @@ type EventSettings struct {
 	PauseDurationSec                 int
 	TeleopDurationSec                int
 	WarningRemainingDurationSec      int
+	AutonRpThreshold                 int
+	ScoringRpThreshold               int
 }
 
 func (database *Database) GetEventSettings() (*EventSettings, error) {
@@ -128,6 +130,8 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		PauseDurationSec:            game.MatchTiming.PauseDurationSec,
 		TeleopDurationSec:           game.MatchTiming.TeleopDurationSec,
 		WarningRemainingDurationSec: game.MatchTiming.WarningRemainingDurationSec,
+		AutonRpThreshold:            game.AutonRpThreshold,
+		ScoringRpThreshold:          game.ScoringRpThreshold,
 	}
 
 	if err := database.eventSettingsTable.create(&eventSettings); err != nil {

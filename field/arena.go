@@ -279,6 +279,9 @@ func (arena *Arena) LoadSettings() error {
 	game.UpdateMatchSounds()
 	arena.MatchTimingNotifier.Notify()
 
+	game.AutonRpThreshold = settings.AutonRpThreshold
+	game.ScoringRpThreshold = settings.ScoringRpThreshold
+
 	// Reconstruct the playoff tournament in memory.
 	if err = arena.CreatePlayoffTournament(); err != nil {
 		return err

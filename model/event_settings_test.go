@@ -32,6 +32,8 @@ func TestEventSettingsReadWrite(t *testing.T) {
 			PauseDurationSec:            3,
 			TeleopDurationSec:           120,
 			WarningRemainingDurationSec: 30,
+			AutonRpThreshold:            20,
+			ScoringRpThreshold:          12,
 			CompanionAddress:            "",
 			CompanionPort:               0,
 		},

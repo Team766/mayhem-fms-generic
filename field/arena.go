@@ -66,7 +66,6 @@ type Arena struct {
 	CompanionClient  *partner.CompanionClient
 	AllianceStations map[string]*AllianceStation
 	Displays         map[string]*Display
-	TeamSigns        *TeamSigns
 	Leds             *led.Controller
 	ScoringPanelRegistry
 	ArenaNotifiers
@@ -136,7 +135,6 @@ func NewArena(dbPath string) (*Arena, error) {
 
 	arena.Displays = make(map[string]*Display)
 
-	arena.TeamSigns = NewTeamSigns()
 	arena.Leds = led.NewController()
 
 	var err error
@@ -175,14 +173,6 @@ func (arena *Arena) LoadSettings() error {
 	arena.EventSettings = settings
 
 	// Initialize the components that depend on settings.
-	arena.TeamSigns.Red1.SetId(settings.TeamSignRed1Id)
-	arena.TeamSigns.Red2.SetId(settings.TeamSignRed2Id)
-	arena.TeamSigns.Red3.SetId(settings.TeamSignRed3Id)
-	arena.TeamSigns.RedTimer.SetId(settings.TeamSignRedTimerId)
-	arena.TeamSigns.Blue1.SetId(settings.TeamSignBlue1Id)
-	arena.TeamSigns.Blue2.SetId(settings.TeamSignBlue2Id)
-	arena.TeamSigns.Blue3.SetId(settings.TeamSignBlue3Id)
-	arena.TeamSigns.BlueTimer.SetId(settings.TeamSignBlueTimerId)
 	accessPointWifiStatuses := [6]*network.TeamWifiStatus{
 		&arena.AllianceStations["R1"].WifiStatus,
 		&arena.AllianceStations["R2"].WifiStatus,
@@ -788,9 +778,6 @@ func (arena *Arena) Update() {
 		arena.RealtimeScoreNotifier.Notify()
 	}
 
-	// Handle the team number / timer displays.
-	arena.TeamSigns.Update(arena)
-
 	arena.LastMatchTimeSec = matchTimeSec
 	arena.lastMatchState = arena.MatchState
 }
@@ -1010,7 +997,6 @@ func (arena *Arena) preLoadNextMatch() {
 		}
 	}
 	arena.setupNetwork(teams, true)
-	arena.TeamSigns.SetNextMatchTeams(teamIds)
 }
 
 // Enable or disable the team ethernet ports on both SCCs
@@ -1374,7 +1360,7 @@ func (arena *Arena) handleTeamStop(station string, eStopState, aStopState bool) 
 	}
 }
 
-// Set the field lights and team signs to purple, if not in a match.
+// Set the field lights to purple, if not in a match.
 func (arena *Arena) SignalVolunteers() {
 	if arena.MatchState != PostMatch && arena.MatchState != PreMatch && arena.MatchState != TimeoutActive {
 		// Don't signal volunteers during matches.
@@ -1388,7 +1374,7 @@ func (arena *Arena) SignalVolunteers() {
 	arena.Leds.SetMode(led.PurpleMode, led.PurpleMode)
 }
 
-// Set the field lights and team signs to green, if not in a match.
+// Set the field lights to green, if not in a match.
 func (arena *Arena) SignalReset() {
 	if arena.MatchState != PostMatch && arena.MatchState != PreMatch && arena.MatchState != TimeoutActive {
 		// Don't signal reset during matches.

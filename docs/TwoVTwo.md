@@ -1,53 +1,53 @@
 # 2v2 mode
 
-M-Ayhem is sometimes played 2v2 and sometimes 3v3. The base supports both permanently, selected per event.
-This document is the contract that [agents/sync-upstream.md](agents/sync-upstream.md) re-applies onto each
-new upstream. The file-by-file inventory of the 2025 implementation, and how it maps onto upstream as of
-September 2026, is in [agents/reference/two-v-two.md](agents/reference/two-v-two.md).
+M-Ayhem is played 2v2 some years and 3v3 others. The base supports both, chosen per event. This page is the
+design that [agents/sync-upstream.md](agents/sync-upstream.md) re-applies onto each new upstream. What the
+2025 code did, file by file, is in [agents/reference/two-v-two.md](agents/reference/two-v-two.md); this
+design deliberately differs from it.
 
-## Design
+## The idea
 
-1. **One event setting.** `EventSettings.TwoVsTwoMode bool`, default false, on Setup > Settings. It is not a build flag: one binary and one test run cover both sizes.
-2. **Zero impact when off.** With the setting off, behaviour and screens are upstream's 3v3, including the fourth (off-field) team row on the audience final score.
-3. **No schema change.** `model.Match` keeps six team slots.
-4. **One representation: `Red3 = Blue3 = 0`.** A 2v2 match has no third team anywhere it is stored: scheduled matches, playoff matches, substitutions. No surrogate filler team, no duplicated captain. (The 2025 code used all three representations; that is what made later screens fragile.)
-5. **One helper decides who is playing.** Code asks the arena or the match for its *active stations* (four in 2v2, six in 3v3) instead of testing the setting. Match-start checks, PLC stop handling, stack-light readiness, network setup, displays and game rules all go through it. New upstream code that loops over stations or names `R3`/`B3` is adapted the same way.
-6. **Generalise rather than hide.** Prefer rendering from the list of active teams over CSS that hides a third control. Where a game screen has per-robot controls, the game playbook renders one per active robot.
-7. **Games count real robots.** Rules such as "all robots left" use the active, non-bypassed robots. Thresholds may differ by alliance size only if the game spec says so.
+**A 2v2 match is a match whose third team slots are 0.** Upstream already copes with an empty slot (a
+practice match with five teams): the station has no team, and the operator bypasses it. So almost nothing
+needs to know about a "mode". Two kinds of code change:
 
-## What it touches
+1. **Generators** decide how many teams go into a match. They read the event setting.
+2. **Everything else** looks at the match in front of it: a station or a robot position is *empty* when its team is 0. It never reads the setting.
 
-| Area | Requirement |
-|------|-------------|
-| Settings | Checkbox, persisted, sent to clients in the match-load message |
-| Schedule generation | `2p_*` templates; third slots zero, surrogate flags cleared; choose template by team count and matches per team |
-| Arena | Load, substitute and reset leave station 3 empty and bypassed; start conditions, PLC stops and **stack-light readiness** use active stations; network config skips empty stations |
-| Alliance selection and playoffs | Alliance size 2; third-round setting cannot silently make it 4; playoff lineups and post-match alliance updates never write team 0 |
-| Panels | Scoring, referee (cards, fouls by team), head-ref bypass: active robots only |
-| Displays | Audience, announcer, wall, alliance station, queueing, field monitor (both), FTA views, bracket: lay out two teams per alliance cleanly |
-| Match review and logs | Edit form and logs show active teams only; editing does not resurrect a third team |
-| Reports | Schedule and team reports drop the third columns |
+This keeps the setting out of match play, scoring, panels and displays, makes a 3v3 event behave exactly
+like upstream, and means a new upstream screen usually works unchanged because it already handles team 0.
 
-## Known gaps (follow-up work, not blockers for regeneration)
+## The setting
 
-- **Schedule generation is minimal**: one 14-team template, cut at 8, 10 or 12 matches per team, no generator for other team counts, no tests. `rand.Seed(0)` no longer makes it deterministic under current Go. Planned as its own PRs after the base exists.
-- "Two plus a backup" alliances are not supported.
-- Station-3 per-team lights need hardware that does not exist yet (see [BASE.md](BASE.md), PLC).
+`EventSettings.TwoVsTwoMode bool`, default false, a checkbox on Setup > Settings. An event setting rather
+than a build flag so one binary and one test run cover both sizes. It is read in exactly three places:
 
-## Defects in the 2025 implementation that must not be carried forward
+| Generator | With the setting on |
+|-----------|---------------------|
+| Schedule builder (`tournament/schedule.go`) | Uses `schedules/2p_<teams>_<matchesPerTeam>.csv`, four teams per match, `Red3 = Blue3 = 0`, no surrogate flags on the empty slots |
+| Alliance selection (`web/alliance_selection.go`) | Alliances of two; no third or backup round |
+| Playoff match creation | Lineups of two; the third lineup slot is 0 |
 
-- Stack lights never turn green with the PLC enabled in 2v2: station-3 stop handling was skipped, so those stations never counted as reset, and readiness still required them. Fixed by design point 5.
-- Audience final score lost the off-field team row in both modes.
-- `tournament` tests did not compile after the schedule function signature changed.
-- Three different stored representations of a 2v2 match (design point 4).
+## Empty stations and positions (everywhere else)
+
+- **Arena.** Loading or substituting a match leaves a station with team 0 empty and **bypassed automatically**. One helper (`AllianceStation.IsEmpty()`, or an `activeStations()` list) is used by the start conditions, PLC e-stop and a-stop handling, stack-light readiness and network configuration, so an empty station can never block a match or keep the lights from going green. This also fixes the five-team practice match in 3v3.
+- **Stored data.** Empty is always 0: schedules, playoff lineups, substitutions, edited results. No filler surrogate team, no duplicated captain. Alliance updates after a playoff match ignore 0.
+- **Panels and displays.** Per-robot controls and team rows are rendered from the teams present, not hidden by a mode flag. A display adds a `two-teams` layout class when the loaded match has no third teams. The audience final score keeps upstream's fourth (off-field) row.
+- **Game code.** Per-robot arrays stay length 3; position 3 is unused in a 2v2 match. Rules that say "all robots" count the robots present and not bypassed. A game spec may give different thresholds per alliance size; otherwise they are the same.
+
+## Out of scope
+
+- Alliances of two plus a backup.
+- A schedule generator. Templates are pre-generated files; today only `2p_14_*.csv` exists, so **a template for the event's team count must be added before the event**. Better 2v2 scheduling is follow-up work.
+- Station-3 lights and mixed 2v2/3v3 schedules (the design does not prevent the latter, it is just untested).
 
 ## Verification
 
-Automated (all in `go test ./...`):
-- Existing upstream suite unchanged and green with the setting off.
-- Arena: load/substitute/reset in 2v2; start conditions with four stations; PLC readiness and stack lights reach green in 2v2.
-- Schedule: every generated 2v2 match has zero third slots, no surrogates, four distinct teams.
-- Alliance selection: size 2 with each playoff type; no team 0 after a playoff substitution.
-- Game: worked examples from the spec in both sizes.
+Automated, in `go test ./...`:
+- Upstream's suite passes unchanged with the setting off.
+- Arena: loading a match with empty third slots bypasses them; start conditions pass with four robots; with a PLC, readiness reaches green and an e-stop on an empty station is ignored.
+- Schedule: every generated 2v2 match has four distinct teams, zero third slots, no surrogates on them.
+- Alliance selection and playoffs: alliances of two for each playoff type; no team 0 written back after a playoff match.
+- Match review: editing a 2v2 result keeps the third slots 0.
 
-Manual, on one database: turn 2v2 on; generate a schedule; play a qualification match from the panels; commit; check audience, announcer, wall, queueing, field monitors, rankings, reports; run alliance selection and one playoff match; then turn 2v2 off and confirm a 3v3 match looks and scores exactly like upstream.
+Manual, on one database: turn the setting on, generate a schedule, play and commit a qualification match from the panels, check every display and report, run alliance selection and one playoff match. Then turn it off and confirm a 3v3 match looks and scores exactly like upstream.

@@ -35,12 +35,6 @@ UI for configuring event settings.
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" id="publishing-tab" data-bs-toggle="tab" data-bs-target="#publishing" type="button"
-              role="tab">
-              Publishing
-            </button>
-          </li>
-          <li class="nav-item">
             <button class="nav-link" id="automation-tab" data-bs-toggle="tab" data-bs-target="#automation" type="button"
               role="tab">
               Automation
@@ -138,16 +132,10 @@ UI for configuring event settings.
                     name="selectionShowUnpickedTeams" {{if .SelectionShowUnpickedTeams}} checked{{end}}>
                 </div>
               </div>
-            </fieldset>
-            <fieldset class="mb-4">
-              <legend>Team Info Download</legend>
               <div class="row mb-3">
-                <label class="col-lg-6 control-label" for="tbaDownloadEnabled">
-                  Enable Team Info Download (From The Blue Alliance)
-                </label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="tbaDownloadEnabled"
-                    name="tbaDownloadEnabled" {{if .TbaDownloadEnabled}} checked{{end}}>
+                <label class="col-lg-6 control-label">Event Code</label>
+                <div class="col-lg-6">
+                  <input type="text" class="form-control" name="eventCode" value="{{.EventCode}}">
                 </div>
               </div>
             </fieldset>
@@ -457,57 +445,6 @@ UI for configuring event settings.
               </div>
             </fieldset>
           </div>
-          <div class="tab-pane" id="publishing" role="tabpanel">
-            <fieldset class="mb-4">
-              <legend>Publishing</legend>
-              <p>Contact The Blue Alliance to obtain an event code and credentials.</p>
-              <div class="row mb-3">
-                <label class="col-lg-8 control-label"
-                  for="tbaPublishingEnabled">Enable The Blue Alliance publishing</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="tbaPublishingEnabled"
-                    name="tbaPublishingEnabled" {{if .TbaPublishingEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Event Code</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaEventCode" value="{{.TbaEventCode}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Auth ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaSecretId" value="{{.TbaSecretId}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Secret</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaSecret" value="{{.TbaSecret}}">
-                </div>
-              </div>
-            </fieldset>
-            <div class="col-lg-4">
-              {{if .TbaPublishingEnabled}}
-              <legend>Publishing Operations</legend>
-              <div>
-                <a href="/setup/settings/publish_teams" class="btn btn-primary">Publish Teams</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_matches" class="btn btn-primary">Publish Schedule/Results</a></div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_rankings" class="btn btn-primary">Publish Standings</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_alliances" class="btn btn-primary">Publish Alliances</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_awards" class="btn btn-primary">Publish Awards</a>
-              </div>
-              {{end}}
-            </div>
-          </div>
           <div class="tab-pane" id="automation" role="tabpanel">
             <fieldset class="mb-4">
               <legend>Audience display</legend>
@@ -521,8 +458,8 @@ UI for configuring event settings.
             </fieldset>
             <fieldset class="mb-4">
               <legend>Nexus</legend>
-              <p>Automatically populate practice and playoff match lineups from Nexus. Uses the same event code as TBA-
-                configure it on the publishing tab.</p>
+              <p>Automatically populate practice and playoff match lineups from Nexus. Uses the event code
+                configured on the event tab.</p>
               <p>When enabled, Nexus is the source of truth for lineups and they can not
                 be overridden by the scorekeeper. To make changes, update the lineup in Nexus or disable this setting.</p>
               <div class="row mb-5">
@@ -532,7 +469,7 @@ UI for configuring event settings.
                 </div>
               </div>
               <p><b>Nexus AutoQueue</b>: The queuing status in Nexus can be automatically updated when match scores are
-                committed. To generate an AutoQueue key, the TBA event key must be set and you must log in with a Nexus
+                committed. To generate an AutoQueue key, the event code must be set and you must log in with a Nexus
                 account that has the lead queuer role.</p>
               <div class="row mb-3">
                 <label class="col-lg-8 control-label" for="nexusAutoQueueEnabled">Enable Nexus AutoQueue</label>
@@ -545,7 +482,7 @@ UI for configuring event settings.
                 <div class="col-lg-6">
                   <div class="input-group">
                     <input type="text" class="form-control" id="nexusAutoQueueKeyInput" name="nexusAutoQueueKey" value="{{.NexusAutoQueueKey}}">
-                    {{if .TbaEventCode}}<a class="btn btn-outline-primary" href="{{.NexusBaseUrl}}/event/{{.TbaEventCode}}/auto-queue?fms=true" target="_blank" rel="opener">Generate</a>{{end}}
+                    {{if .EventCode}}<a class="btn btn-outline-primary" href="{{.NexusBaseUrl}}/event/{{.EventCode}}/auto-queue?fms=true" target="_blank" rel="opener">Generate</a>{{end}}
                   </div>
                 </div>
               </div>

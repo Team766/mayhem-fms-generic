@@ -227,7 +227,7 @@ func TestListenForDriverStations(t *testing.T) {
 	}
 
 	// Set event name
-	arena.EventSettings.TbaEventCode = "2026CC"
+	arena.EventSettings.EventCode = "2026CC"
 	tcpConn, err = net.Dial("tcp", serverAddress)
 	if assert.Nil(t, err) {
 		defer tcpConn.Close()

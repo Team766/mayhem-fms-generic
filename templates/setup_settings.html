@@ -70,6 +70,14 @@ UI for configuring event settings.
                       Single-Elimination (2-16 alliances)
                     </label>
                   </div>
+                  <div class="radio">
+                    <label>
+                      <input type="radio" name="playoffType" value="SingleEliminationSingleGamePlayoff"
+                        onclick="updateNumPlayoffAlliances(false);"
+                        {{if eq .PlayoffType 2}}checked{{end}}>
+                      Single elimination, single-game rounds (best-of-three final) (2-16 alliances)
+                    </label>
+                  </div>
                 </div>
               </div>
               <div class="row mb-3">

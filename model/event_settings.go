@@ -16,6 +16,7 @@ type PlayoffType int
 const (
 	DoubleEliminationPlayoff PlayoffType = iota
 	SingleEliminationPlayoff
+	SingleEliminationSingleGamePlayoff
 )
 
 // Configured here to avoid circular import dependencies.

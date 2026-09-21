@@ -49,8 +49,10 @@ UI for controlling the alliance selection process.
             <th>Alliance #</th>
             <th>Captain</th>
             <th>Pick 1</th>
+            {{if ge (len (index .Alliances 0).TeamIds) 3}}
             <th>Pick 2</th>
-            {{if (index .Alliances 0).TeamIds | len | eq 4}}
+            {{end}}
+            {{if eq (len (index .Alliances 0).TeamIds) 4}}
             <th>Pick 3</th>
             {{end}}
           </tr>

@@ -28,6 +28,12 @@ body {
 .position-row[data-ds="true"][data-preMatch="false"] {
   display: none;
 }
+body.two-v-two .position-row {
+  height: 44%;
+}
+body.two-v-two .position-row[data-ds="true"] {
+  height: 46%;
+}
 #matchStatusRow {
   height: 6%;
   display: flex;

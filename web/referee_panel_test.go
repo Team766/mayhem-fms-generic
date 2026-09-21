@@ -5,6 +5,7 @@ package web
 
 import (
 	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
@@ -22,6 +23,37 @@ func TestRefereePanel(t *testing.T) {
 	assert.NotContains(t, recorder.Body.String(), "Leave")
 	assert.NotContains(t, recorder.Body.String(), "Coral")
 	assert.NotContains(t, recorder.Body.String(), "Algae")
+}
+
+func TestRefereePanelTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	recorder := web.getHttpResponse("/panels/referee")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "red3Card")
+	assert.Contains(t, recorder.Body.String(), "blue3Card")
+	assert.Contains(t, recorder.Body.String(), "team-3")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/panels/referee")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "red3Card")
+	assert.NotContains(t, recorder.Body.String(), "blue3Card")
+	assert.NotContains(t, recorder.Body.String(), "team-3")
+
+	// Also check the foul list partial, which is a separate handler/data struct.
+	web.arena.EventSettings.TwoVsTwoMode = false
+	web.arena.CurrentMatch.Red1, web.arena.CurrentMatch.Red2, web.arena.CurrentMatch.Red3 = 101, 102, 103
+	web.arena.CurrentMatch.Blue1, web.arena.CurrentMatch.Blue2, web.arena.CurrentMatch.Blue3 = 104, 105, 106
+	web.arena.RedRealtimeScore.CurrentScore.Fouls = []game.Foul{{TeamId: 101}}
+	recorder = web.getHttpResponse("/panels/referee/foul_list")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "103")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/panels/referee/foul_list")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "103")
 }
 
 func TestRefereePanelWebsocket(t *testing.T) {

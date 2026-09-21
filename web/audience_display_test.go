@@ -30,6 +30,25 @@ func TestAudienceDisplay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "finalTiebreakReason")
 }
 
+func TestAudienceDisplayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	url := "/displays/audience?displayId=1&background=%23000&reversed=false&overlayLocation=top"
+	recorder := web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "leftTeam3")
+	assert.Contains(t, recorder.Body.String(), "rightTeam3")
+	// The final score's fourth (off-field) team row must remain in both modes.
+	assert.Contains(t, recorder.Body.String(), "leftFinalTeam4")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "leftTeam3")
+	assert.NotContains(t, recorder.Body.String(), "rightTeam3")
+	assert.Contains(t, recorder.Body.String(), "leftFinalTeam4")
+}
+
 func TestAudienceDisplayWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

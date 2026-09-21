@@ -100,6 +100,37 @@ func TestScheduleCsvReport(t *testing.T) {
 	assert.Equal(t, expectedBody, recorder.Body.String())
 }
 
+func TestScheduleCsvReportTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.EventSettings.TwoVsTwoMode = true
+
+	match := model.Match{
+		Type: model.Qualification, ShortName: "Q1", Time: time.Unix(0, 0), Red1: 1, Red2: 2, Blue1: 4, Blue2: 5,
+	}
+	web.arena.Database.CreateMatch(&match)
+
+	recorder := web.getHttpResponse("/reports/csv/schedule/qualification")
+	assert.Equal(t, 200, recorder.Code)
+	body := recorder.Body.String()
+	assert.NotContains(t, body, "Red3")
+	assert.NotContains(t, body, "Blue3")
+	assert.Contains(t, body, "Match,Type,Time,Red1,Red1IsSurrogate,Red2,Red2IsSurrogate,Blue1,Blue1IsSurrogate,"+
+		"Blue2,Blue2IsSurrogate\n")
+}
+
+func TestSchedulePdfReportTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.EventSettings.TwoVsTwoMode = true
+
+	match := model.Match{Type: model.Practice, ShortName: "P1", Time: time.Unix(0, 0), Red1: 1, Red2: 2, Blue1: 4, Blue2: 5}
+	web.arena.Database.CreateMatch(&match)
+
+	// Can't really parse the PDF content and check it, so just check that what's sent back is a well-formed PDF.
+	recorder := web.getHttpResponse("/reports/pdf/schedule/practice")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Equal(t, "application/pdf", recorder.Header()["Content-Type"][0])
+}
+
 func TestSchedulePdfReport(t *testing.T) {
 	web := setupTestWeb(t)
 

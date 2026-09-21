@@ -241,6 +241,13 @@ h3 {
   row-gap: 0.25vw;
   align-items: center;
 }
+#refereePanel.two-v-two #scoreSummary > div {
+  grid-template-columns: 7.5vw repeat(2, 5.2vw);
+}
+#refereePanel.two-v-two .team-card {
+  width: 13vw;
+  height: 4.5vw;
+}
 
 #scoreSummary .placeholder {
   visibility: hidden;

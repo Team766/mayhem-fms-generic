@@ -20,7 +20,7 @@ stripped) and `CURRENT` is empty.
 ## Inputs
 
 - The game spec (`specs/<year>_<name>.md`) and its assets folder (`specs/<year>_<name>/`: logos, sounds, rule text).
-- `docs/BASE.md` "Placeholder-game seam": the allowlist of files this playbook may touch.
+- `docs/DEVELOPMENT.md` "Placeholder-game seam": the allowlist of files this playbook may touch.
 - The tree's current game, as the pattern to follow for plumbing (websocket commands, template helpers, test fixtures).
 
 ## Ground rules
@@ -28,7 +28,7 @@ stripped) and `CURRENT` is empty.
 1. **Stay inside the seam.** If the spec needs something outside the allowlist (a new arena hook, PLC I/O, a new display), stop and ask, or do it as a clearly separate commit and say so. A yearly game must not quietly change base behaviour.
 2. **The spec decides; the old code does not.** Where the spec is silent or contradicts itself, ask; do not copy last year's behaviour. Record every assumption you had to make in the report.
 3. **Robot count.** Write rules against the robots that are actually playing (2v2 or 3v3, bypassed robots), using the base's active-stations helper (`docs/TwoVTwo.md`). "All robots" never means a literal 3.
-4. **Every consumer of the score JSON gets updated.** The 2025 hand port missed the announcer, wall and alliance-station displays and the rankings PDF; they rendered `NaN` or failed. The consumer list in `docs/BASE.md` is a checklist, and step 6 checks it mechanically.
+4. **Every consumer of the score JSON gets updated.** The 2025 hand port missed the announcer, wall and alliance-station displays and the rankings PDF; they rendered `NaN` or failed. The consumer list in `docs/DEVELOPMENT.md` is a checklist, and step 6 checks it mechanically.
 5. Keep upstream's style: imports alphabetical and ungrouped, table-driven tests, `go fmt`.
 6. Work on a new branch. Do not push or open PRs unless asked.
 

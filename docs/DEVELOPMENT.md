@@ -1,4 +1,7 @@
-# The M-Ayhem base
+# Developing the M-Ayhem FMS
+
+How this repository relates to upstream Cheesy Arena, what it removes and adds, where a year's game lives, and how
+both are kept current. Read this before changing anything.
 
 This repository is Team 766's base for the Mechanical M-Ayhem field management system. It is
 [Team254/cheesy-arena](https://github.com/Team254/cheesy-arena) **minus** a strip list, **plus** a short
@@ -86,7 +89,7 @@ Anything else changed by a game is a defect unless the PR calls it out.
 
 ## Files the base owns (survive a regeneration untouched)
 
-`docs/BASE.md`, `docs/TwoVTwo.md`, `docs/agents/`, `specs/`, `UPSTREAM.md`, the M-Ayhem
+`docs/DEVELOPMENT.md`, `docs/TwoVTwo.md`, `docs/agents/`, `specs/`, `UPSTREAM.md`, the M-Ayhem
 section of `AGENTS.md`, `.claude/skills/` (thin wrappers), `README.md` identity, `schedules/2p_*.csv`.
 
 ## Open decisions

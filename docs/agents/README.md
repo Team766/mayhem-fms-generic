@@ -12,7 +12,7 @@ reviewed against the base. A typical year: `sync-upstream` to the latest upstrea
 write `specs/<year>_<name>.md`, `apply-game`, iterate on the spec as the rules settle, then freeze a
 release branch for the event.
 
-Background and contracts: [../BASE.md](../BASE.md), [../TwoVTwo.md](../TwoVTwo.md). Dated inventories that
+Background and contracts: [../DEVELOPMENT.md](../DEVELOPMENT.md), [../TwoVTwo.md](../TwoVTwo.md). Dated inventories that
 the playbooks cite: [reference/](reference/).
 
 Tool wrappers (`.claude/skills/`) only point here. Add an equivalent pointer for another tool if it needs one; keep the content in these files.

@@ -3,7 +3,7 @@
 Regenerate or update the **M-Ayhem base** from upstream [Team254/cheesy-arena](https://github.com/Team254/cheesy-arena).
 
 This is a playbook for a coding agent (any LLM) or a careful human. It is phase 1 of two; phase 2 is
-[apply-game.md](apply-game.md). Read [../BASE.md](../BASE.md) first: it defines what the base is. This
+[apply-game.md](apply-game.md). Read [../DEVELOPMENT.md](../DEVELOPMENT.md) first: it defines what the base is. This
 file says how to produce it.
 
 ## The idea
@@ -23,7 +23,7 @@ There are two modes. Pick by distance from the checkpoint.
 ## Inputs
 
 - Upstream ref to sync to. Default: the latest upstream release tag; `upstream/main` if a needed fix is not released yet. Never fetch unless the operator asked you to; use the refs that are already there and say which commit you used.
-- `UPSTREAM.md` (the checkpoint), `docs/BASE.md` (strip list, keep list, feature list), `docs/TwoVTwo.md`, `docs/agents/reference/*` (detailed inventories, dated; trust the code over them when they disagree, and update them).
+- `UPSTREAM.md` (the checkpoint), `docs/DEVELOPMENT.md` (strip list, keep list, feature list), `docs/TwoVTwo.md`, `docs/agents/reference/*` (detailed inventories, dated; trust the code over them when they disagree, and update them).
 - The current base branch, for the feature code you are carrying forward.
 
 ## Ground rules
@@ -31,17 +31,17 @@ There are two modes. Pick by distance from the checkpoint.
 1. **Stay textually close to upstream.** In files you are only stripping, delete whole lines or blocks. Do not reflow, regroup imports, rename, fix typos or touch copyright headers. No `goimports`; upstream keeps imports alphabetical and ungrouped.
 2. **Module path stays `github.com/Team254/cheesy-arena`.** It keeps upstream diffs applicable without a rewrite pass.
 3. **Strip completely.** A removed integration leaves no settings fields, template sections, routes, JS, tests or enum values behind.
-4. **Never reintroduce** anything on the "never reintroduce" list in `docs/BASE.md`, and do not copy Lite-specific behaviour (list in `docs/agents/reference/strip-list.md` section 3). Lite is a map of *where* game content lives, not a source of code.
+4. **Never reintroduce** anything on the "never reintroduce" list in `docs/DEVELOPMENT.md`, and do not copy Lite-specific behaviour (list in `docs/agents/reference/strip-list.md` section 3). Lite is a map of *where* game content lives, not a source of code.
 5. **PLC signal order is an interface.** The generic inputs, registers and coils keep upstream's order. Season I/O and M-Ayhem I/O go after the generic block. After any enum change run `go generate ./...`.
-6. **The game is not your job here.** In `regenerate` mode you stop with upstream's season game stripped to the neutral seam described in `docs/BASE.md`; `apply-game` then installs the current year's spec. In `port` mode you leave the game files alone.
+6. **The game is not your job here.** In `regenerate` mode you stop with upstream's season game stripped to the neutral seam described in `docs/DEVELOPMENT.md`; `apply-game` then installs the current year's spec. In `port` mode you leave the game files alone.
 7. Work on a new branch. Do not push, open PRs, or delete branches unless asked.
 
 ## Procedure: `regenerate`
 
-1. **Branch.** Create the work branch from the base branch. Replace the tree's tracked content with the chosen upstream tree, keeping everything listed under "Files the base owns" in `docs/BASE.md` (docs, specs, playbooks, `UPSTREAM.md`, `AGENTS.md` additions, M-Ayhem assets). Commit this as one mechanical commit: `Import upstream <tag> (<sha>)`. Nothing else goes in that commit, so reviewers can skip it.
+1. **Branch.** Create the work branch from the base branch. Replace the tree's tracked content with the chosen upstream tree, keeping everything listed under "Files the base owns" in `docs/DEVELOPMENT.md` (docs, specs, playbooks, `UPSTREAM.md`, `AGENTS.md` additions, M-Ayhem assets). Commit this as one mechanical commit: `Import upstream <tag> (<sha>)`. Nothing else goes in that commit, so reviewers can skip it.
 2. **Strip integrations**, one commit each within a single strip pull request, in this order: TBA, Nexus, team signs, Twitch. Use the call-site lists in `reference/strip-list.md` section 2, but re-derive them with `git grep` because upstream moves. Build and run tests after each.
-3. **Strip the season game and LEDs** down to the neutral seam. One commit, same pull request; the PR should be almost entirely deletions. The seam file allowlist is in `docs/BASE.md`; everything game-specific outside it (arena hooks, PLC game I/O, LED package, settings fields, sounds) goes.
-4. **Apply the base features**, one pull request each, from `docs/BASE.md` "Feature list":
+3. **Strip the season game and LEDs** down to the neutral seam. One commit, same pull request; the PR should be almost entirely deletions. The seam file allowlist is in `docs/DEVELOPMENT.md`; everything game-specific outside it (arena hooks, PLC game I/O, LED package, settings fields, sounds) goes.
+4. **Apply the base features**, one pull request each, from `docs/DEVELOPMENT.md` "Feature list":
    1. 2v2 mode, following `docs/TwoVTwo.md` (invariants first, then touchpoints; new upstream screens need handling too).
    2. M-Ayhem PLC wire map.
    3. Any other listed feature.

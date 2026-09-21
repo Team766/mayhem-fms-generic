@@ -36,7 +36,7 @@ Status: `open`, `answered` (spec updated), `n/a`.
 | 28 | Comment [a] says "the balance beam is no longer in the safe zone", but 3.6 and 3.8 say it is. Which is right? (Affects the wording of MA2603/MA2606 only.) | no default; affects only the wording of MA2603/MA2606 |  | open |
 | 29 | Control limit: text shows "three two" and "3 2". | 2. |  | open |
 | 30 | Is this export the final post-kickoff manual? It still says values may change before the September kickoff. | numbers as exported on 2026-09-20 |  | open |
-| 31 | Logos (`game-logo.png`, `blinds-logo.png`) for Medieval Mayhem are not supplied. The overlay spot is sized for a wide banner (upstream's is about 2.5:1); a square logo shows small there. | the M-Ayhem placeholder logo (600x600), installed 2026-09-20 |  | open |
+| 31 | Logos (`game-logo.png`, `blinds-logo.png`) for Medieval Mayhem are not supplied. They should be square, to be shown as a round badge filling the overlay circle with the timer overlaid. | the M-Ayhem placeholder badge (600x600), installed 2026-09-20 |  | open |
 | 32 | G401's text is cut off in the manual ("during AUTO and"). | the shortened text in section 6. |  | open |
 | 33 | MA2604 (hoarding) is a major foul that repeats every 10 seconds. A long hoard could swing a match by 30 points or more. Is that intended, or should repeats be capped or be minor? | as written in the manual: major (10), a separate foul for each repeat |  | open |
 | 34 | The Toss cue plays 20 s before the end and needs a sound. Who supplies `toss.wav`? | placeholder: a copy of the stock resume sound |  | open |

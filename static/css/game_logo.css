@@ -1,0 +1,41 @@
+/*
+  Game logo styling for a round badge logo (static/img/game-logo.png and blinds-logo.png are square). Loaded after
+  the shared overlay styles by the audience and wall displays. A game whose logo is a wide banner, like upstream's,
+  does not need this file: remove the two <link> tags that load it.
+*/
+
+/* Fill the whole match circle with the badge. "top" must be !important: the display scripts animate #logo's top
+   (logoUp/logoDown) to make room for the countdown below a banner logo, and a full-circle badge has no room to
+   give. The countdown is overlaid on the badge instead (see #matchTime), so nothing needs to move. */
+#logo {
+  top: 0 !important;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Countdown as a near-opaque pill over the lower part of the badge, so it stays legible on any artwork. Absolute
+   positioning takes it out of the normal flow so it cannot push past the circle. Its opacity is still animated by
+   the display scripts. */
+#matchTime {
+  position: absolute;
+  top: auto;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: auto;
+  line-height: 1;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  font-size: 30px;
+}
+
+#blindsLogo {
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}

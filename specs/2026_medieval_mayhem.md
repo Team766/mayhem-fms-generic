@@ -502,6 +502,8 @@ rules_text: specs/2026_medieval_mayhem/medieval.txt   # copy of the manual expor
 The manual describes every period change as an air horn. Stock sounds are kept unless the designers ask
 otherwise (section 12).
 
+- **Logo style: round badge.** `game-logo.png` and `blinds-logo.png` are square (600x600; currently the M-Ayhem placeholder). The badge fills the whole centre circle of the audience and wall overlays and the blinds circle, and the match timer is overlaid on the lower part of the badge on a near-opaque white pill so it stays legible. Implemented by `static/css/game_logo.css`, loaded by `templates/audience_display.html` and `templates/wall_display.html`. A banner-shaped logo would not need that stylesheet.
+
 ## 11. Worked examples (become tests and the UI acceptance script)
 
 Values used: auto floor 4 / first 8 / top 12; teleop floor 2 / first 5 / top 10 / stacked 8; leave 4; auto

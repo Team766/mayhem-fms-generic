@@ -59,8 +59,16 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	if playoffTypeValue == "" && eventSettings.PlayoffType == model.SingleEliminationPlayoff {
 		playoffTypeValue = "SingleEliminationPlayoff"
 	}
-	if playoffTypeValue == "SingleEliminationPlayoff" || playoffTypeValue == "single" {
-		playoffType = model.SingleEliminationPlayoff
+	if playoffTypeValue == "" && eventSettings.PlayoffType == model.SingleEliminationSingleGamePlayoff {
+		playoffTypeValue = "SingleEliminationSingleGamePlayoff"
+	}
+	if playoffTypeValue == "SingleEliminationPlayoff" || playoffTypeValue == "single" ||
+		playoffTypeValue == "SingleEliminationSingleGamePlayoff" {
+		if playoffTypeValue == "SingleEliminationSingleGamePlayoff" {
+			playoffType = model.SingleEliminationSingleGamePlayoff
+		} else {
+			playoffType = model.SingleEliminationPlayoff
+		}
 		if r.PostFormValue("numPlayoffAlliances") == "" {
 			if playoffTypeProvided {
 				numAlliances = 0

@@ -298,7 +298,8 @@ func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match) error 
 	numAlliances := web.arena.EventSettings.NumPlayoffAlliances
 	if web.arena.EventSettings.PlayoffType == model.DoubleEliminationPlayoff && numAlliances == 4 {
 		bracketType = "double4"
-	} else if web.arena.EventSettings.PlayoffType == model.SingleEliminationPlayoff {
+	} else if web.arena.EventSettings.PlayoffType == model.SingleEliminationPlayoff ||
+		web.arena.EventSettings.PlayoffType == model.SingleEliminationSingleGamePlayoff {
 		if numAlliances > 8 {
 			bracketType = "16"
 		} else if numAlliances > 4 {

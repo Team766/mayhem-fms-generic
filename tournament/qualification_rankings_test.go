@@ -105,6 +105,25 @@ func TestCalculateRankings(t *testing.T) {
 
 }
 
+func TestCalculateRankingsTwoVsTwo(t *testing.T) {
+	database := setupTestDb(t)
+
+	match := model.Match{
+		Type: model.Qualification, TypeOrder: 1, Status: game.RedWonMatch, Red1: 1, Red2: 2, Blue1: 3, Blue2: 4,
+	}
+	assert.Nil(t, database.CreateMatch(&match))
+	matchResult := model.BuildTestMatchResult(match.Id, 1)
+	assert.Nil(t, database.CreateMatchResult(matchResult))
+
+	rankings, err := CalculateRankings(database, false)
+	assert.Nil(t, err)
+	if assert.Equal(t, 4, len(rankings)) {
+		for _, ranking := range rankings {
+			assert.NotZero(t, ranking.TeamId)
+		}
+	}
+}
+
 func TestAddMatchResultToRankingsHandleCards(t *testing.T) {
 	rankings := map[int]*game.Ranking{}
 	matchResult := model.BuildTestMatchResult(1, 1)

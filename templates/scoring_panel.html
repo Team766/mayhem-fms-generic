@@ -6,107 +6,79 @@ Author: ian@yann.io (Ian Thompson)
 UI for entering realtime scores.
 */}}
 {{define "title"}}Scoring Panel{{end}}
+{{define "body"}}
+<header id="banner">
+  <div class="screen-title">{{.Position.Title}} - <span id="matchName">&nbsp;</span></div>
+</header>
+<main>
+  <div id="tower-controls">
+    <section class="tower-section" id="auto-section">
+      <h1>Auto Tower</h1>
+      <div class="tower-team-controls" id="auto-controls">
+      {{range $i := seq 3}}
+      {{template "tower-input" (dict "id" (printf "auto-input-%d" $i) "index" $i "handler" "handleAutoTowerClick")}}
+      {{end}}
+      </div>
+    </section>
+    <section class="tower-section" id="endgame-section">
+      <h1>Endgame Tower</h1>
+      <div class="tower-team-controls" id="endgame-controls">
+      {{range $i := seq 3}}
+      {{template "tower-input" (dict "id" (printf "endgame-input-%d" $i) "index" $i "handler" "handleEndgameClick")}}
+      {{end}}
+      </div>
+    </section>
+  </div>
+  <div id="panel-actions">
+    <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
+    <button id="fouls-button" class="scoring-button" onclick="showFoulsDialog();" ontouchstart disabled>Fouls</button>
+  </div>
+</main>
 
+<dialog id="fouls-dialog" onclick="closeFoulsDialogIfOutside(event);">
+  <div class="dialog-container">
+    <div class="dialog-banner">Add Fouls</div>
+    <div id="foul-container">
+      {{template "foulButton" (dict "id" "foul-blue-minor" "color" "blue" "label" "Blue" "isMajor" false)}}
+      {{template "foulButton" (dict "id" "foul-red-minor" "color" "red" "label" "Red" "isMajor" false)}}
+      {{template "foulButton" (dict "id" "foul-blue-major" "color" "blue" "label" "Blue Major" "isMajor" true)}}
+      {{template "foulButton" (dict "id" "foul-red-major" "color" "red" "label" "Red Major" "isMajor" true)}}
+    </div>
+    <button class="dialog-close" autofocus onclick="closeFoulsDialog();" ontouchstart>Close</button>
+  </div>
+</dialog>
+{{end}}
 
 {{define "head"}}
 <link rel="manifest" href="/static/manifest/{{.PositionName}}_scoring.manifest">
 <meta name="viewport" content="width=device-width, user-scalable=no">
 <link href="/static/css/scoring_panel.css" rel="stylesheet">
-<style>
-  /* Hide third-team UI when 2v2 is enabled */
-  #scoringPanel[data-two-v-two="true"] .team-3,
-  #scoringPanel[data-two-v-two="true"] #leave-3,
-  #scoringPanel[data-two-v-two="true"] #park-3 {
-    display: none !important;
-  }
-  /* Adjust layout spacing if needed */
-  #scoringPanel[data-two-v-two="true"] .button-group { gap: 8px; }
-</style>
 {{end}}
 {{define "script"}}
 <script src="/static/js/match_timing.js"></script>
 <script src="/static/js/scoring_panel.js"></script>
 {{end}}
 
-{{define "teamButton"}}
-<button id="{{.id}}" class="team-button team-{{.index}} {{.class}}" onclick="{{.onclick}}" ontouchstart disabled>
-  <div class="team-num"></div>
-  <div class="team-text">{{.label}}</div>
+{{define "foulButton"}}
+<button id="{{.id}}" class="foul-button {{.color}} scoring-button" ontouchstart onclick="addFoul('{{.color}}', {{.isMajor}});">
+  <div class="foul-button-label">{{.label}}</div>
+  <div class="foul-button-counters">
+    <span class="fouls-local">0</span> / <span class="fouls-global">0</span>
+  </div>
 </button>
 {{end}}
 
-{{define "counter"}}
-<div id="{{.id}}" class="counter">
-  <div class="counter-header">
-    <div class="counter-label">{{.label}}</div>
-  </div>
-  <div class="counter-controls">
-    <button class="counter-decrement scoring-button" onclick="handleCounterClick('{{.id}}', -1);" ontouchstart disabled>
-      <span class="button-symbol">−</span>
-    </button>
-    <div class="counter-value">0</div>
-    <button class="counter-increment scoring-button" onclick="handleCounterClick('{{.id}}', 1);" ontouchstart disabled>
-      <span class="button-symbol">+</span>
-    </button>
-  </div>
+{{define "tower-input"}}
+<div id="{{.id}}" class="tower-input team-{{.index}}">
+  <div class="team-num"></div>
+  {{template "tower-input-button" (dict "label" "Level 3" "towerState" 3 "index" .index "handler" .handler)}}
+  {{template "tower-input-button" (dict "label" "Level 2" "towerState" 2 "index" .index "handler" .handler)}}
+  {{template "tower-input-button" (dict "label" "Level 1" "towerState" 1 "index" .index "handler" .handler)}}
+  {{template "tower-input-button" (dict "label" "None" "towerState" 0 "index" .index "handler" .handler)}}
 </div>
 {{end}}
-
-{{define "body"}}
-<div id="scoringPanel" data-two-v-two="{{.EventSettings.TwoVsTwoMode}}">
-<header id="banner">
-  <div class="screen-title">{{.Position.Title}} - <span id="matchName">&nbsp;</span></div>
-</header>
-<main>
-  {{if .Position.ScoresAuto}}
-  <div class="scoring-section">
-    <h2>Autonomous</h2>
-    <div class="button-group">
-      {{range $i := seq 3}}
-      {{template "teamButton" (dict "id" (printf "leave-%d" $i) "index" $i "class" "scoring-button" "onclick" (printf "handleLeaveClick(%d);" $i) "label" "Leave")}}
-      {{end}}
-    </div>
-  </div>
-  {{end}}
-
-  {{if .Position.ScoresStructure1}}
-  <div class="scoring-section">
-    <h2>Structure 1 - Auto</h2>
-    {{template "counter" (dict "id" "auto_gp1_l1" "label" "Auto GP1 Level 1")}}
-    {{template "counter" (dict "id" "auto_gp1_l2" "label" "Auto GP1 Level 2")}}
-  </div>
-  <div class="scoring-section">
-    <h2>Structure 1 - Teleop</h2>
-    {{template "counter" (dict "id" "teleop_gp1_l1" "label" "Teleop GP1 Level 1")}}
-    {{template "counter" (dict "id" "teleop_gp1_l2" "label" "Teleop GP1 Level 2")}}
-  </div>
-  {{end}}
-
-  {{if .Position.ScoresStructure2}}
-  <div class="scoring-section">
-    <h2>Structure 2 - Auto</h2>
-    {{template "counter" (dict "id" "auto_gp2" "label" "Auto GP2")}}
-  </div>
-  <div class="scoring-section">
-    <h2>Structure 2 - Teleop</h2>
-    {{template "counter" (dict "id" "teleop_gp2" "label" "Teleop GP2")}}
-  </div>
-  {{end}}
-
-  {{if .Position.ScoresEndgame}}
-  <div class="scoring-section">
-    <h2>Endgame</h2>
-    <div class="button-group">
-      {{range $i := seq 3}}
-      {{template "teamButton" (dict "id" (printf "park-%d" $i) "index" $i "class" "scoring-button" "onclick" (printf "handleParkClick(%d);" $i) "label" "Park")}}
-      {{end}}
-    </div>
-  </div>
-  {{end}}
-
-  <div class="scoring-section">
-    <button id="commit" onclick="commitMatchScore();" ontouchstart disabled>Commit</button>
-  </div>
-</main>
-</div>
+{{define "tower-input-button"}}
+<button class="tower-input-button scoring-tower-button tower-{{.towerState}}" ontouchstart disabled
+  onclick="{{.handler}}({{.index}}, {{.towerState}});">{{.label}}
+</button>
 {{end}}

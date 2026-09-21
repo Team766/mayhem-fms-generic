@@ -5,7 +5,11 @@
 
 package model
 
-import "github.com/Team254/cheesy-arena/game"
+import (
+	"strings"
+
+	"github.com/Team254/cheesy-arena/game"
+)
 
 type PlayoffType int
 
@@ -14,48 +18,107 @@ const (
 	SingleEliminationPlayoff
 )
 
+// Configured here to avoid circular import dependencies.
+var (
+	sccDefaultUpCommands = []string{
+		"configure terminal",
+		"interface range gigabitEthernet 1/2-4",
+		"no shutdown",
+		"exit",
+		"exit",
+		"exit",
+	}
+	sccDefaultDownCommands = []string{
+		"configure terminal",
+		"interface range gigabitEthernet 1/2-4",
+		"shutdown",
+		"exit",
+		"exit",
+		"exit",
+	}
+)
+
 type EventSettings struct {
-	Id                          int `db:"id"`
-	Name                        string
-	PlayoffType                 PlayoffType
-	NumPlayoffAlliances         int
-	SelectionRound2Order        string
-	SelectionRound3Order        string
-	SelectionShowUnpickedTeams  bool
-	TwoVsTwoMode                bool
-	TbaDownloadEnabled          bool
-	TbaPublishingEnabled        bool
-	TbaEventCode                string
-	TbaSecretId                 string
-	TbaSecret                   string
-	NexusEnabled                bool
-	NetworkSecurityEnabled      bool
-	ApAddress                   string
-	ApPassword                  string
-	ApChannel                   int
-	SwitchAddress               string
-	SwitchPassword              string
-	PlcAddress                  string
-	AdminPassword               string
-	TeamSignRed1Id              int
-	TeamSignRed2Id              int
-	TeamSignRed3Id              int
-	TeamSignRedTimerId          int
-	TeamSignBlue1Id             int
-	TeamSignBlue2Id             int
-	TeamSignBlue3Id             int
-	TeamSignBlueTimerId         int
-	UseLiteUdpPort              bool
-	BlackmagicAddresses         string
-	WarmupDurationSec           int
-	AutoDurationSec             int
-	PauseDurationSec            int
-	TeleopDurationSec           int
-	WarningRemainingDurationSec int
-	AutoBonusCoralThreshold     int
-	CoralBonusPerLevelThreshold int
-	CoralBonusCoopEnabled       bool
-	BargeBonusPointThreshold    int
+	Id                               int `db:"id"`
+	Name                             string
+	PlayoffType                      PlayoffType
+	NumPlayoffAlliances              int
+	SelectionRound2Order             string
+	SelectionRound3Order             string
+	SelectionShowUnpickedTeams       bool
+	TbaDownloadEnabled               bool
+	TbaPublishingEnabled             bool
+	TbaEventCode                     string
+	TbaSecretId                      string
+	TbaSecret                        string
+	AutoAudienceDisplayEnabled       bool
+	NexusEnabled                     bool
+	NexusAutoQueueEnabled            bool
+	NexusAutoQueueKey                string
+	NetworkSecurityEnabled           bool
+	ApAddress                        string
+	ApPassword                       string
+	ApChannel                        int
+	SwitchAddress                    string
+	SwitchPassword                   string
+	SCCManagementEnabled             bool
+	RedSCCAddress                    string
+	BlueSCCAddress                   string
+	SCCUsername                      string
+	SCCPassword                      string
+	SCCUpCommands                    string
+	SCCDownCommands                  string
+	PlcAddress                       string
+	LedControllerAddress             string
+	LedUniverseMode                  string
+	AdminPassword                    string
+	TeamSignRed1Id                   int
+	TeamSignRed2Id                   int
+	TeamSignRed3Id                   int
+	TeamSignRedTimerId               int
+	TeamSignBlue1Id                  int
+	TeamSignBlue2Id                  int
+	TeamSignBlue3Id                  int
+	TeamSignBlueTimerId              int
+	UseLiteUdpPort                   bool
+	BlackmagicAddresses              string
+	CompanionAddress                 string
+	CompanionPort                    int
+	CompanionMatchPreviewPage        int
+	CompanionMatchPreviewRow         int
+	CompanionMatchPreviewColumn      int
+	CompanionSetAudiencePage         int
+	CompanionSetAudienceRow          int
+	CompanionSetAudienceColumn       int
+	CompanionMatchStartPage          int
+	CompanionMatchStartRow           int
+	CompanionMatchStartColumn        int
+	CompanionTeleopStartPage         int
+	CompanionTeleopStartRow          int
+	CompanionTeleopStartColumn       int
+	CompanionEndgameStartPage        int
+	CompanionEndgameStartRow         int
+	CompanionEndgameStartColumn      int
+	CompanionMatchEndPage            int
+	CompanionMatchEndRow             int
+	CompanionMatchEndColumn          int
+	CompanionPostResultPage          int
+	CompanionPostResultRow           int
+	CompanionPostResultColumn        int
+	CompanionAllianceSelectionPage   int
+	CompanionAllianceSelectionRow    int
+	CompanionAllianceSelectionColumn int
+	CompanionMatchAbortPage          int
+	CompanionMatchAbortRow           int
+	CompanionMatchAbortColumn        int
+	AutoDurationSec                  int
+	PauseDurationSec                 int
+	TransitionShiftDurationSec       int
+	ShiftDurationSec                 int
+	EndgameDurationSec               int
+	EnergizedBonusThreshold          int
+	SuperchargedBonusThreshold       int
+	TraversalBonusThreshold          int
 }
 
 func (database *Database) GetEventSettings() (*EventSettings, error) {
@@ -64,24 +127,32 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		return nil, err
 	}
 	if len(allEventSettings) == 1 {
-		return &allEventSettings[0], nil
+		eventSettings := allEventSettings[0]
+		return &eventSettings, nil
 	}
 
 	// Database record doesn't exist yet; create it now.
 	eventSettings := EventSettings{
-		Name:                        "Untitled Event",
-		PlayoffType:                 DoubleEliminationPlayoff,
-		NumPlayoffAlliances:         8,
-		SelectionRound2Order:        "L",
-		SelectionRound3Order:        "",
-		SelectionShowUnpickedTeams:  true,
-		TbaDownloadEnabled:          true,
-		ApChannel:                   36,
-		WarmupDurationSec:           game.MatchTiming.WarmupDurationSec,
-		AutoDurationSec:             game.MatchTiming.AutoDurationSec,
-		PauseDurationSec:            game.MatchTiming.PauseDurationSec,
-		TeleopDurationSec:           game.MatchTiming.TeleopDurationSec,
-		WarningRemainingDurationSec: game.MatchTiming.WarningRemainingDurationSec,
+		Name:                       "Untitled Event",
+		PlayoffType:                DoubleEliminationPlayoff,
+		NumPlayoffAlliances:        8,
+		SelectionRound2Order:       "L",
+		SelectionRound3Order:       "",
+		SelectionShowUnpickedTeams: true,
+		TbaDownloadEnabled:         true,
+		ApChannel:                  36,
+		SCCUpCommands:              strings.Join(sccDefaultUpCommands, "\n"),
+		SCCDownCommands:            strings.Join(sccDefaultDownCommands, "\n"),
+		LedUniverseMode:            "single",
+		CompanionAddress:           "",
+		AutoDurationSec:            game.MatchTiming.AutoDurationSec,
+		PauseDurationSec:           game.MatchTiming.PauseDurationSec,
+		TransitionShiftDurationSec: game.MatchTiming.TransitionShiftDurationSec,
+		ShiftDurationSec:           game.MatchTiming.ShiftDurationSec,
+		EndgameDurationSec:         game.MatchTiming.EndgameDurationSec,
+		EnergizedBonusThreshold:    game.EnergizedBonusThreshold,
+		SuperchargedBonusThreshold: game.SuperchargedBonusThreshold,
+		TraversalBonusThreshold:    game.TraversalBonusThreshold,
 	}
 
 	if err := database.eventSettingsTable.create(&eventSettings); err != nil {

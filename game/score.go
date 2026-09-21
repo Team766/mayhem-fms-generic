@@ -6,15 +6,32 @@
 package game
 
 type Score struct {
-	RobotsBypassed [3]bool
-	Mayhem         Mayhem
-	Fouls          []Foul
-	PlayoffDq      bool
+	AutoTowerStatuses    [3]TowerStatus
+	Hub                  Hub
+	EndgameTowerStatuses [3]TowerStatus
+	Fouls                []Foul
+	PlayoffDq            bool
 }
+
+// Game-specific settings that can be changed via the settings.
+var EnergizedBonusThreshold = 100
+var SuperchargedBonusThreshold = 360
+var TraversalBonusThreshold = 50
+
+// Represents the state of a robot on the Tower, at the end of auto or teleop.
+type TowerStatus int
+
+const (
+	TowerNone TowerStatus = iota
+	TowerLevel1
+	TowerLevel2
+	TowerLevel3
+)
 
 // Summarize calculates and returns the summary fields used for ranking and display.
 func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	summary := new(ScoreSummary)
+	summary.PlayoffDq = score.PlayoffDq
 
 	// Leave the score at zero if the alliance was disqualified.
 	if score.PlayoffDq {
@@ -22,42 +39,43 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 	}
 
 	// Calculate autonomous period points.
-	for _, status := range score.Mayhem.LeaveStatuses {
-		if status {
-			summary.LeavePoints += LeavePoints
+	summary.AutoFuelPoints = score.Hub.GetShiftCount(ShiftAuto, true)
+	summary.NumFuel += summary.AutoFuelPoints
+	numAutoTowerRobots := 0
+	for _, status := range score.AutoTowerStatuses {
+		if status == TowerLevel1 || status == TowerLevel2 || status == TowerLevel3 {
+			summary.AutoTowerPoints += 15
+			numAutoTowerRobots++
+			if numAutoTowerRobots == 2 {
+				break
+			}
 		}
 	}
 
-	summary.AutoPoints = summary.LeavePoints +
-		score.Mayhem.AutoGamepiece1Level1Count*AutoGamepiece1Level1Points +
-		score.Mayhem.AutoGamepiece1Level2Count*AutoGamepiece1Level2Points +
-		score.Mayhem.AutoGamepiece2Count*AutoGamepiece2Points
-
-	summary.NumGamepiece1 = score.Mayhem.AutoGamepiece1Level1Count + score.Mayhem.AutoGamepiece1Level2Count +
-		score.Mayhem.TeleopGamepiece1Level1Count + score.Mayhem.TeleopGamepiece1Level2Count
-
-	summary.Gamepiece1Points = score.Mayhem.AutoGamepiece1Level1Count*AutoGamepiece1Level1Points +
-		score.Mayhem.AutoGamepiece1Level2Count*AutoGamepiece1Level2Points +
-		score.Mayhem.TeleopGamepiece1Level1Count*TeleopGamepiece1Level1Points +
-		score.Mayhem.TeleopGamepiece1Level2Count*TeleopGamepiece1Level2Points
-
-	summary.NumGamepiece2 = score.Mayhem.AutoGamepiece2Count + score.Mayhem.TeleopGamepiece2Count
-
-	summary.Gamepiece2Points = score.Mayhem.AutoGamepiece2Count*AutoGamepiece2Points +
-		score.Mayhem.TeleopGamepiece2Count*TeleopGamepiece2Points
-
-	// Calculate park points.
-	for _, status := range score.Mayhem.ParkStatuses {
-		if status {
-			summary.ParkPoints += ParkPoints
+	// Calculate teleoperated period points.
+	summary.TeleopFuelPoints = score.Hub.GetTeleopActiveFuelCount()
+	summary.NumFuelPostMatch = score.Hub.GetShiftCount(ShiftPostMatch, true)
+	summary.NumFuel += summary.TeleopFuelPoints
+	for _, status := range score.EndgameTowerStatuses {
+		switch status {
+		case TowerLevel1:
+			summary.TeleopTowerPoints += 10
+		case TowerLevel2:
+			summary.TeleopTowerPoints += 20
+		case TowerLevel3:
+			summary.TeleopTowerPoints += 30
+		default:
 		}
 	}
 
-	summary.MatchPoints = summary.LeavePoints + summary.Gamepiece1Points + summary.Gamepiece2Points + summary.ParkPoints
+	summary.MatchPoints = summary.AutoFuelPoints + summary.AutoTowerPoints +
+		summary.TeleopFuelPoints + summary.TeleopTowerPoints
+	summary.PostMatchPoints = summary.TeleopTowerPoints + summary.NumFuelPostMatch
 
 	// Calculate penalty points.
 	for _, foul := range opponentScore.Fouls {
 		summary.FoulPoints += foul.PointValue()
+		// Store the number of major fouls since it is used to break ties in playoffs.
 		if foul.IsMajor {
 			summary.NumOpponentMajorFouls++
 		}
@@ -65,44 +83,36 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 
 	summary.Score = summary.MatchPoints + summary.FoulPoints
 
-	// Calculate bonus ranking points.
-	// Leave Bonus RP
-	allRobotsLeft := true
-	for i, left := range score.Mayhem.LeaveStatuses {
-		if !left && !score.RobotsBypassed[i] {
-			allRobotsLeft = false
+	// Fuel bonus ranking points.
+	summary.NumFuelGoal = EnergizedBonusThreshold
+	if summary.NumFuel >= EnergizedBonusThreshold {
+		summary.EnergizedBonusRankingPoint = true
+		summary.NumFuelGoal = SuperchargedBonusThreshold
+	}
+	summary.SuperchargedBonusRankingPoint = summary.NumFuel >= SuperchargedBonusThreshold
+
+	// Tower bonus ranking point. A threshold of zero disables the bonus.
+	summary.TraversalBonusRankingPoint = TraversalBonusThreshold != 0 &&
+		summary.AutoTowerPoints+summary.TeleopTowerPoints >= TraversalBonusThreshold
+
+	// Check for G206 violation.
+	for _, foul := range score.Fouls {
+		if foul.Rule() != nil && foul.Rule().RuleNumber == "G206" {
+			summary.EnergizedBonusRankingPoint = false
+			summary.SuperchargedBonusRankingPoint = false
+			summary.TraversalBonusRankingPoint = false
 			break
 		}
-	}
-	if allRobotsLeft {
-		summary.LeaveBonusRankingPoint = true
-	}
-
-	// Gamepiece 1 Bonus RP
-	if summary.NumGamepiece1 >= Gamepiece1RPThreshold {
-		summary.Gamepiece1BonusRankingPoint = true
-	}
-
-	// Park Bonus RP
-	allRobotsParked := true
-	for i, parked := range score.Mayhem.ParkStatuses {
-		if !parked && !score.RobotsBypassed[i] {
-			allRobotsParked = false
-			break
-		}
-	}
-	if allRobotsParked {
-		summary.ParkBonusRankingPoint = true
 	}
 
 	// Add up the bonus ranking points.
-	if summary.LeaveBonusRankingPoint {
+	if summary.EnergizedBonusRankingPoint {
 		summary.BonusRankingPoints++
 	}
-	if summary.Gamepiece1BonusRankingPoint {
+	if summary.SuperchargedBonusRankingPoint {
 		summary.BonusRankingPoints++
 	}
-	if summary.ParkBonusRankingPoint {
+	if summary.TraversalBonusRankingPoint {
 		summary.BonusRankingPoints++
 	}
 
@@ -111,15 +121,9 @@ func (score *Score) Summarize(opponentScore *Score) *ScoreSummary {
 
 // Equals returns true if and only if all fields of the two scores are equal.
 func (score *Score) Equals(other *Score) bool {
-	if score.Mayhem.LeaveStatuses != other.Mayhem.LeaveStatuses ||
-		score.Mayhem.AutoGamepiece1Level1Count != other.Mayhem.AutoGamepiece1Level1Count ||
-		score.Mayhem.TeleopGamepiece1Level1Count != other.Mayhem.TeleopGamepiece1Level1Count ||
-		score.Mayhem.AutoGamepiece1Level2Count != other.Mayhem.AutoGamepiece1Level2Count ||
-		score.Mayhem.TeleopGamepiece1Level2Count != other.Mayhem.TeleopGamepiece1Level2Count ||
-		score.Mayhem.AutoGamepiece2Count != other.Mayhem.AutoGamepiece2Count ||
-		score.Mayhem.TeleopGamepiece2Count != other.Mayhem.TeleopGamepiece2Count ||
-		score.Mayhem.ParkStatuses != other.Mayhem.ParkStatuses ||
-		score.RobotsBypassed != other.RobotsBypassed ||
+	if score.AutoTowerStatuses != other.AutoTowerStatuses ||
+		score.Hub != other.Hub ||
+		score.EndgameTowerStatuses != other.EndgameTowerStatuses ||
 		score.PlayoffDq != other.PlayoffDq ||
 		len(score.Fouls) != len(other.Fouls) {
 		return false

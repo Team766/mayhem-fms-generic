@@ -7,14 +7,13 @@ package web
 
 import (
 	"fmt"
+	"github.com/Team254/cheesy-arena/game"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
-
-	"github.com/Team254/cheesy-arena/game"
 
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/model"
@@ -94,7 +93,9 @@ func (web *Web) ServeWebInterface(port int) {
 	log.Printf("Serving HTTP requests on port %d", port)
 
 	// Start Server
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+		log.Printf("HTTP server error: %v", err)
+	}
 }
 
 // Serves the root page of Cheesy Arena.
@@ -155,6 +156,8 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("GET /displays/bracket/websocket", web.bracketDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/field_monitor", web.fieldMonitorDisplayHandler)
 	mux.HandleFunc("GET /displays/field_monitor/websocket", web.fieldMonitorDisplayWebsocketHandler)
+	mux.HandleFunc("GET /displays/fms_field_monitor", web.fmsFieldMonitorDisplayHandler)
+	mux.HandleFunc("GET /displays/fms_field_monitor/websocket", web.fieldMonitorDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/logo", web.logoDisplayHandler)
 	mux.HandleFunc("GET /displays/logo/websocket", web.logoDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/queueing", web.queueingDisplayHandler)
@@ -162,6 +165,10 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("GET /displays/queueing/websocket", web.queueingDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/rankings", web.rankingsDisplayHandler)
 	mux.HandleFunc("GET /displays/rankings/websocket", web.rankingsDisplayWebsocketHandler)
+	mux.HandleFunc("GET /displays/twitch", web.twitchDisplayHandler)
+	mux.HandleFunc("GET /displays/twitch/websocket", web.twitchDisplayWebsocketHandler)
+	mux.HandleFunc("GET /displays/unpicked", web.unpickedDisplayHandler)
+	mux.HandleFunc("GET /displays/unpicked/websocket", web.unpickedDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/wall", web.wallDisplayHandler)
 	mux.HandleFunc("GET /displays/wall/websocket", web.wallDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/webpage", web.webpageDisplayHandler)
@@ -176,6 +183,7 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("GET /match_review", web.matchReviewHandler)
 	mux.HandleFunc("GET /match_review/{matchId}/edit", web.matchReviewEditGetHandler)
 	mux.HandleFunc("POST /match_review/{matchId}/edit", web.matchReviewEditPostHandler)
+	mux.HandleFunc("POST /match_review/{matchId}/summary", web.matchReviewSummaryPostHandler)
 	mux.HandleFunc("GET /panels/scoring/{position}", web.scoringPanelHandler)
 	mux.HandleFunc("GET /panels/scoring/{position}/websocket", web.scoringPanelWebsocketHandler)
 	mux.HandleFunc("GET /panels/referee", web.refereePanelHandler)
@@ -217,7 +225,11 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/schedule/save", web.scheduleSavePostHandler)
 	mux.HandleFunc("GET /setup/settings", web.settingsGetHandler)
 	mux.HandleFunc("POST /setup/settings", web.settingsPostHandler)
-
+	mux.HandleFunc("GET /setup/settings/publish_alliances", web.settingsPublishAlliancesHandler)
+	mux.HandleFunc("GET /setup/settings/publish_awards", web.settingsPublishAwardsHandler)
+	mux.HandleFunc("GET /setup/settings/publish_matches", web.settingsPublishMatchesHandler)
+	mux.HandleFunc("GET /setup/settings/publish_rankings", web.settingsPublishRankingsHandler)
+	mux.HandleFunc("GET /setup/settings/publish_teams", web.settingsPublishTeamsHandler)
 	mux.HandleFunc("GET /setup/sponsor_slides", web.sponsorSlidesGetHandler)
 	mux.HandleFunc("POST /setup/sponsor_slides", web.sponsorSlidesPostHandler)
 	mux.HandleFunc("GET /setup/teams", web.teamsGetHandler)
@@ -228,7 +240,7 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/teams/clear", web.teamsClearHandler)
 	mux.HandleFunc("GET /setup/teams/generate_wpa_keys", web.teamsGenerateWpaKeysHandler)
 	mux.HandleFunc("GET /setup/teams/progress", web.teamsUpdateProgressBarHandler)
-
+	mux.HandleFunc("GET /setup/teams/refresh", web.teamsRefreshHandler)
 	return mux
 }
 

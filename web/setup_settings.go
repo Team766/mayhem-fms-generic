@@ -170,6 +170,8 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.PauseDurationSec, _ = strconv.Atoi(r.PostFormValue("pauseDurationSec"))
 	eventSettings.TeleopDurationSec, _ = strconv.Atoi(r.PostFormValue("teleopDurationSec"))
 	eventSettings.WarningRemainingDurationSec, _ = strconv.Atoi(r.PostFormValue("warningRemainingDurationSec"))
+	eventSettings.AutonRpThreshold, _ = strconv.Atoi(r.PostFormValue("autonRpThreshold"))
+	eventSettings.ScoringRpThreshold, _ = strconv.Atoi(r.PostFormValue("scoringRpThreshold"))
 
 	err := web.arena.Database.UpdateEventSettings(eventSettings)
 	if err != nil {

@@ -223,6 +223,21 @@ UI for configuring event settings.
                 </div>
               </div>
             </fieldset>
+            <fieldset>
+              <legend>Game-Specific</legend>
+              <div class="row mb-3">
+                <label class="col-lg-6 control-label">Auton RP threshold<br/>(autonomous points)</label>
+                <div class="col-lg-6">
+                  <input type="text" class="form-control" name="autonRpThreshold" value="{{.AutonRpThreshold}}">
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label class="col-lg-6 control-label">Scoring RP threshold<br/>(shelf treasures)</label>
+                <div class="col-lg-6">
+                  <input type="text" class="form-control" name="scoringRpThreshold" value="{{.ScoringRpThreshold}}">
+                </div>
+              </div>
+            </fieldset>
           </div>
           <div class="tab-pane" id="field" role="tabpanel">
             <fieldset class="mb-4">

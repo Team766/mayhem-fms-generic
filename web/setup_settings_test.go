@@ -57,6 +57,51 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, "/setup/settings#field", recorder.Header().Get("Location"))
 }
 
+// Verifies that the Auton RP and Scoring RP thresholds round-trip through the settings form and that changing them
+// changes what Summarize() reports.
+func TestSetupSettingsGameRpThresholds(t *testing.T) {
+	// game.AutonRpThreshold/ScoringRpThreshold are package-level vars shared by the whole web test binary: another
+	// test that posts an incomplete settings form (missing these fields, which strconv.Atoi silently zeroes, the
+	// same as every other numeric setting field) can leave them at 0. Pin them to the real defaults before seeding
+	// this test's arena, and restore them afterward so this test can't pollute any that runs after it.
+	game.AutonRpThreshold = 20
+	game.ScoringRpThreshold = 12
+	defer func() {
+		game.AutonRpThreshold = 20
+		game.ScoringRpThreshold = 12
+	}()
+
+	web := setupTestWeb(t)
+
+	// Check the default threshold values are rendered.
+	recorder := web.getHttpResponse("/setup/settings")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), `name="autonRpThreshold" value="20"`)
+	assert.Contains(t, recorder.Body.String(), `name="scoringRpThreshold" value="12"`)
+
+	// A score with 16 auton points doesn't earn the Auton RP at the default threshold of 20.
+	score := &game.Score{AutoFirst: 2} // 2 * 8 = 16 auton points.
+	opponentScore := &game.Score{}
+	assert.False(t, score.Summarize(opponentScore).AutonRankingPoint)
+
+	// Lower the threshold to 16 and confirm the same score now earns the RP.
+	recorder = web.postHttpResponse(
+		"/setup/settings",
+		"name=Untitled Event&numPlayoffAlliances=8&autonRpThreshold=16&scoringRpThreshold=10",
+	)
+	assert.Equal(t, 303, recorder.Code, recorder.Body.String())
+	assert.Equal(t, 16, web.arena.EventSettings.AutonRpThreshold)
+	assert.Equal(t, 10, web.arena.EventSettings.ScoringRpThreshold)
+	assert.Equal(t, 16, game.AutonRpThreshold)
+	assert.Equal(t, 10, game.ScoringRpThreshold)
+	assert.True(t, score.Summarize(opponentScore).AutonRankingPoint)
+
+	// Check that the new values are rendered back.
+	recorder = web.getHttpResponse("/setup/settings")
+	assert.Contains(t, recorder.Body.String(), `name="autonRpThreshold" value="16"`)
+	assert.Contains(t, recorder.Body.String(), `name="scoringRpThreshold" value="10"`)
+}
+
 func TestSetupSettingsBlockedDuringMatch(t *testing.T) {
 	web := setupTestWeb(t)
 	web.arena.EventSettings.Name = "Original Event"

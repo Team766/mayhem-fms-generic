@@ -1,4 +1,4 @@
-// Copyright 2026 Team 254. All Rights Reserved.
+// Copyright 2026 Team 766. All Rights Reserved.
 //
 // Defines the tournament structure for a single-elimination bracket whose rounds are decided by a single game,
 // except for the final, which remains best-of-three.

@@ -79,9 +79,20 @@
       });
     },
 
-    handleRealtimeScore: function (data, redSide, blueSide) {
-      $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score - data.Red.ScoreSummary.PostMatchPoints);
-      $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score - data.Blue.ScoreSummary.PostMatchPoints);
+    handleRealtimeScore: function (data, redSide, blueSide, isPlayoff) {
+      $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score);
+      $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score);
+
+      this.setScoreStats(redSide, data.Red.ScoreSummary, isPlayoff);
+      this.setScoreStats(blueSide, data.Blue.ScoreSummary, isPlayoff);
+    },
+
+    // Updates the two live in-match stats (treasure count and shelf-treasure progress) shown beside the score.
+    setScoreStats: function (side, summary, isPlayoff) {
+      $(`#${side}Treasure`).text(summary.TreasureCount);
+      $(`#${side}Shelf`).text(
+        isPlayoff ? summary.ShelfTreasureCount : `${summary.ShelfTreasureCount}/${summary.ShelfTreasureGoal}`
+      );
     },
   };
 })(window);

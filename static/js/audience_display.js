@@ -98,13 +98,34 @@ const handleMatchTime = function (data) {
 
 // Handles a websocket message to update the match score.
 const handleRealtimeScore = function (data) {
-  DisplayShared.handleRealtimeScore(data, redSide, blueSide);
+  DisplayShared.handleRealtimeScore(data, redSide, blueSide, currentMatch && currentMatch.Type === matchTypePlayoff);
 };
 
 const setFinalResultIndicator = function (side, label, result) {
   const indicator = $(`#${side}FinalResultIndicator`);
   indicator.text(label);
   indicator.attr("data-result", result);
+};
+
+// Populates one alliance's final-score breakdown rows (spec 9.3): the seven point categories, then the three bonus
+// ranking points as check/cross indicators (hidden in playoffs).
+const setFinalBreakdown = function (side, summary) {
+  $(`#${side}FinalLeavePoints`).text(summary.LeavePoints);
+  $(`#${side}FinalAutoBalancePoints`).text(summary.AutoBalancePoints);
+  $(`#${side}FinalAutoTreasurePoints`).text(summary.AutoTreasurePoints);
+  $(`#${side}FinalTeleopTreasurePoints`).text(summary.TeleopTreasurePoints);
+  $(`#${side}FinalEndgamePoints`).text(summary.EndgamePoints);
+  $(`#${side}FinalTossPoints`).text(summary.TossPoints);
+  $(`#${side}FinalFoulPoints`).text(summary.FoulPoints);
+  setRankingPointIndicator(`${side}FinalAutonRankingPoint`, summary.AutonRankingPoint);
+  setRankingPointIndicator(`${side}FinalScoringRankingPoint`, summary.ScoringRankingPoint);
+  setRankingPointIndicator(`${side}FinalEndgameRankingPoint`, summary.EndgameRankingPoint);
+};
+
+const setRankingPointIndicator = function (elementId, achieved) {
+  const element = $(`#${elementId}`);
+  element.html(achieved ? "&#x2714;" : "&#x2718;");
+  element.attr("data-checked", achieved);
 };
 
 // Handles a websocket message to populate the final score data.
@@ -133,8 +154,7 @@ const handleScorePosted = function (data) {
   } else {
     setTeamInfo(redSide, 4, 0, data.RedCards, data.RedRankings);
   }
-  $(`#${redSide}FinalFoulPoints`).text(data.RedScoreSummary.FoulPoints);
-  $(`#${redSide}FinalRankingPoints`).html(data.RedRankingPoints);
+  setFinalBreakdown(redSide, data.RedScoreSummary);
   $(`#${redSide}FinalWins`).text(data.RedWins);
   const redFinalDestination = $(`#${redSide}FinalDestination`);
   redFinalDestination.html(data.RedDestination.replace("Advances to ", "Advances to<br>"));
@@ -151,8 +171,7 @@ const handleScorePosted = function (data) {
   } else {
     setTeamInfo(blueSide, 4, 0, data.BlueCards, data.BlueRankings);
   }
-  $(`#${blueSide}FinalFoulPoints`).text(data.BlueScoreSummary.FoulPoints);
-  $(`#${blueSide}FinalRankingPoints`).html(data.BlueRankingPoints);
+  setFinalBreakdown(blueSide, data.BlueScoreSummary);
   $(`#${blueSide}FinalWins`).text(data.BlueWins);
   const blueFinalDestination = $(`#${blueSide}FinalDestination`);
   blueFinalDestination.html(data.BlueDestination.replace("Advances to ", "Advances to<br>"));

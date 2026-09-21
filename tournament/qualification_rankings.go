@@ -34,7 +34,8 @@ func CalculateRankings(database *model.Database, preservePreviousRank bool) (gam
 		if !match.Red2IsSurrogate {
 			addMatchResultToRankings(rankings, match.Red2, matchResult, true)
 		}
-		if !match.Red3IsSurrogate {
+		if match.Red3 != 0 && !match.Red3IsSurrogate {
+			// A 2v2 match's empty third slot (team 0) is not a team to rank.
 			addMatchResultToRankings(rankings, match.Red3, matchResult, true)
 		}
 		if !match.Blue1IsSurrogate {
@@ -43,7 +44,7 @@ func CalculateRankings(database *model.Database, preservePreviousRank bool) (gam
 		if !match.Blue2IsSurrogate {
 			addMatchResultToRankings(rankings, match.Blue2, matchResult, false)
 		}
-		if !match.Blue3IsSurrogate {
+		if match.Blue3 != 0 && !match.Blue3IsSurrogate {
 			addMatchResultToRankings(rankings, match.Blue3, matchResult, false)
 		}
 	}

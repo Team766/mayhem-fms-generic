@@ -10,7 +10,7 @@ import "errors"
 type FakeModbusClient struct {
 	inputs      [32]bool
 	registers   [32]uint16
-	coils       [32]bool
+	coils       [64]bool // Sized to the Mayhem wire map's coilCount (see mayhem_wire_map.go), not just upstream's.
 	returnError bool
 }
 

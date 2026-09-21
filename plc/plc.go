@@ -55,6 +55,7 @@ type ModbusPlc struct {
 	oldCoilOverrides [coilCount]string
 	cycleCounter     int
 	matchResetCycles int
+	wire             *wireMap
 }
 
 const (
@@ -141,6 +142,18 @@ func (plc *ModbusPlc) SetAddress(address string) {
 	if plc.ioChangeNotifier == nil {
 		// Register a notifier that listeners can subscribe to to get websocket updates about I/O value changes.
 		plc.ioChangeNotifier = websocket.NewNotifier("plcIoChange", plc.generateIoChangeMessage)
+	}
+}
+
+// SetWireMap selects which wire map, if any, translates between the PLC's logical signals (readInputs,
+// readRegisters, writeCoils) and physical wire addresses. "mayhem" selects the frozen M-Ayhem wire map (see
+// mayhem_wire_map.go); any other value, including "upstream", selects no map at all, i.e. unmodified upstream
+// behavior: wire address equals logical index, at upstream's own table sizes.
+func (plc *ModbusPlc) SetWireMap(name string) {
+	if name == "mayhem" {
+		plc.wire = MayhemWireMap
+	} else {
+		plc.wire = nil
 	}
 }
 
@@ -383,17 +396,26 @@ func (plc *ModbusPlc) readInputs() bool {
 		return true
 	}
 
-	inputs, err := plc.client.ReadDiscreteInputs(0, uint16(len(plc.inputs)))
+	count := len(plc.inputs)
+	if plc.wire != nil {
+		count = int(plc.wire.inputCount)
+	}
+
+	inputs, err := plc.client.ReadDiscreteInputs(0, uint16(count))
 	if err != nil {
 		log.Printf("PLC error reading inputs: %v", err)
 		return false
 	}
-	if len(inputs)*8 < len(plc.inputs) {
-		log.Printf("Insufficient length of PLC inputs: got %d bytes, expected %d bits.", len(inputs), len(plc.inputs))
+	if len(inputs)*8 < count {
+		log.Printf("Insufficient length of PLC inputs: got %d bytes, expected %d bits.", len(inputs), count)
 		return false
 	}
 
-	copy(plc.inputs[:], byteToBool(inputs, len(plc.inputs)))
+	if plc.wire == nil {
+		copy(plc.inputs[:], byteToBool(inputs, len(plc.inputs)))
+	} else {
+		plc.wire.scatterInputs(inputs, &plc.inputs)
+	}
 	return true
 }
 
@@ -402,21 +424,30 @@ func (plc *ModbusPlc) readRegisters() bool {
 		return true
 	}
 
-	registers, err := plc.client.ReadHoldingRegisters(0, uint16(len(plc.registers)))
+	count := len(plc.registers)
+	if plc.wire != nil {
+		count = int(plc.wire.registerCount)
+	}
+
+	registers, err := plc.client.ReadHoldingRegisters(0, uint16(count))
 	if err != nil {
 		log.Printf("PLC error reading registers: %v", err)
 		return false
 	}
-	if len(registers)/2 < len(plc.registers) {
+	if len(registers)/2 < count {
 		log.Printf(
 			"Insufficient length of PLC registers: got %d bytes, expected %d words.",
 			len(registers),
-			len(plc.registers),
+			count,
 		)
 		return false
 	}
 
-	copy(plc.registers[:], byteToUint(registers, len(plc.registers)))
+	if plc.wire == nil {
+		copy(plc.registers[:], byteToUint(registers, len(plc.registers)))
+	} else {
+		plc.wire.scatterRegisters(byteToUint(registers, count), &plc.registers)
+	}
 	return true
 }
 
@@ -424,9 +455,18 @@ func (plc *ModbusPlc) writeCoils() bool {
 	// Send a heartbeat to the PLC so that it can disable outputs if the connection is lost.
 	plc.coils[heartbeat] = true
 
+	// Applying the wire map after getEffectiveCoils() keeps the field-testing coil override feature working: an
+	// override still lands on the wire exactly where the corresponding auto-generated coil value would have.
 	effectiveCoils := plc.getEffectiveCoils()
-	coils := boolToByte(effectiveCoils[:])
-	_, err := plc.client.WriteMultipleCoils(0, uint16(len(plc.coils)), coils)
+	count := len(plc.coils)
+	coilsToSend := effectiveCoils[:]
+	if plc.wire != nil {
+		count = int(plc.wire.coilCount)
+		coilsToSend = plc.wire.gatherCoils(effectiveCoils)
+	}
+
+	coils := boolToByte(coilsToSend)
+	_, err := plc.client.WriteMultipleCoils(0, uint16(count), coils)
 	if err != nil {
 		log.Printf("PLC error writing coils: %v", err)
 		return false

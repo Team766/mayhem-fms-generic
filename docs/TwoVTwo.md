@@ -12,7 +12,7 @@ practice match with five teams): the station has no team, and the operator bypas
 never needs to know about a "mode". Three kinds of code change:
 
 1. **Generators** decide how many teams go into a match. They read the event setting.
-2. **The arena** looks at the match in front of it: a station is *empty* when its team is 0, whatever the mode.
+2. **The arena** has four active stations when the setting is on (R3 and B3 are inactive) and six when it is off. With the setting off it is exactly upstream, including how empty stations are handled.
 3. **Layouts** (panels, displays, reports) have exactly two shapes, 2v2 and 3v3, chosen by the event setting. They never infer a shape from which teams happen to be 0.
 
 Team 0 already means other things upstream, which is why layouts must not key off it: the Test Match has six
@@ -34,7 +34,7 @@ message for layout, and read by three generators:
 
 ## Everywhere else
 
-- **Arena.** Loading or substituting a match leaves a station with team 0 empty and **bypassed automatically**. One helper (`AllianceStation.IsEmpty()`, or an `activeStations()` list) is used by the start conditions, PLC e-stop and a-stop handling, stack-light readiness and network configuration, so an empty station can never block a match or keep the lights from going green. This also fixes the five-team practice match in 3v3.
+- **Arena.** One helper, `activeStations()`, returns four stations when the setting is on and all six otherwise. Start conditions, PLC e-stop and a-stop handling, stack-light readiness, driver-station enabling and network configuration iterate over it, so R3 and B3 can never block a 2v2 match or keep the lights from going green. Nothing sets `Bypass` on the operator's behalf, and with the setting off the arena is unchanged from upstream (an empty station still needs a manual bypass, as today).
 - **Stored data.** Empty is always 0: schedules, playoff lineups, substitutions, edited results. No filler surrogate team, no duplicated captain. Alliance updates after a playoff match ignore 0.
 - **Panels and displays.** Two fixed layouts. With the setting on, every page gets a `two-v-two` class (or template branch) that removes the third robot's row and controls and rebalances the spacing; with it off, pages are upstream's. One mechanism everywhere, not a mix of CSS, template and JS checks. The audience final score keeps upstream's fourth (off-field) row in both.
 - **Guard.** With the setting on, a third team cannot be entered: substitution and the edit-result form reject a non-zero third slot, and loading a match that has one reports an error instead of showing a broken layout.
@@ -43,7 +43,7 @@ message for layout, and read by three generators:
 ## Out of scope
 
 - Alliances of two plus a backup.
-- A schedule generator. Templates are pre-generated files; today only `2p_14_*.csv` exists, so **a template for the event's team count must be added before the event**. Better 2v2 scheduling is follow-up work.
+- Schedule *templates*. The 2v2 PR makes the schedule builder use `2p_` templates; a follow-up PR adds a template generator and checked-in templates for a range of team counts and matches per team, so a 2v2 schedule can be regenerated from the tool in seconds when a team drops out, the way 3v3 works upstream.
 - Station-3 lights and mixed 2v2/3v3 schedules (the design does not prevent the latter, it is just untested).
 
 ## Verification

@@ -34,7 +34,7 @@ PRs should include:
 Cheesy Arena is designed to run as a local web server and uses BoltDB for data. For field networking and hardware integrations, see the project README and relevant `field/` or `plc/` code before making behavioral changes.
 
 ## M-Ayhem Base Workflows
-This repository is Team 766's M-Ayhem base: upstream Cheesy Arena minus a strip list, plus 2v2 mode and the M-Ayhem PLC wire map, with a placeholder game. Read `docs/DEVELOPMENT.md` before changing anything.
+This repository is Team 766's M-Ayhem base: upstream Cheesy Arena minus a strip list, plus 2v2 mode and compatibility with the M-Ayhem Arduino PLC, with the current year's game. Read `docs/DEVELOPMENT.md` before changing anything.
 
 Two playbooks cover the recurring work. Follow them rather than improvising:
 

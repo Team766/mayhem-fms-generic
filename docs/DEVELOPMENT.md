@@ -50,22 +50,21 @@ game engine, no build tags or mode flags that switch between games.
 | Feature | Contract |
 |---------|----------|
 | 2v2 mode | [TwoVTwo.md](TwoVTwo.md) |
-| M-Ayhem PLC wire map | Below |
+| M-Ayhem Arduino PLC, unmodified | Below |
 | Single-game playoff rounds | A third playoff type: single elimination where every round before the final advances on one win; the final stays best-of-three. Implemented by setting `NumWinsToAdvance = 1` on the non-final matchups; the existing matchup logic then schedules one match and reveals the next only after a tie. No other bracket changes |
 | Per-team station lights | Planned; design in [agents/reference/plc.md](agents/reference/plc.md) section 4 |
 
 ### PLC
 
-The field uses Team 766's Arduino Modbus PLC (`fakeplc-arduino`, branch `plc-cheesy-arena-compat` as flashed for M-Ayhem 2025), not upstream's Allen-Bradley program.
-Upstream renumbers and grows its signal tables when season I/O changes, which breaks a fixed firmware: as of
-September 2026 unmodified upstream reads more registers than the Arduino serves, requires an `ftaReady`
-input it never sets, and sees station-3 stops as permanently pressed.
+The field uses Team 766's Arduino Modbus PLC (`fakeplc-arduino`, branch `plc-cheesy-arena-compat`, as flashed for
+M-Ayhem 2025), not upstream's Allen-Bradley program. **The FMS's PLC code is upstream's, unchanged, as it was in
+2025**, and the Arduino needs no reflashing. Three facts make that work:
 
-Contract: a **frozen, documented M-Ayhem wire map** keyed by signal name, applied only at the wire boundary
-(`readInputs`, `readRegisters`, `writeCoils`), selected by an event setting, with a guard test that pins
-every wire index. The `Plc` interface and arena logic stay upstream's. Signals the hardware lacks read as
-healthy. Firmware changes that go with it are listed in the PLC reference, section 3.1. No remapping layer
-shipped in 2025; do not resurrect the accessor-level remap or `plc/mayhem_plc.go`.
+- The firmware serves fixed addresses that match upstream's generic signal order (field e-stop, team e-stops and a-stops, connected inputs, the field I/O register, heartbeat, match reset, stack lights, buzzer, field reset light). `plc/mayhem_arduino_test.go` fails if an upstream sync moves any of them or grows a table past what the firmware serves. Season I/O always goes after the generic block, and the strip removes it.
+- The hardware has no station-3 stop wiring, so those inputs read as pressed. 2v2 mode ignores R3 and B3, so **the supported configuration with the PLC enabled is 2v2**. 3v3 with this PLC would show station 3 as e-stopped.
+- Upstream's "FTA ready" switch (a start permission added in May 2026, not a safety stop) does not exist on this field. Its start condition and Match Play badge are removed; the PLC input itself stays in the signal list so nothing is renumbered.
+
+Do not resurrect the 2025 remap attempts (`InputMap`/`CoilMap`, `getInputPin`/`getCoilPin`, `plc/mayhem_plc.go`).
 
 ## The current game and the game seam
 
@@ -75,6 +74,18 @@ replaced (its ids are the vocabulary to remove), and then points `CURRENT` at th
 `specs/` as history and examples. There is no separate placeholder game and no maintained word list.
 
 `specs/high_seas_havoc.md` (M-Ayhem 2025) is kept as a second example spec; it has no code in this tree.
+
+### The neutral state (no game)
+
+Right after a regeneration, before `apply-game` runs, the tree has no game. It must still build, pass its
+tests and run a match. "No game" means:
+
+- `game.Score` holds only `Fouls` and `PlayoffDq`. `Summarize()` computes foul points from the opponent's fouls, `NumOpponentMajorFouls`, `MatchPoints = 0`, `Score = FoulPoints`, and no bonus ranking points. No game settings, thresholds or special-case rules.
+- Ranking: win 3 RP, tie 1. Sort by ranking points per match, then match points per match, then the random value. Playoff tie: fewer major fouls committed, otherwise a tie.
+- `game/rule.go` keeps the `Rule` type and lookups with a two-entry list (one minor, one major) so the referee flow stays testable. `game/foul.go` keeps upstream's point values and has no rule-specific exceptions.
+- Match timing is auto, pause, teleop and a warning time before the end; sounds are start, resume, warning, end, abort and the non-match sounds. No shifts.
+- Scoring panels show the match, the foul dialog and Commit; the referee panel shows cards and fouls; the audience overlay shows teams, score and timer; the final score shows the score, a Foul row and ranking points or playoff wins; edit-result has fouls and cards; rankings and reports have Rank, Team, RP, Match points, W-L-T, DQ, Played.
+- The arena has no game hooks, the PLC has only the generic signals, and there is no "Game-Specific" settings fieldset.
 
 Files a game may touch (the seam):
 

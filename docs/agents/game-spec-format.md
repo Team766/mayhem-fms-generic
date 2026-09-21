@@ -45,7 +45,7 @@ Try a rule change during design:
 > Using `docs/agents/apply-game.md`, update the game in this branch for the edits I just made to `specs/2027_<name>.md` sections 7 and 11. Show me the worked examples before and after.
 
 Bring the base up to date:
-> Follow `docs/agents/sync-upstream.md` in `port` mode up to upstream tag `v2027.0.1`. Give me the classification table before porting anything.
+> Follow `docs/agents/sync-upstream.md` in `update` mode up to upstream tag `v2027.0.1`. Give me the classification table before porting anything.
 
 Re-apply this year's game after a base update:
 > The base moved to a new upstream. Re-apply `specs/2027_<name>.md` with `docs/agents/apply-game.md` on a fresh branch off the base and tell me what differed from the previous application.

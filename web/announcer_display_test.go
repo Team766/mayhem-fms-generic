@@ -4,6 +4,7 @@
 package web
 
 import (
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
@@ -17,38 +18,6 @@ func TestAnnouncerDisplay(t *testing.T) {
 	recorder := web.getHttpResponse("/displays/announcer?displayId=1")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Announcer Display - Untitled Event - Cheesy Arena")
-}
-
-func TestAnnouncerDisplayMatchLoadTwoVsTwo(t *testing.T) {
-    web := setupTestWeb(t)
-
-    // Create a match with all 3 teams per alliance.
-    match := model.Match{Type: model.Practice, Red1: 101, Red2: 102, Red3: 103, Blue1: 201, Blue2: 202, Blue3: 203}
-    web.arena.LoadMatch(&match)
-
-    // TwoVsTwoMode off: R3/B3 should be present.
-    web.arena.EventSettings.TwoVsTwoMode = false
-    recorder := web.getHttpResponse("/displays/announcer/match_load")
-    assert.Equal(t, 200, recorder.Code)
-    body := recorder.Body.String()
-    assert.Contains(t, body, "101")
-    assert.Contains(t, body, "102")
-    assert.Contains(t, body, "103") // R3 visible
-    assert.Contains(t, body, "201")
-    assert.Contains(t, body, "202")
-    assert.Contains(t, body, "203") // B3 visible
-
-    // TwoVsTwoMode on: R3/B3 should be omitted from the rendered list.
-    web.arena.EventSettings.TwoVsTwoMode = true
-    recorder = web.getHttpResponse("/displays/announcer/match_load")
-    assert.Equal(t, 200, recorder.Code)
-    body = recorder.Body.String()
-    assert.Contains(t, body, "101")
-    assert.Contains(t, body, "102")
-    assert.NotContains(t, body, "103") // R3 hidden
-    assert.Contains(t, body, "201")
-    assert.Contains(t, body, "202")
-    assert.NotContains(t, body, "203") // B3 hidden
 }
 
 func TestAnnouncerDisplayMatchLoad(t *testing.T) {
@@ -65,12 +34,24 @@ func TestAnnouncerDisplayMatchLoad(t *testing.T) {
 
 func TestAnnouncerDisplayScorePosted(t *testing.T) {
 	web := setupTestWeb(t)
-	match := model.Match{Type: model.Qualification, LongName: "Qual 17"}
-	web.arena.SavedMatch = &match
+	for _, test := range []struct {
+		status game.MatchStatus
+		winner string
+		class  string
+	}{
+		{game.RedWonMatch, "Red", "bg-danger"},
+		{game.BlueWonMatch, "Blue", "bg-primary"},
+		{game.TieMatch, "Tie", "bg-tie"},
+	} {
+		match := model.Match{Type: model.Qualification, LongName: "Qual 17", Status: test.status}
+		web.arena.SavedMatch = &match
 
-	recorder := web.getHttpResponse("/displays/announcer/score_posted")
-	assert.Equal(t, 200, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Qual 17")
+		recorder := web.getHttpResponse("/displays/announcer/score_posted")
+		assert.Equal(t, 200, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "Qual 17")
+		assert.Contains(t, recorder.Body.String(), "Winner: "+test.winner)
+		assert.Contains(t, recorder.Body.String(), test.class)
+	}
 }
 
 func TestAnnouncerDisplayWebsocket(t *testing.T) {

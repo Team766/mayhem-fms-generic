@@ -1,4 +1,4 @@
-// Copyright 2018 Team 254. All Rights Reserved.
+// Copyright 2026 Team 254. All Rights Reserved.
 // Author: pat@patfairbank.com (Patrick Fairbank)
 //
 // Web handlers for the field monitor display showing robot connection status.
@@ -31,12 +31,33 @@ func (web *Web) fieldMonitorDisplayHandler(w http.ResponseWriter, r *http.Reques
 	}
 	data := struct {
 		*model.EventSettings
-		TwoVsTwoMode bool
-	}{
-		EventSettings: web.arena.EventSettings,
-		TwoVsTwoMode:  web.arena.EventSettings.TwoVsTwoMode,
-	}
+	}{web.arena.EventSettings}
 	err = template.ExecuteTemplate(w, "field_monitor_display.html", data)
+	if err != nil {
+		handleWebErr(w, err)
+		return
+	}
+}
+
+// Renders the FMS-style field monitor display.
+func (web *Web) fmsFieldMonitorDisplayHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("fta") == "true" && !web.userIsAdmin(w, r) {
+		return
+	}
+
+	if !web.enforceDisplayConfiguration(w, r, map[string]string{"ds": "false", "fta": "false", "reversed": "false"}) {
+		return
+	}
+
+	template, err := web.parseFiles("templates/fms_field_monitor_display.html")
+	if err != nil {
+		handleWebErr(w, err)
+		return
+	}
+	data := struct {
+		*model.EventSettings
+	}{web.arena.EventSettings}
+	err = template.ExecuteTemplate(w, "fms_field_monitor_display.html", data)
 	if err != nil {
 		handleWebErr(w, err)
 		return
@@ -50,7 +71,6 @@ func (web *Web) fieldMonitorDisplayWebsocketHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// Register the display and set up the WebSocket connection
 	display, err := web.registerDisplay(r)
 	if err != nil {
 		handleWebErr(w, err)
@@ -63,7 +83,7 @@ func (web *Web) fieldMonitorDisplayWebsocketHandler(w http.ResponseWriter, r *ht
 		handleWebErr(w, err)
 		return
 	}
-	defer ws.Close()
+	defer closeWebsocket(ws)
 
 	// Subscribe the websocket to the notifiers whose messages will be passed on to the client, in a separate goroutine.
 	go ws.HandleNotifiers(
@@ -97,7 +117,7 @@ func (web *Web) fieldMonitorDisplayWebsocketHandler(w http.ResponseWriter, r *ht
 				}{}
 				err = mapstructure.Decode(data, &args)
 				if err != nil {
-					ws.WriteError(err.Error())
+					writeWebsocketError(ws, err.Error())
 					continue
 				}
 
@@ -105,17 +125,17 @@ func (web *Web) fieldMonitorDisplayWebsocketHandler(w http.ResponseWriter, r *ht
 					if allianceStation.Team != nil {
 						allianceStation.Team.FtaNotes = args.Notes
 						if err := web.arena.Database.UpdateTeam(allianceStation.Team); err != nil {
-							ws.WriteError(err.Error())
+							writeWebsocketError(ws, err.Error())
 						}
 						web.arena.ArenaStatusNotifier.Notify()
 					} else {
-						ws.WriteError("No team present")
+						writeWebsocketError(ws, "No team present")
 					}
 				} else {
-					ws.WriteError("Invalid alliance station")
+					writeWebsocketError(ws, "Invalid alliance station")
 				}
 			} else {
-				ws.WriteError("Must be in FTA mode to update team notes")
+				writeWebsocketError(ws, "Must be in FTA mode to update team notes")
 			}
 		}
 	}

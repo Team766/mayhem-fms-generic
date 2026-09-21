@@ -4,9 +4,9 @@
 package model
 
 import (
-	"testing"
-
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestEventSettingsReadWrite(t *testing.T) {
@@ -18,23 +18,33 @@ func TestEventSettingsReadWrite(t *testing.T) {
 	assert.Equal(
 		t,
 		EventSettings{
-			Id:                          1,
-			Name:                        "Untitled Event",
-			PlayoffType:                 DoubleEliminationPlayoff,
-			NumPlayoffAlliances:         8,
-			SelectionRound2Order:        "L",
-			SelectionRound3Order:        "",
-			SelectionShowUnpickedTeams:  true,
-			TbaDownloadEnabled:          true,
-			ApChannel:                   36,
-			WarmupDurationSec:           0,
-			AutoDurationSec:             15,
-			PauseDurationSec:            3,
-			TeleopDurationSec:           135,
-			WarningRemainingDurationSec: 20,
+			Id:                         1,
+			Name:                       "Untitled Event",
+			PlayoffType:                DoubleEliminationPlayoff,
+			NumPlayoffAlliances:        8,
+			SelectionRound2Order:       "L",
+			SelectionRound3Order:       "",
+			SelectionShowUnpickedTeams: true,
+			TbaDownloadEnabled:         true,
+			ApChannel:                  36,
+			SCCUpCommands:              "configure terminal\ninterface range gigabitEthernet 1/2-4\nno shutdown\nexit\nexit\nexit",
+			SCCDownCommands:            "configure terminal\ninterface range gigabitEthernet 1/2-4\nshutdown\nexit\nexit\nexit",
+			LedControllerAddress:       "",
+			LedUniverseMode:            "single",
+			AutoDurationSec:            20,
+			PauseDurationSec:           3,
+			TransitionShiftDurationSec: 10,
+			ShiftDurationSec:           25,
+			EndgameDurationSec:         30,
+			EnergizedBonusThreshold:    100,
+			SuperchargedBonusThreshold: 360,
+			TraversalBonusThreshold:    50,
+			CompanionAddress:           "",
+			CompanionPort:              0,
 		},
 		*eventSettings,
 	)
+	assert.Equal(t, 140, game.GetTeleopDurationSec())
 
 	eventSettings.Name = "Chezy Champs"
 	eventSettings.NumPlayoffAlliances = 6

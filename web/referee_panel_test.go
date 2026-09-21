@@ -19,26 +19,11 @@ func TestRefereePanel(t *testing.T) {
 	recorder := web.getHttpResponse("/panels/referee")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Referee Panel - Untitled Event - Cheesy Arena")
-}
-
-func TestRefereePanelTwoVsTwoAttribute(t *testing.T) {
-    web := setupTestWeb(t)
-
-    // TwoVsTwoMode off
-    web.arena.EventSettings.TwoVsTwoMode = false
-    recorder := web.getHttpResponse("/panels/referee")
-    assert.Equal(t, 200, recorder.Code)
-    body := recorder.Body.String()
-    assert.Contains(t, body, "id=\"refereePanel\"")
-    assert.Contains(t, body, "data-two-v-two=\"false\"")
-
-    // TwoVsTwoMode on
-    web.arena.EventSettings.TwoVsTwoMode = true
-    recorder = web.getHttpResponse("/panels/referee")
-    assert.Equal(t, 200, recorder.Code)
-    body = recorder.Body.String()
-    assert.Contains(t, body, "id=\"refereePanel\"")
-    assert.Contains(t, body, "data-two-v-two=\"true\"")
+	assert.Contains(t, recorder.Body.String(), "Auto Tower")
+	assert.Contains(t, recorder.Body.String(), "Endgame Tower")
+	assert.NotContains(t, recorder.Body.String(), "Leave")
+	assert.NotContains(t, recorder.Body.String(), "Coral")
+	assert.NotContains(t, recorder.Body.String(), "Algae")
 }
 
 func TestRefereePanelWebsocket(t *testing.T) {
@@ -67,6 +52,7 @@ func TestRefereePanelWebsocket(t *testing.T) {
 	ws.Write("addFoul", addFoulData)
 	addFoulData.Alliance = "blue"
 	ws.Write("addFoul", addFoulData)
+	readWebsocketType(t, ws, "arenaStatus")
 	readWebsocketType(t, ws, "realtimeScore")
 	readWebsocketType(t, ws, "realtimeScore")
 	readWebsocketType(t, ws, "realtimeScore")
@@ -178,6 +164,7 @@ func TestRefereePanelWebsocket(t *testing.T) {
 	}
 
 	// Test field reset and match committing.
+	web.arena.CurrentMatch.Type = model.Test
 	web.arena.MatchState = field.PostMatch
 	ws.Write("signalReset", nil)
 	time.Sleep(time.Millisecond * 10)
@@ -185,13 +172,11 @@ func TestRefereePanelWebsocket(t *testing.T) {
 	assert.False(t, web.arena.RedRealtimeScore.FoulsCommitted)
 	assert.False(t, web.arena.BlueRealtimeScore.FoulsCommitted)
 	web.arena.AllianceStationDisplayMode = "logo"
-	ws.Write("commitMatch", nil)
+	ws.Write("commitAndPost", nil)
 	readWebsocketType(t, ws, "scoringStatus")
-	assert.Equal(t, "fieldReset", web.arena.AllianceStationDisplayMode)
-	assert.True(t, web.arena.RedRealtimeScore.FoulsCommitted)
-	assert.True(t, web.arena.BlueRealtimeScore.FoulsCommitted)
-
-	// Should refresh the page when the next match is loaded.
-	web.arena.MatchLoadNotifier.Notify()
-	readWebsocketType(t, ws, "matchLoad")
+	messages := readWebsocketMultiple(t, ws, 3)
+	assert.NotNil(t, messages["realtimeScore"])
+	assert.NotNil(t, messages["scoringStatus"])
+	assert.NotNil(t, messages["matchLoad"])
+	assert.Equal(t, "score", web.arena.AudienceDisplayMode)
 }

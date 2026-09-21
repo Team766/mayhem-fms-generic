@@ -28,6 +28,38 @@ func TestFmsFieldMonitorDisplay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Field Monitor - Untitled Event - Cheesy Arena")
 }
 
+func TestFieldMonitorDisplayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	url := "/displays/field_monitor?displayId=1&ds=false&fta=true&reversed=false"
+	recorder := web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.Contains(t, recorder.Body.String(), "rightTeam3Id")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.NotContains(t, recorder.Body.String(), "rightTeam3Id")
+}
+
+func TestFmsFieldMonitorDisplayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	url := "/displays/fms_field_monitor?displayId=1&ds=false&fta=true&reversed=false"
+	recorder := web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.Contains(t, recorder.Body.String(), "rightTeam3Id")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.NotContains(t, recorder.Body.String(), "rightTeam3Id")
+}
+
 func TestFieldMonitorDisplayWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 	web.arena.Database.CreateTeam(&model.Team{Id: 254})

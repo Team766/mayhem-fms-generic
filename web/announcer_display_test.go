@@ -32,6 +32,25 @@ func TestAnnouncerDisplayMatchLoad(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "2056")
 }
 
+func TestAnnouncerDisplayMatchLoadTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.Database.CreateTeam(&model.Team{Id: 254})
+	web.arena.Database.CreateTeam(&model.Team{Id: 1114})
+	web.arena.Database.CreateTeam(&model.Team{Id: 118})
+	web.arena.Database.CreateTeam(&model.Team{Id: 148})
+	match := model.Match{Type: model.Practice, Red1: 254, Red2: 1114, Blue1: 118, Blue2: 148}
+	web.arena.LoadMatch(&match)
+
+	recorder := web.getHttpResponse("/displays/announcer/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "No team present")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/displays/announcer/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "No team present")
+}
+
 func TestAnnouncerDisplayScorePosted(t *testing.T) {
 	web := setupTestWeb(t)
 	for _, test := range []struct {

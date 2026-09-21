@@ -40,6 +40,60 @@ func TestMatchReview(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "RP")
 }
 
+func TestMatchReviewTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	match := model.Match{Type: model.Practice, ShortName: "P1", Red1: 101, Red2: 102, Red3: 103}
+	web.arena.Database.CreateMatch(&match)
+
+	recorder := web.getHttpResponse("/match_review")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "101, 102, 103")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/match_review")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "101, 102, 103")
+	assert.Contains(t, recorder.Body.String(), "101, 102")
+}
+
+func TestMatchReviewEditExistingResultTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.Database.CreateTeam(&model.Team{Id: 101})
+	web.arena.Database.CreateTeam(&model.Team{Id: 102})
+	web.arena.Database.CreateTeam(&model.Team{Id: 103})
+	web.arena.Database.CreateTeam(&model.Team{Id: 104})
+	web.arena.Database.CreateTeam(&model.Team{Id: 105})
+	web.arena.Database.CreateTeam(&model.Team{Id: 106})
+	match := model.Match{
+		Type: model.Practice, Red1: 101, Red2: 102, Red3: 103, Blue1: 104, Blue2: 105, Blue3: 106,
+	}
+	web.arena.Database.CreateMatch(&match)
+	matchResult := model.NewMatchResult()
+	matchResult.MatchId = match.Id
+	web.arena.Database.CreateMatchResult(matchResult)
+
+	recorder := web.getHttpResponse(fmt.Sprintf("/match_review/%d/edit", match.Id))
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "Team 103")
+
+	// With the setting on, a match that still has a third team can't be edited via this form.
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(fmt.Sprintf("/match_review/%d/edit", match.Id))
+	assert.Equal(t, 500, recorder.Code)
+
+	// A genuinely two-team match edits fine, with only two card rows.
+	match2 := model.Match{Type: model.Practice, Red1: 101, Red2: 102, Blue1: 104, Blue2: 105}
+	web.arena.Database.CreateMatch(&match2)
+	matchResult2 := model.NewMatchResult()
+	matchResult2.MatchId = match2.Id
+	web.arena.Database.CreateMatchResult(matchResult2)
+	recorder = web.getHttpResponse(fmt.Sprintf("/match_review/%d/edit", match2.Id))
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "Team 103")
+	assert.Contains(t, recorder.Body.String(), "Team 102")
+}
+
 func TestMatchReviewEditExistingResult(t *testing.T) {
 	web := setupTestWeb(t)
 

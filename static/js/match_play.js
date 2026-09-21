@@ -123,9 +123,14 @@ const setTestMatchName = function () {
   websocket.send("setTestMatchName", $("#testMatchName").val());
 };
 
-// Returns the integer team number entered into the team number input box for the given station, or 0 if it is empty.
+// Returns the integer team number entered into the team number input box for the given station, or 0 if it is
+// empty or the station's row doesn't exist on the page (e.g. R3/B3 in 2v2 mode).
 const getTeamNumber = function (station) {
-  const teamId = $(`#status${station} .team-number`).val().trim();
+  const input = $(`#status${station} .team-number`);
+  if (input.length === 0) {
+    return 0;
+  }
+  const teamId = input.val().trim();
   return teamId ? parseInt(teamId) : 0;
 }
 

@@ -32,7 +32,7 @@ func TestSetupSettings(t *testing.T) {
 	recorder = web.postHttpResponse(
 		"/setup/settings",
 		"name=Chezy Champs&code=CC&playoffType=single&numPlayoffAlliances=16&"+
-			"eventCode=2014cc&teleopDurationSec=106&warningRemainingDurationSec=25",
+			"eventCode=2014cc&teleopDurationSec=106&warningRemainingDurationSec=25&twoVsTwoMode=on",
 	)
 	assert.Equal(t, 303, recorder.Code)
 	assert.Equal(t, "/setup/settings#event", recorder.Header().Get("Location"))
@@ -43,6 +43,14 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, 106, web.arena.EventSettings.TeleopDurationSec)
 	assert.Equal(t, 25, web.arena.EventSettings.WarningRemainingDurationSec)
 	assert.Equal(t, 106, game.GetTeleopDurationSec())
+	assert.True(t, web.arena.EventSettings.TwoVsTwoMode)
+
+	// Turn 2v2 mode back off and check that it round-trips.
+	recorder = web.postHttpResponse(
+		"/setup/settings", "name=Chezy Champs&code=CC&playoffType=single&numPlayoffAlliances=16",
+	)
+	assert.Equal(t, 303, recorder.Code)
+	assert.False(t, web.arena.EventSettings.TwoVsTwoMode)
 
 	recorder = web.postHttpResponse("/setup/settings", "name=Field Tab Event&activeSettingsTab=field")
 	assert.Equal(t, 303, recorder.Code)

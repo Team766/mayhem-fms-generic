@@ -214,6 +214,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		BlueOffFieldTeams  []*model.Team
 		BreakDescription   string
 		BreakNextMatchName string
+		TwoVsTwoMode       bool
 	}{
 		arena.CurrentMatch,
 		allowManualSubstitution,
@@ -225,6 +226,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		blueOffFieldTeams,
 		arena.breakDescription,
 		arena.breakNextMatchName,
+		arena.EventSettings.TwoVsTwoMode,
 	}
 }
 

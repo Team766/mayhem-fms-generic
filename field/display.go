@@ -38,6 +38,8 @@ const (
 	TwitchStreamDisplay
 	WallDisplay
 	WebpageDisplay
+	FmsFieldMonitorDisplay
+	UnpickedDisplay
 )
 
 var DisplayTypeNames = map[DisplayType]string{
@@ -53,6 +55,8 @@ var DisplayTypeNames = map[DisplayType]string{
 	TwitchStreamDisplay:    "Twitch Stream",
 	WallDisplay:            "Wall",
 	WebpageDisplay:         "Web Page",
+	FmsFieldMonitorDisplay: "FMS Field Monitor",
+	UnpickedDisplay:        "Unpicked Teams",
 }
 
 var displayTypePaths = map[DisplayType]string{
@@ -68,6 +72,8 @@ var displayTypePaths = map[DisplayType]string{
 	TwitchStreamDisplay:    "/displays/twitch",
 	WallDisplay:            "/displays/wall",
 	WebpageDisplay:         "/displays/webpage",
+	FmsFieldMonitorDisplay: "/displays/fms_field_monitor",
+	UnpickedDisplay:        "/displays/unpicked",
 }
 
 var displayRegistryMutex sync.Mutex
@@ -96,7 +102,11 @@ func DisplayFromUrl(path string, query map[string][]string) (*DisplayConfigurati
 	var displayConfig DisplayConfiguration
 	displayConfig.Id = query["displayId"][0]
 	if nickname, ok := query["nickname"]; ok {
-		displayConfig.Nickname, _ = url.QueryUnescape(nickname[0])
+		var err error
+		displayConfig.Nickname, err = url.QueryUnescape(nickname[0])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Determine type from the websocket connection URL. This way of doing it isn't super efficient, but it's not really
@@ -115,7 +125,11 @@ func DisplayFromUrl(path string, query map[string][]string) (*DisplayConfigurati
 	displayConfig.Configuration = make(map[string]string)
 	for key, value := range query {
 		if key != "displayId" && key != "nickname" {
-			displayConfig.Configuration[key], _ = url.QueryUnescape(value[0])
+			var err error
+			displayConfig.Configuration[key], err = url.QueryUnescape(value[0])
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

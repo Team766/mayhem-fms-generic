@@ -4,6 +4,10 @@
 //
 // Client-side methods for the audience display.
 
+if (typeof DisplayShared === "undefined") {
+  $.ajax({async: false, cache: true, dataType: "script", url: "/static/js/display_shared.js"});
+}
+
 var websocket;
 let transitionMap;
 const transitionQueue = [];
@@ -14,6 +18,9 @@ let blueSide;
 let currentMatch;
 let overlayCenteringHideParams;
 let overlayCenteringShowParams;
+const hubActiveController = DisplayShared.createHubActiveController(function () {
+  return currentScreen;
+});
 const allianceSelectionTemplate = Handlebars.compile($("#allianceSelectionTemplate").html());
 const sponsorImageTemplate = Handlebars.compile($("#sponsorImageTemplate").html());
 const sponsorTextTemplate = Handlebars.compile($("#sponsorTextTemplate").html());
@@ -26,12 +33,12 @@ const overlayCenteringTopHideParams = {queue: false, top: overlayCenteringTopUp}
 const overlayCenteringTopShowParams = {queue: false, top: "50px"};
 const eventMatchInfoDown = "30px";
 const eventMatchInfoUp = $("#eventMatchInfo").css("height");
-const logoUp = "20px";
+const logoUp = "35px";
 const logoDown = $("#logo").css("top");
 const scoreIn = $(".score").css("width");
 const scoreMid = "185px";
-const scoreOut = "370px";
-const scoreFieldsOut = "150px";
+const scoreOut = "400px";
+const scoreFieldsOut = "180px";
 const scoreLogoTop = "-530px";
 const bracketLogoTop = "-780px";
 const bracketLogoScale = 0.75;
@@ -85,83 +92,47 @@ const executeTransitionQueue = function () {
 
 // Handles a websocket message to update the teams for the current match.
 const handleMatchLoad = function (data) {
-  currentMatch = data.Match;
-  $(`#${redSide}Team1`).text(currentMatch.Red1);
-  $(`#${redSide}Team1`).attr("data-yellow-card", data.Teams["R1"]?.YellowCard);
-  $(`#${redSide}Team2`).text(currentMatch.Red2);
-  $(`#${redSide}Team2`).attr("data-yellow-card", data.Teams["R2"]?.YellowCard);
-  $(`#${redSide}Team3`).text(currentMatch.Red3);
-  $(`#${redSide}Team3`).attr("data-yellow-card", data.Teams["R3"]?.YellowCard);
-  $(`#${redSide}Team1Avatar`).attr("src", getAvatarUrl(currentMatch.Red1));
-  $(`#${redSide}Team2Avatar`).attr("src", getAvatarUrl(currentMatch.Red2));
-  $(`#${redSide}Team3Avatar`).attr("src", getAvatarUrl(currentMatch.Red3));
-  $(`#${blueSide}Team1`).text(currentMatch.Blue1);
-  $(`#${blueSide}Team1`).attr("data-yellow-card", data.Teams["B1"]?.YellowCard);
-  $(`#${blueSide}Team2`).text(currentMatch.Blue2);
-  $(`#${blueSide}Team2`).attr("data-yellow-card", data.Teams["B2"]?.YellowCard);
-  $(`#${blueSide}Team3`).text(currentMatch.Blue3);
-  $(`#${blueSide}Team3`).attr("data-yellow-card", data.Teams["B3"]?.YellowCard);
-  $(`#${blueSide}Team1Avatar`).attr("src", getAvatarUrl(currentMatch.Blue1));
-  $(`#${blueSide}Team2Avatar`).attr("src", getAvatarUrl(currentMatch.Blue2));
-  $(`#${blueSide}Team3Avatar`).attr("src", getAvatarUrl(currentMatch.Blue3));
-
-  // Show alliance numbers if this is a playoff match.
-  if (currentMatch.Type === matchTypePlayoff) {
-    $(`#${redSide}PlayoffAlliance`).text(currentMatch.PlayoffRedAlliance);
-    $(`#${blueSide}PlayoffAlliance`).text(currentMatch.PlayoffBlueAlliance);
-    $(".playoff-alliance").show();
-
-    // Show the series status if this playoff round isn't just a single match.
-    if (data.Matchup.NumWinsToAdvance > 1) {
-      $(`#${redSide}PlayoffAllianceWins`).text(data.Matchup.RedAllianceWins);
-      $(`#${blueSide}PlayoffAllianceWins`).text(data.Matchup.BlueAllianceWins);
-      $("#playoffSeriesStatus").css("display", "flex");
-    } else {
-      $("#playoffSeriesStatus").hide();
-    }
-  } else {
-    $(`#${redSide}PlayoffAlliance`).text("");
-    $(`#${blueSide}PlayoffAlliance`).text("");
-    $(".playoff-alliance").hide();
-    $("#playoffSeriesStatus").hide();
-  }
-
-  let matchName = data.Match.LongName;
-  if (data.Match.NameDetail !== "") {
-    matchName += " &ndash; " + data.Match.NameDetail;
-  }
-  $("#matchName").html(matchName);
-  $("#timeoutNextMatchName").html(matchName);
-  $("#timeoutBreakDescription").text(data.BreakDescription);
+  currentMatch = DisplayShared.handleMatchLoad(data, redSide, blueSide);
 };
 
 // Handles a websocket message to update the match time countdown.
 const handleMatchTime = function (data) {
-  translateMatchTime(data, function (matchState, matchStateText, countdownSec) {
-    $("#matchTime").text(getCountdownString(countdownSec));
-  });
+  DisplayShared.handleMatchTime(data);
 };
 
 // Handles a websocket message to update the match score.
 const handleRealtimeScore = function (data) {
-  $(`#${redSide}ScoreNumber`).text(data.Red.ScoreSummary.Score);
-  $(`#${blueSide}ScoreNumber`).text(data.Blue.ScoreSummary.Score);
+  DisplayShared.handle2026RealtimeScore(
+    data,
+    currentMatch,
+    redSide,
+    blueSide,
+    hubActiveController.updateHubActiveIndicator
+  );
+};
 
-  const redGp1 = data.Red.Score.Mayhem.AutoGamepiece1Level1Count + data.Red.Score.Mayhem.TeleopGamepiece1Level1Count +
-    data.Red.Score.Mayhem.AutoGamepiece1Level2Count + data.Red.Score.Mayhem.TeleopGamepiece1Level2Count;
-  const redGp2 = data.Red.Score.Mayhem.AutoGamepiece2Count + data.Red.Score.Mayhem.TeleopGamepiece2Count;
-  const blueGp1 = data.Blue.Score.Mayhem.AutoGamepiece1Level1Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level1Count +
-    data.Blue.Score.Mayhem.AutoGamepiece1Level2Count + data.Blue.Score.Mayhem.TeleopGamepiece1Level2Count;
-  const blueGp2 = data.Blue.Score.Mayhem.AutoGamepiece2Count + data.Blue.Score.Mayhem.TeleopGamepiece2Count;
-
-  $(`#${redSide}Gp1`).text(redGp1);
-  $(`#${redSide}Gp2`).text(redGp2);
-  $(`#${blueSide}Gp1`).text(blueGp1);
-  $(`#${blueSide}Gp2`).text(blueGp2);
+const setFinalResultIndicator = function (side, label, result) {
+  const indicator = $(`#${side}FinalResultIndicator`);
+  indicator.text(label);
+  indicator.attr("data-result", result);
 };
 
 // Handles a websocket message to populate the final score data.
 const handleScorePosted = function (data) {
+  if (data.RedWon) {
+    setFinalResultIndicator(redSide, "WINNER", "winner");
+    setFinalResultIndicator(blueSide, "", "");
+  } else if (data.BlueWon) {
+    setFinalResultIndicator(redSide, "", "");
+    setFinalResultIndicator(blueSide, "WINNER", "winner");
+  } else {
+    setFinalResultIndicator(redSide, "TIE", "tie");
+    setFinalResultIndicator(blueSide, "TIE", "tie");
+  }
+  const tiebreakReason = data.TiebreakReason || "";
+  $("#finalTiebreakReason").text(tiebreakReason);
+  $("#finalTiebreakReason").attr("data-visible", tiebreakReason !== "");
+
   $(`#${redSide}FinalScore`).text(data.RedScoreSummary.Score);
   $(`#${redSide}FinalAlliance`).text("Alliance " + data.Match.PlayoffRedAlliance);
   setTeamInfo(redSide, 1, data.Match.Red1, data.RedCards, data.RedRankings);
@@ -172,18 +143,35 @@ const handleScorePosted = function (data) {
   } else {
     setTeamInfo(redSide, 4, 0, data.RedCards, data.RedRankings);
   }
-  $(`#${redSide}FinalLeavePoints`).text(data.RedScoreSummary.LeavePoints);
-  $(`#${redSide}FinalGamepiece1Points`).text(data.RedScoreSummary.Gamepiece1Points);
-  $(`#${redSide}FinalGamepiece2Points`).text(data.RedScoreSummary.Gamepiece2Points);
-  $(`#${redSide}FinalParkPoints`).text(data.RedScoreSummary.ParkPoints);
+  $(`#${redSide}FinalAutoFuelPoints`).text(data.RedScoreSummary.AutoFuelPoints);
+  $(`#${redSide}FinalAutoTowerPoints`).text(data.RedScoreSummary.AutoTowerPoints);
+  $(`#${redSide}FinalTeleopFuelPoints`).text(data.RedScoreSummary.TeleopFuelPoints);
+  $(`#${redSide}FinalTeleopTowerPoints`).text(data.RedScoreSummary.TeleopTowerPoints);
   $(`#${redSide}FinalFoulPoints`).text(data.RedScoreSummary.FoulPoints);
-  $(`#${redSide}FinalLeaveRankingPoint`).html(data.RedScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalLeaveRankingPoint`).attr("data-checked", data.RedScoreSummary.LeaveBonusRankingPoint);
-  $(`#${redSide}FinalGamepiece1RankingPoint`).html(data.RedScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.RedScoreSummary.Gamepiece1BonusRankingPoint);
-  $(`#${redSide}FinalParkRankingPoint`).html(data.RedScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${redSide}FinalParkRankingPoint`).attr("data-checked", data.RedScoreSummary.ParkBonusRankingPoint);
+  $(`#${redSide}FinalEnergizedBonusRankingPoint`).html(
+    data.RedScoreSummary.EnergizedBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${redSide}FinalEnergizedBonusRankingPoint`).attr(
+    "data-checked", data.RedScoreSummary.EnergizedBonusRankingPoint
+  );
+  $(`#${redSide}FinalSuperchargedBonusRankingPoint`).html(
+    data.RedScoreSummary.SuperchargedBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${redSide}FinalSuperchargedBonusRankingPoint`).attr(
+    "data-checked", data.RedScoreSummary.SuperchargedBonusRankingPoint
+  );
+  $(`#${redSide}FinalTraversalBonusRankingPoint`).html(
+    data.RedScoreSummary.TraversalBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${redSide}FinalTraversalBonusRankingPoint`).attr(
+    "data-checked", data.RedScoreSummary.TraversalBonusRankingPoint
+  );
   $(`#${redSide}FinalRankingPoints`).html(data.RedRankingPoints);
+  $(`#${redSide}FinalWins`).text(data.RedWins);
+  const redFinalDestination = $(`#${redSide}FinalDestination`);
+  redFinalDestination.html(data.RedDestination.replace("Advances to ", "Advances to<br>"));
+  redFinalDestination.toggle(data.RedDestination !== "");
+  redFinalDestination.attr("data-won", data.RedWon);
 
   $(`#${blueSide}FinalScore`).text(data.BlueScoreSummary.Score);
   $(`#${blueSide}FinalAlliance`).text("Alliance " + data.Match.PlayoffBlueAlliance);
@@ -195,18 +183,35 @@ const handleScorePosted = function (data) {
   } else {
     setTeamInfo(blueSide, 4, 0, data.BlueCards, data.BlueRankings);
   }
-  $(`#${blueSide}FinalLeavePoints`).text(data.BlueScoreSummary.LeavePoints);
-  $(`#${blueSide}FinalGamepiece1Points`).text(data.BlueScoreSummary.Gamepiece1Points);
-  $(`#${blueSide}FinalGamepiece2Points`).text(data.BlueScoreSummary.Gamepiece2Points);
-  $(`#${blueSide}FinalParkPoints`).text(data.BlueScoreSummary.ParkPoints);
+  $(`#${blueSide}FinalAutoFuelPoints`).text(data.BlueScoreSummary.AutoFuelPoints);
+  $(`#${blueSide}FinalAutoTowerPoints`).text(data.BlueScoreSummary.AutoTowerPoints);
+  $(`#${blueSide}FinalTeleopFuelPoints`).text(data.BlueScoreSummary.TeleopFuelPoints);
+  $(`#${blueSide}FinalTeleopTowerPoints`).text(data.BlueScoreSummary.TeleopTowerPoints);
   $(`#${blueSide}FinalFoulPoints`).text(data.BlueScoreSummary.FoulPoints);
-  $(`#${blueSide}FinalLeaveRankingPoint`).html(data.BlueScoreSummary.LeaveBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalLeaveRankingPoint`).attr("data-checked", data.BlueScoreSummary.LeaveBonusRankingPoint);
-  $(`#${blueSide}FinalGamepiece1RankingPoint`).html(data.BlueScoreSummary.Gamepiece1BonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalGamepiece1RankingPoint`).attr("data-checked", data.BlueScoreSummary.Gamepiece1BonusRankingPoint);
-  $(`#${blueSide}FinalParkRankingPoint`).html(data.BlueScoreSummary.ParkBonusRankingPoint ? "&#x2714;" : "&#x2718;");
-  $(`#${blueSide}FinalParkRankingPoint`).attr("data-checked", data.BlueScoreSummary.ParkBonusRankingPoint);
+  $(`#${blueSide}FinalEnergizedBonusRankingPoint`).html(
+    data.BlueScoreSummary.EnergizedBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${blueSide}FinalEnergizedBonusRankingPoint`).attr(
+    "data-checked", data.BlueScoreSummary.EnergizedBonusRankingPoint
+  );
+  $(`#${blueSide}FinalSuperchargedBonusRankingPoint`).html(
+    data.BlueScoreSummary.SuperchargedBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${blueSide}FinalSuperchargedBonusRankingPoint`).attr(
+    "data-checked", data.BlueScoreSummary.SuperchargedBonusRankingPoint
+  );
+  $(`#${blueSide}FinalTraversalBonusRankingPoint`).html(
+    data.BlueScoreSummary.TraversalBonusRankingPoint ? "&#x2714;" : "&#x2718;"
+  );
+  $(`#${blueSide}FinalTraversalBonusRankingPoint`).attr(
+    "data-checked", data.BlueScoreSummary.TraversalBonusRankingPoint
+  );
   $(`#${blueSide}FinalRankingPoints`).html(data.BlueRankingPoints);
+  $(`#${blueSide}FinalWins`).text(data.BlueWins);
+  const blueFinalDestination = $(`#${blueSide}FinalDestination`);
+  blueFinalDestination.html(data.BlueDestination.replace("Advances to ", "Advances to<br>"));
+  blueFinalDestination.toggle(data.BlueDestination !== "");
+  blueFinalDestination.attr("data-won", data.BlueWon);
 
   let matchName = data.Match.LongName;
   if (data.Match.NameDetail !== "") {
@@ -357,6 +362,7 @@ const transitionBlankToMatch = function (callback) {
       $(".score-number").transition({queue: false, opacity: 1}, 750, "ease");
       $("#matchTime").transition({queue: false, opacity: 1}, 750, "ease");
       $(".score-fields").transition({queue: false, opacity: 1}, 750, "ease");
+      hubActiveController.restartPendingHubActiveIndicators();
     });
   });
 };
@@ -449,6 +455,7 @@ const transitionIntroToMatch = function (callback) {
     $(".score-number").transition({queue: false, opacity: 1}, 750, "ease");
     $("#matchTime").transition({queue: false, opacity: 1}, 750, "ease", callback);
     $(".score-fields").transition({queue: false, opacity: 1}, 750, "ease");
+    hubActiveController.restartPendingHubActiveIndicators();
   });
 };
 
@@ -680,7 +687,7 @@ const initializeSponsorDisplay = function () {
 };
 
 const getAvatarUrl = function (teamId) {
-  return "/api/teams/" + teamId + "/avatar";
+  return DisplayShared.getAvatarUrl(teamId);
 };
 
 const setTeamInfo = function (side, position, teamId, cards, rankings) {
@@ -719,16 +726,9 @@ $(function () {
   // Read the configuration for this display from the URL query string.
   const urlParams = new URLSearchParams(window.location.search);
   document.body.style.backgroundColor = urlParams.get("background");
-  const reversed = urlParams.get("reversed");
-  if (reversed === "true") {
-    redSide = "right";
-    blueSide = "left";
-  } else {
-    redSide = "left";
-    blueSide = "right";
-  }
-  $(".reversible-left").attr("data-reversed", reversed);
-  $(".reversible-right").attr("data-reversed", reversed);
+  const sides = DisplayShared.applyDisplaySides(urlParams);
+  redSide = sides.redSide;
+  blueSide = sides.blueSide;
   if (urlParams.get("overlayLocation") === "top") {
     overlayCenteringHideParams = overlayCenteringTopHideParams;
     overlayCenteringShowParams = overlayCenteringTopShowParams;

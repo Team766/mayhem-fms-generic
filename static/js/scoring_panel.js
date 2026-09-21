@@ -6,37 +6,18 @@
 
 var websocket;
 let alliance;
-let nearSide;
 let committed = false;
 
 // True when scoring controls in general should be available
 let scoringAvailable = false;
 // True when the commit button should be available
 let commitAvailable = false;
-// True when teleop-only scoring controls should be available
-let inTeleop = false;
-// True when post-auto and in edit auto mode
-let editingAuto = false;
 
 let localFoulCounts = {
   "red-minor": 0,
   "blue-minor": 0,
   "red-major": 0,
   "blue-major": 0,
-}
-
-// Handle controls to open/close the endgame dialog
-const endgameDialog = $("#endgame-dialog")[0];
-const showEndgameDialog = function () {
-  endgameDialog.showModal();
-}
-const closeEndgameDialog = function () {
-  endgameDialog.close();
-}
-const closeEndgameDialogIfOutside = function (event) {
-  if (event.target === endgameDialog) {
-    closeEndgameDialog();
-  }
 }
 
 const foulsDialog = $("#fouls-dialog")[0];
@@ -69,8 +50,15 @@ const handleMatchLoad = function (data) {
 const renderLocalFoulCounts = function () {
   for (const foulType in localFoulCounts) {
     const count = localFoulCounts[foulType];
-    $(`#foul-${foulType} .fouls-local`).text(count);
+    $(`#foul-${foulType} .fouls-local`).text(count)
   }
+}
+
+const renderGlobalFoulCounts = function (redFouls, blueFouls) {
+  $(`#foul-blue-minor .fouls-global`).text(blueFouls.filter(foul => !foul.IsMajor).length)
+  $(`#foul-blue-major .fouls-global`).text(blueFouls.filter(foul => foul.IsMajor).length)
+  $(`#foul-red-minor .fouls-global`).text(redFouls.filter(foul => !foul.IsMajor).length)
+  $(`#foul-red-major .fouls-global`).text(redFouls.filter(foul => foul.IsMajor).length)
 }
 
 const resetFoulCounts = function () {
@@ -84,8 +72,8 @@ const resetFoulCounts = function () {
 const addFoul = function (alliance, isMajor) {
   const foulType = `${alliance}-${isMajor ? "major" : "minor"}`;
   localFoulCounts[foulType] += 1;
-  websocket.send("addFoul", {Alliance: alliance, IsMajor: isMajor});
   renderLocalFoulCounts();
+  websocket.send("addFoul", {Alliance: alliance, IsMajor: isMajor});
 }
 
 // Handles a websocket message to update the match status.
@@ -93,59 +81,45 @@ const handleMatchTime = function (data) {
   switch (matchStates[data.MatchState]) {
     case "AUTO_PERIOD":
     case "PAUSE_PERIOD":
-      scoringAvailable = true;
-      commitAvailable = false;
-      inTeleop = false;
-      editingAuto = false;
-      committed = false;
-      break;
     case "TELEOP_PERIOD":
       scoringAvailable = true;
       commitAvailable = false;
-      inTeleop = true;
       committed = false;
       break;
     case "POST_MATCH":
       if (!committed) {
         scoringAvailable = true;
         commitAvailable = true;
-        inTeleop = true;
       }
       break;
     default:
       scoringAvailable = false;
       commitAvailable = false;
-      inTeleop = false;
-      editingAuto = false;
       committed = false;
       resetFoulCounts();
   }
   updateUIMode();
 };
 
-// Switch in and out of autonomous editing mode
-const toggleEditAuto = function () {
-  editingAuto = !editingAuto;
-  updateUIMode();
-}
-
 // Clear any local ephemeral state that is not maintained by the server
 const resetLocalState = function () {
   committed = false;
-  editingAuto = false;
   updateUIMode();
 }
 
 // Refresh which UI controls are enabled/disabled
 const updateUIMode = function () {
   $(".scoring-button").prop('disabled', !scoringAvailable);
-  $(".scoring-teleop-button").prop('disabled', !(inTeleop && scoringAvailable));
+  $(".scoring-tower-button").prop('disabled', !scoringAvailable);
   $("#commit").prop('disabled', !commitAvailable);
-  $("#edit-auto").prop('disabled', !(inTeleop && scoringAvailable));
-  $(".container").attr("data-scoring-auto", (!inTeleop || editingAuto) && scoringAvailable);
-  $(".container").attr("data-in-teleop", inTeleop && scoringAvailable);
-  $("#edit-auto").text(editingAuto ? "Save Auto" : "Edit Auto");
 }
+
+const endgameStatusNames = [
+  "None",
+  "Level 1",
+  "Level 2",
+  "Level 3",
+];
 
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
@@ -157,60 +131,25 @@ const handleRealtimeScore = function (data) {
   }
   const score = realtimeScore.Score;
 
-  // Update leave/park buttons
   for (let i = 0; i < 3; i++) {
     const i1 = i + 1;
-    $(`#leave-${i1}`).attr("data-selected", score.Mayhem.LeaveStatuses[i]);
-    $(`#park-${i1}`).attr("data-selected", score.Mayhem.ParkStatuses[i]);
+    for (let j = 0; j < endgameStatusNames.length; j++) {
+      $(`#auto-input-${i1} .tower-${j}`).attr("data-selected", j == score.AutoTowerStatuses[i]);
+      $(`#endgame-input-${i1} .tower-${j}`).attr("data-selected", j == score.EndgameTowerStatuses[i]);
+    }
   }
 
-  // Update auto counters
-  $("#auto_gp1_l1 .counter-value").text(score.Mayhem.AutoGamepiece1Level1Count);
-  $("#auto_gp1_l2 .counter-value").text(score.Mayhem.AutoGamepiece1Level2Count);
-  $("#auto_gp2 .counter-value").text(score.Mayhem.AutoGamepiece2Count);
-  
-  // Update teleop counters
-  $("#teleop_gp1_l1 .counter-value").text(score.Mayhem.TeleopGamepiece1Level1Count);
-  $("#teleop_gp1_l2 .counter-value").text(score.Mayhem.TeleopGamepiece1Level2Count);
-  $("#teleop_gp2 .counter-value").text(score.Mayhem.TeleopGamepiece2Count);
+  const redFouls = data.Red.Score.Fouls || [];
+  const blueFouls = data.Blue.Score.Fouls || [];
+  renderGlobalFoulCounts(redFouls, blueFouls);
 };
 
 // Websocket message senders for various buttons
-const handleCounterClick = function (id, adjustment) {
-  switch (id) {
-    // Auto counters
-    case "auto_gp1_l1":
-      websocket.send("GP1", { Level: 1, Autonomous: true, Adjustment: adjustment });
-      break;
-    case "auto_gp1_l2":
-      websocket.send("GP1", { Level: 2, Autonomous: true, Adjustment: adjustment });
-      break;
-    case "auto_gp2":
-      websocket.send("GP2", { Autonomous: true, Adjustment: adjustment });
-      break;
-    
-    // Teleop counters
-    case "teleop_gp1_l1":
-      websocket.send("GP1", { Level: 1, Autonomous: false, Adjustment: adjustment });
-      break;
-    case "teleop_gp1_l2":
-      websocket.send("GP1", { Level: 2, Autonomous: false, Adjustment: adjustment });
-      break;
-    case "teleop_gp2":
-      websocket.send("GP2", { Autonomous: false, Adjustment: adjustment });
-      break;
-    
-    default:
-      return;
-  }
+const handleAutoTowerClick = function (teamPosition, autoTowerStatus) {
+  websocket.send("autoTower", {TeamPosition: teamPosition, AutoTowerStatus: autoTowerStatus});
 }
-
-const handleLeaveClick = function (teamPosition) {
-  websocket.send("leave", { TeamPosition: teamPosition });
-}
-
-const handleParkClick = function (teamPosition) {
-  websocket.send("park", { TeamPosition: teamPosition });
+const handleEndgameClick = function (teamPosition, endgameTowerStatus) {
+  websocket.send("endgame", {TeamPosition: teamPosition, EndgameTowerStatus: endgameTowerStatus});
 }
 
 // Sends a websocket message to indicate that the score for this alliance is ready.
@@ -220,16 +159,13 @@ const commitMatchScore = function () {
   committed = true;
   scoringAvailable = false;
   commitAvailable = false;
-  inTeleop = false;
-  editingAuto = false;
   updateUIMode();
 };
 
 $(function () {
   position = window.location.href.split("/").slice(-1)[0];
-  [alliance, side] = position.split("_");
+  alliance = position;
   $(".container").attr("data-alliance", alliance);
-  nearSide = side === "near";
   resetLocalState();
 
   // Set up the websocket back to the server.

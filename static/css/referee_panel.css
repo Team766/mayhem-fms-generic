@@ -41,22 +41,6 @@ h3 {
 #cards[data-hr="false"] {
   display: none;
 }
-
-/* 2v2 Mode */
-#refereePanel[data-two-v-two="true"] #redTeam3Card,
-#refereePanel[data-two-v-two="true"] #blueTeam3Card,
-#refereePanel[data-two-v-two="true"] .team-3,
-#refereePanel[data-two-v-two="true"] .team-3-leave,
-#refereePanel[data-two-v-two="true"] .team-3-park {
-  display: none !important;
-}
-
-#refereePanel[data-two-v-two="true"] .team-card {
-  width: 12vw;
-  height: 4vw;
-  font-size: 2.8vw;
-  margin: 0.8vw 0;
-}
 .alliance-cards {
   padding: 0.5vw 1vw;
   display: flex;
@@ -72,6 +56,9 @@ h3 {
 }
 #blueCards {
   background-color: #223;
+}
+.team-card.bypassed-status {
+  background-color: #dc3545;
 }
 .team-card {
   margin: 0.5vw 0;
@@ -231,13 +218,16 @@ h3 {
 #commitButton {
   background-color: #26c;
 }
+#commitButton.disabled {
+  background-color: #666;
+}
 
 #scoreSummary {
   width: 100%;
   display: flex;
-  gap: 2vw;
-  padding: 1vw 7vw;
-  justify-content: space-evenly;
+  gap: 1vw;
+  padding: 0.8vw 1vw;
+  justify-content: center;
   text-align: center;
 }
 #scoreSummary[data-hr="false"] {
@@ -246,49 +236,46 @@ h3 {
 
 #scoreSummary > div {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-/* Adjust grid for 2v2 mode */
-#refereePanel[data-two-v-two="true"] #scoreSummary > div {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-#refereePanel[data-two-v-two="true"] .team-3,
-#refereePanel[data-two-v-two="true"] .team-3-leave,
-#refereePanel[data-two-v-two="true"] .team-3-park {
-  display: none;
+  grid-template-columns: 7.5vw repeat(3, 5.2vw);
+  column-gap: 0.35vw;
+  row-gap: 0.25vw;
+  align-items: center;
 }
 
 #scoreSummary .placeholder {
   visibility: hidden;
 }
 
-/* GP1 and GP2 rows */
 #scoreSummary .wide-row {
-  display: contents;
-}
-
-#scoreSummary .wide-row .label {
-  grid-column: 1;
-  text-align: right;
-  padding-right: 0.5vw;
-}
-
-#scoreSummary .wide-row .values {
-  grid-column: 3;  /* Align with first team's leave value */
-  display: flex;
-  gap: 1vw;
-  align-items: center;
-  padding-left: 0.5vw;  /* Add some spacing from the grid line */
-}
-
-/* Adjust for 2v2 mode */
-#refereePanel[data-two-v-two="true"] #scoreSummary .wide-row .values {
-  grid-column: 3;  /* Still column 3 since we're hiding column 4 in 2v2 mode */
+  grid-column: span 3;
 }
 
 #scoreSummary .label {
   text-align: right;
-  padding: 0 0.2vw;
+  padding-right: 0.35vw;
+}
+
+#scoreSummary .tower-status {
+  min-width: 4.8vw;
+  padding: 0.05vw 0.2vw;
+  border-radius: 0.25vw;
+  color: #fff;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+#scoreSummary .tower-status[data-status="0"] {
+  background-color: #555;
+}
+
+#scoreSummary .tower-status[data-status="1"] {
+  background-color: #c1a313;
+}
+
+#scoreSummary .tower-status[data-status="2"] {
+  background-color: #286fbd;
+}
+
+#scoreSummary .tower-status[data-status="3"] {
+  background-color: #2a8c55;
 }

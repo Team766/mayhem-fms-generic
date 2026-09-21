@@ -63,17 +63,17 @@ func TestPlayoffTournamentCreateMatchesAndBreaks(t *testing.T) {
 		assertMatch(t, matches[5], 6, 7700, "Match 6", "M6", "Round 2 Lower", "M6", 0, 0, true, "sf", 6, 1)
 		assertMatch(t, matches[6], 7, 8240, "Match 7", "M7", "Round 2 Upper", "M7", 0, 0, true, "sf", 7, 1)
 		assertMatch(t, matches[7], 8, 8780, "Match 8", "M8", "Round 2 Upper", "M8", 0, 0, true, "sf", 8, 1)
-		assertMatch(t, matches[8], 9, 9320, "Match 9", "M9", "Round 3 Lower", "M9", 0, 0, true, "sf", 9, 1)
-		assertMatch(t, matches[9], 10, 9860, "Match 10", "M10", "Round 3 Lower", "M10", 0, 0, true, "sf", 10, 1)
-		assertMatch(t, matches[10], 11, 10520, "Match 11", "M11", "Round 4 Upper", "M11", 0, 0, true, "sf", 11, 1)
-		assertMatch(t, matches[11], 12, 11060, "Match 12", "M12", "Round 4 Lower", "M12", 0, 0, true, "sf", 12, 1)
-		assertMatch(t, matches[12], 13, 12260, "Match 13", "M13", "Round 5 Lower", "M13", 0, 0, true, "sf", 13, 1)
-		assertMatch(t, matches[13], 14, 13460, "Final 1", "F1", "", "F", 0, 0, false, "f", 1, 1)
-		assertMatch(t, matches[14], 15, 14660, "Final 2", "F2", "", "F", 0, 0, false, "f", 1, 2)
-		assertMatch(t, matches[15], 16, 15860, "Final 3", "F3", "", "F", 0, 0, false, "f", 1, 3)
-		assertMatch(t, matches[16], 17, 16160, "Overtime 1", "O1", "", "F", 0, 0, true, "f", 1, 4)
-		assertMatch(t, matches[17], 18, 16760, "Overtime 2", "O2", "", "F", 0, 0, true, "f", 1, 5)
-		assertMatch(t, matches[18], 19, 17360, "Overtime 3", "O3", "", "F", 0, 0, true, "f", 1, 6)
+		assertMatch(t, matches[8], 9, 9440, "Match 9", "M9", "Round 3 Lower", "M9", 0, 0, true, "sf", 9, 1)
+		assertMatch(t, matches[9], 10, 9980, "Match 10", "M10", "Round 3 Lower", "M10", 0, 0, true, "sf", 10, 1)
+		assertMatch(t, matches[10], 11, 10640, "Match 11", "M11", "Round 4 Upper", "M11", 0, 0, true, "sf", 11, 1)
+		assertMatch(t, matches[11], 12, 11180, "Match 12", "M12", "Round 4 Lower", "M12", 0, 0, true, "sf", 12, 1)
+		assertMatch(t, matches[12], 13, 12380, "Match 13", "M13", "Round 5 Lower", "M13", 0, 0, true, "sf", 13, 1)
+		assertMatch(t, matches[13], 14, 13580, "Final 1", "F1", "", "F", 0, 0, false, "f", 1, 1)
+		assertMatch(t, matches[14], 15, 14780, "Final 2", "F2", "", "F", 0, 0, false, "f", 1, 2)
+		assertMatch(t, matches[15], 16, 15980, "Final 3", "F3", "", "F", 0, 0, false, "f", 1, 3)
+		assertMatch(t, matches[16], 17, 16280, "Overtime 1", "O1", "", "F", 0, 0, true, "f", 1, 4)
+		assertMatch(t, matches[17], 18, 16880, "Overtime 2", "O2", "", "F", 0, 0, true, "f", 1, 5)
+		assertMatch(t, matches[18], 19, 17480, "Overtime 3", "O3", "", "F", 0, 0, true, "f", 1, 6)
 	}
 	for i := 0; i < 16; i++ {
 		assert.Equal(t, game.MatchScheduled, matches[i].Status)
@@ -83,12 +83,53 @@ func TestPlayoffTournamentCreateMatchesAndBreaks(t *testing.T) {
 	}
 	scheduledBreaks, err := database.GetScheduledBreaksByMatchType(model.Playoff)
 	assert.Nil(t, err)
+	if assert.Equal(t, 6, len(scheduledBreaks)) {
+		assertBreak(t, scheduledBreaks[0], 9, 9080, 360, "Field Break")
+		assertBreak(t, scheduledBreaks[1], 11, 10280, 360, "Field Break")
+		assertBreak(t, scheduledBreaks[2], 13, 11480, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[3], 14, 12680, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[4], 15, 13880, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[5], 16, 15080, 900, "Awards Break *")
+	}
+
+	// Test four-alliance double-elimination.
+	assert.Nil(t, database.TruncateMatches())
+	assert.Nil(t, database.TruncateScheduledBreaks())
+	playoffTournament, err = NewPlayoffTournament(model.DoubleEliminationPlayoff, 4)
+	assert.Nil(t, err)
+
+	startTime = time.Unix(20000, 0)
+	err = playoffTournament.CreateMatchesAndBreaks(database, startTime)
+	assert.Nil(t, err)
+
+	matches, _ = database.GetMatchesByType(model.Playoff, true)
+	if assert.Equal(t, 11, len(matches)) {
+		assertMatch(t, matches[0], 1, 20000, "Match 1", "M1", "Round 1 Upper", "M1", 1, 4, true, "sf", 1, 1)
+		assertMatch(t, matches[1], 2, 20540, "Match 2", "M2", "Round 1 Upper", "M2", 2, 3, true, "sf", 2, 1)
+		assertMatch(t, matches[2], 3, 21980, "Match 3", "M3", "Round 2 Upper", "M3", 0, 0, true, "sf", 3, 1)
+		assertMatch(t, matches[3], 4, 22520, "Match 4", "M4", "Round 2 Lower", "M4", 0, 0, true, "sf", 4, 1)
+		assertMatch(t, matches[4], 5, 23960, "Match 5", "M5", "Round 3 Lower", "M5", 0, 0, true, "sf", 5, 1)
+		assertMatch(t, matches[5], 6, 25160, "Final 1", "F1", "", "F", 0, 0, false, "f", 1, 1)
+		assertMatch(t, matches[6], 7, 26360, "Final 2", "F2", "", "F", 0, 0, false, "f", 1, 2)
+		assertMatch(t, matches[7], 8, 27560, "Final 3", "F3", "", "F", 0, 0, false, "f", 1, 3)
+		assertMatch(t, matches[8], 9, 27860, "Overtime 1", "O1", "", "F", 0, 0, true, "f", 1, 4)
+		assertMatch(t, matches[9], 10, 28460, "Overtime 2", "O2", "", "F", 0, 0, true, "f", 1, 5)
+		assertMatch(t, matches[10], 11, 29060, "Overtime 3", "O3", "", "F", 0, 0, true, "f", 1, 6)
+	}
+	for i := 0; i < 8; i++ {
+		assert.Equal(t, game.MatchScheduled, matches[i].Status)
+	}
+	for i := 8; i < 11; i++ {
+		assert.Equal(t, game.MatchHidden, matches[i].Status)
+	}
+	scheduledBreaks, err = database.GetScheduledBreaksByMatchType(model.Playoff)
+	assert.Nil(t, err)
 	if assert.Equal(t, 5, len(scheduledBreaks)) {
-		assertBreak(t, scheduledBreaks[0], 11, 10160, 360, "Field Break")
-		assertBreak(t, scheduledBreaks[1], 13, 11360, 900, "Awards Break")
-		assertBreak(t, scheduledBreaks[2], 14, 12560, 900, "Awards Break")
-		assertBreak(t, scheduledBreaks[3], 15, 13760, 900, "Awards Break")
-		assertBreak(t, scheduledBreaks[4], 16, 14960, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[0], 3, 21080, 900, "Field Break")
+		assertBreak(t, scheduledBreaks[1], 5, 23060, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[2], 6, 24260, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[3], 7, 25460, 900, "Awards Break")
+		assertBreak(t, scheduledBreaks[4], 8, 26660, 900, "Awards Break *")
 	}
 
 	// Test single-elimination.

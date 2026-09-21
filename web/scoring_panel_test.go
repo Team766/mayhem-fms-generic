@@ -4,13 +4,13 @@
 package web
 
 import (
-	"testing"
-	"time"
-
 	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
 func TestScoringPanel(t *testing.T) {
@@ -19,35 +19,11 @@ func TestScoringPanel(t *testing.T) {
 	recorder := web.getHttpResponse("/panels/scoring/invalidposition")
 	assert.Equal(t, 500, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Invalid position")
-	recorder = web.getHttpResponse("/panels/scoring/red_near")
+	recorder = web.getHttpResponse("/panels/scoring/red")
 	assert.Equal(t, 200, recorder.Code)
-	recorder = web.getHttpResponse("/panels/scoring/red_far")
-	assert.Equal(t, 200, recorder.Code)
-	recorder = web.getHttpResponse("/panels/scoring/blue_near")
-	assert.Equal(t, 200, recorder.Code)
-	recorder = web.getHttpResponse("/panels/scoring/blue_far")
+	recorder = web.getHttpResponse("/panels/scoring/blue")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Scoring Panel - Untitled Event - Cheesy Arena")
-}
-
-func TestScoringPanelTwoVsTwoAttribute(t *testing.T) {
-    web := setupTestWeb(t)
-
-    // TwoVsTwoMode off
-    web.arena.EventSettings.TwoVsTwoMode = false
-    recorder := web.getHttpResponse("/panels/scoring/red_near")
-    assert.Equal(t, 200, recorder.Code)
-    body := recorder.Body.String()
-    assert.Contains(t, body, "id=\"scoringPanel\"")
-    assert.Contains(t, body, "data-two-v-two=\"false\"")
-
-    // TwoVsTwoMode on
-    web.arena.EventSettings.TwoVsTwoMode = true
-    recorder = web.getHttpResponse("/panels/scoring/red_near")
-    assert.Equal(t, 200, recorder.Code)
-    body = recorder.Body.String()
-    assert.Contains(t, body, "id=\"scoringPanel\"")
-    assert.Contains(t, body, "data-two-v-two=\"true\"")
 }
 
 func TestScoringPanelWebsocket(t *testing.T) {
@@ -57,18 +33,18 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	defer server.Close()
 	_, _, err := gorillawebsocket.DefaultDialer.Dial(wsUrl+"/panels/scoring/blorpy/websocket", nil)
 	assert.NotNil(t, err)
-	redConn, _, err := gorillawebsocket.DefaultDialer.Dial(wsUrl+"/panels/scoring/red_near/websocket", nil)
+	redConn, _, err := gorillawebsocket.DefaultDialer.Dial(wsUrl+"/panels/scoring/red/websocket", nil)
 	assert.Nil(t, err)
 	defer redConn.Close()
 	redWs := websocket.NewTestWebsocket(redConn)
-	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("red_near"))
-	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumPanels("blue_near"))
-	blueConn, _, err := gorillawebsocket.DefaultDialer.Dial(wsUrl+"/panels/scoring/blue_near/websocket", nil)
+	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("red"))
+	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumPanels("blue"))
+	blueConn, _, err := gorillawebsocket.DefaultDialer.Dial(wsUrl+"/panels/scoring/blue/websocket", nil)
 	assert.Nil(t, err)
 	defer blueConn.Close()
 	blueWs := websocket.NewTestWebsocket(blueConn)
-	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("red_near"))
-	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("blue_near"))
+	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("red"))
+	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumPanels("blue"))
 
 	// Should get a few status updates right after connection.
 	readWebsocketType(t, redWs, "resetLocalState")
@@ -80,276 +56,135 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	readWebsocketType(t, blueWs, "matchTime")
 	readWebsocketType(t, blueWs, "realtimeScore")
 
-	// Send some autonomous period scoring commands.
-	assert.Equal(t, [3]bool{false, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
-	leaveData := struct {
-		TeamPosition int
+	// Send some auto tower scoring commands.
+	autoData := struct {
+		TeamPosition    int
+		AutoTowerStatus int
 	}{}
-	web.arena.MatchState = field.AutoPeriod
-	leaveData.TeamPosition = 1
-	redWs.Write("leave", leaveData)
-	leaveData.TeamPosition = 3
-	redWs.Write("leave", leaveData)
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
+		web.arena.RedRealtimeScore.CurrentScore.AutoTowerStatuses,
+	)
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
+		web.arena.BlueRealtimeScore.CurrentScore.AutoTowerStatuses,
+	)
+	autoData.TeamPosition = 1
+	autoData.AutoTowerStatus = 1
+	redWs.Write("autoTower", autoData)
+	autoData.TeamPosition = 2
+	autoData.AutoTowerStatus = 3
+	blueWs.Write("autoTower", autoData)
+	autoData.TeamPosition = 3
+	autoData.AutoTowerStatus = 2
+	redWs.Write("autoTower", autoData)
+	for i := 0; i < 3; i++ {
+		readWebsocketType(t, redWs, "realtimeScore")
+		readWebsocketType(t, blueWs, "realtimeScore")
+	}
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerLevel1, game.TowerNone, game.TowerLevel2},
+		web.arena.RedRealtimeScore.CurrentScore.AutoTowerStatuses,
+	)
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerLevel3, game.TowerNone},
+		web.arena.BlueRealtimeScore.CurrentScore.AutoTowerStatuses,
+	)
+
+	// Send some endgame scoring commands.
+	endgameData := struct {
+		TeamPosition       int
+		EndgameTowerStatus int
+	}{}
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
+		web.arena.RedRealtimeScore.CurrentScore.EndgameTowerStatuses,
+	)
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
+		web.arena.BlueRealtimeScore.CurrentScore.EndgameTowerStatuses,
+	)
+	endgameData.TeamPosition = 1
+	endgameData.EndgameTowerStatus = 2
+	redWs.Write("endgame", endgameData)
+	endgameData.TeamPosition = 2
+	endgameData.EndgameTowerStatus = 3
+	blueWs.Write("endgame", endgameData)
+	endgameData.TeamPosition = 3
+	endgameData.EndgameTowerStatus = 1
+	blueWs.Write("endgame", endgameData)
+	endgameData.TeamPosition = 3
+	endgameData.EndgameTowerStatus = 1
+	redWs.Write("endgame", endgameData)
+	endgameData.TeamPosition = 3
+	endgameData.EndgameTowerStatus = 3
+	redWs.Write("endgame", endgameData)
+	endgameData.TeamPosition = 2
+	endgameData.EndgameTowerStatus = 0
+	redWs.Write("endgame", endgameData)
+	for i := 0; i < 6; i++ {
+		readWebsocketType(t, redWs, "realtimeScore")
+		readWebsocketType(t, blueWs, "realtimeScore")
+	}
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerLevel2, game.TowerNone, game.TowerLevel3},
+		web.arena.RedRealtimeScore.CurrentScore.EndgameTowerStatuses,
+	)
+	assert.Equal(
+		t,
+		[3]game.TowerStatus{game.TowerNone, game.TowerLevel3, game.TowerLevel1},
+		web.arena.BlueRealtimeScore.CurrentScore.EndgameTowerStatuses,
+	)
+
+	// Add a couple of fouls.
+	foulData := struct {
+		Alliance string
+		IsMajor  bool
+	}{Alliance: "red", IsMajor: true}
+	redWs.Write("addFoul", foulData)
+	foulData = struct {
+		Alliance string
+		IsMajor  bool
+	}{Alliance: "blue", IsMajor: false}
+	blueWs.Write("addFoul", foulData)
 	for i := 0; i < 2; i++ {
 		readWebsocketType(t, redWs, "realtimeScore")
 		readWebsocketType(t, blueWs, "realtimeScore")
 	}
-	assert.Equal(t, [3]bool{true, false, true}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
-	redWs.Write("leave", leaveData)
-	readWebsocketType(t, redWs, "realtimeScore")
-	readWebsocketType(t, blueWs, "realtimeScore")
-	assert.Equal(t, [3]bool{true, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.LeaveStatuses)
-
-	// Send some counter scoring commands using the new GP1/GP2 protocol
-	gp1Data := struct {
-		Level      int
-		Autonomous bool
-		Adjustment int
-	}{}
-	gp2Data := struct {
-		Autonomous bool
-		Adjustment int
-	}{}
-
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 0, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count)
-	assert.Equal(t, 0, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count)
-
-	// Test GP1 Level 1 for Blue alliance (teleop)
-	gp1Data.Level = 1
-	gp1Data.Autonomous = false
-	gp1Data.Adjustment = 1
-	blueWs.Write("GP1", gp1Data)
-	blueWs.Write("GP1", gp1Data)
-	blueWs.Write("GP1", gp1Data)
-	gp1Data.Adjustment = -1
-	blueWs.Write("GP1", gp1Data)
-	blueWs.Write("GP1", gp1Data)
-	gp1Data.Adjustment = 1
-	blueWs.Write("GP1", gp1Data)
-	for i := 0; i < 6; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-
-	// Test GP2 for Red alliance (teleop)
-	gp2Data.Autonomous = false
-	gp2Data.Adjustment = -1
-	redWs.Write("GP2", gp2Data)
-	redWs.Write("GP2", gp2Data)
-	gp2Data.Adjustment = 1
-	redWs.Write("GP2", gp2Data)
-	redWs.Write("GP2", gp2Data)
-	redWs.Write("GP2", gp2Data)
-	gp2Data.Adjustment = -1
-	redWs.Write("GP2", gp2Data)
-	for i := 0; i < 6; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 2, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 2, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count)
-	assert.Equal(t, 0, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count)
-
-	// Send some gamepiece scoring commands using GP1 protocol
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level2Count)
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level1Count)
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level2Count)
-
-	// Test GP1 Level 1 for Red alliance (auto)
-	gp1Data.Level = 1
-	gp1Data.Autonomous = true
-	gp1Data.Adjustment = 1
-	redWs.Write("GP1", gp1Data)
-	redWs.Write("GP1", gp1Data)
-	redWs.Write("GP1", gp1Data)
-	gp1Data.Adjustment = -1
-	redWs.Write("GP1", gp1Data)
-	for i := 0; i < 4; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-
-	// Test GP1 Level 1 for Red alliance (teleop)
-	gp1Data.Autonomous = false
-	gp1Data.Adjustment = 1
-	redWs.Write("GP1", gp1Data)
-	redWs.Write("GP1", gp1Data)
-
-	// Test GP1 Level 2 for Red alliance (auto)
-	gp1Data.Level = 2
-	gp1Data.Autonomous = true
-	redWs.Write("GP1", gp1Data)
-	redWs.Write("GP1", gp1Data)
-
-	// Test GP1 Level 1 for Red alliance (teleop) - decrement
-	gp1Data.Level = 1
-	gp1Data.Autonomous = false
-	gp1Data.Adjustment = -1
-	redWs.Write("GP1", gp1Data)
-	for i := 0; i < 5; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-
-	assert.Equal(t, 1, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count)
-	assert.Equal(t, 0, web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level2Count)
-	assert.Equal(t, 2, web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level1Count)
-	assert.Equal(t, 2, web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level2Count)
-
-	// Send more gamepiece scoring commands using GP1 and GP2 protocol
-
-	// Auto phase - GP1 Level 1
-	gp1Data.Level = 1
-	gp1Data.Autonomous = true
-	gp1Data.Adjustment = 1
-	redWs.Write("GP1", gp1Data)
-
-	// Auto phase - GP2
-	gp2Data.Autonomous = true
-	gp2Data.Adjustment = 1
-	redWs.Write("GP2", gp2Data)
-
-	// Auto phase - GP1 Level 2
-	gp1Data.Level = 2
-	redWs.Write("GP1", gp1Data)
-	redWs.Write("GP1", gp1Data)
-
-	// Teleop phase - GP1 Level 2
-	gp1Data.Autonomous = false
-	redWs.Write("GP1", gp1Data)
-
-	// Blue alliance - GP1 Level 1
-	gp1Data.Level = 1
-	gp1Data.Autonomous = false
-	blueWs.Write("GP1", gp1Data)
-
-	for i := 0; i < 6; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-	// Red Auto
-	assert.Equal(
-		t,
-		4, // 2 from lines 198-200 + 2 from line 181
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level2Count,
-	)
-	assert.Equal(
-		t,
-		3, // 1 from line 190 + 2 from line 181
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level1Count,
-	)
-	assert.Equal(
-		t,
-		1, // 1 from line 195
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.AutoGamepiece2Count,
-	)
-	// Red Current
-	assert.Equal(
-		t,
-		1, // 1 from line 204
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level2Count,
-	)
-	assert.Equal(
-		t,
-		1, // From line 179
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count,
-	)
-	assert.Equal(
-		t,
-		2, // From line 134
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count,
-	)
-	// Blue Auto
-	assert.Equal(
-		t,
-		0, // No commands sent for Blue Auto GP1 Level 2
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level2Count,
-	)
-	assert.Equal(
-		t,
-		0, // No commands sent for Blue Auto GP1 Level 1
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.AutoGamepiece1Level1Count,
-	)
-	assert.Equal(
-		t,
-		0, // No commands sent for Blue Auto GP2
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.AutoGamepiece2Count,
-	)
-	// Blue Current
-	assert.Equal(
-		t,
-		0, // No commands sent for Blue Teleop GP1 Level 2
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level2Count,
-	)
-	assert.Equal(
-		t,
-		3, // 1 from line 209 + 2 from line 133
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece1Level1Count,
-	)
-	assert.Equal(
-		t,
-		0, // No commands sent for Blue Teleop GP2
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.TeleopGamepiece2Count,
-	)
-
-	// Send some park status commands
-	parkData := struct {
-		TeamPosition int
-	}{} // Note: ParkStatus field is not used in the implementation, it toggles based on position only
-	assert.Equal(t, [3]bool{false, false, false}, web.arena.RedRealtimeScore.CurrentScore.Mayhem.ParkStatuses)
-	assert.Equal(t, [3]bool{false, false, false}, web.arena.BlueRealtimeScore.CurrentScore.Mayhem.ParkStatuses)
-	parkData.TeamPosition = 1
-	redWs.Write("park", parkData)  // true
-	blueWs.Write("park", parkData) // true
-	parkData.TeamPosition = 2
-	blueWs.Write("park", parkData) // true
-	parkData.TeamPosition = 3
-	blueWs.Write("park", parkData) // true
-	redWs.Write("park", parkData)  // true
-	redWs.Write("park", parkData)  // false
-	parkData.TeamPosition = 2
-	redWs.Write("park", parkData) // true
-	for i := 0; i < 7; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-	assert.Equal(
-		t,
-		[3]bool{true, true, false},
-		web.arena.RedRealtimeScore.CurrentScore.Mayhem.ParkStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]bool{true, true, true},
-		web.arena.BlueRealtimeScore.CurrentScore.Mayhem.ParkStatuses,
-	)
+	assert.Equal(t, 1, len(web.arena.RedRealtimeScore.CurrentScore.Fouls))
+	assert.Equal(t, true, web.arena.RedRealtimeScore.CurrentScore.Fouls[0].IsMajor)
+	assert.Equal(t, 1, len(web.arena.BlueRealtimeScore.CurrentScore.Fouls))
+	assert.Equal(t, false, web.arena.BlueRealtimeScore.CurrentScore.Fouls[0].IsMajor)
 
 	// Test that some invalid commands do nothing and don't result in score change notifications.
 	redWs.Write("invalid", nil)
-	leaveData.TeamPosition = 0
-	redWs.Write("leave", leaveData)
-	// Send invalid GP1 command
-	gp1Data.Level = 0 // Invalid level
-	redWs.Write("GP1", gp1Data)
+	autoData.TeamPosition = 1
+	autoData.AutoTowerStatus = 4
+	redWs.Write("autoTower", autoData)
+	endgameData.TeamPosition = 1
+	endgameData.EndgameTowerStatus = 4
+	blueWs.Write("endgame", endgameData)
 
 	// Test committing logic.
 	redWs.Write("commitMatch", nil)
 	readWebsocketType(t, redWs, "error")
 	blueWs.Write("commitMatch", nil)
 	readWebsocketType(t, blueWs, "error")
-	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red_near"))
-	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue_near"))
+	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red"))
+	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue"))
 	web.arena.MatchState = field.PostMatch
 	redWs.Write("commitMatch", nil)
 	blueWs.Write("commitMatch", nil)
 	time.Sleep(time.Millisecond * 10) // Allow some time for the commands to be processed.
-	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red_near"))
-	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue_near"))
+	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red"))
+	assert.Equal(t, 1, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue"))
 
 	// Load another match to reset the results.
 	web.arena.ResetMatch()
@@ -360,6 +195,6 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	readWebsocketType(t, blueWs, "realtimeScore")
 	assert.Equal(t, field.NewRealtimeScore(), web.arena.RedRealtimeScore)
 	assert.Equal(t, field.NewRealtimeScore(), web.arena.BlueRealtimeScore)
-	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red_near"))
-	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue_near"))
+	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("red"))
+	assert.Equal(t, 0, web.arena.ScoringPanelRegistry.GetNumScoreCommitted("blue"))
 }

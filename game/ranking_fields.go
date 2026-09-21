@@ -10,8 +10,8 @@ import "math/rand"
 type RankingFields struct {
 	RankingPoints     int
 	MatchPoints       int
-	AutoPoints        int
-	Gamepiece2Points  int
+	AutoFuelPoints    int
+	TowerPoints       int
 	Random            float64
 	Wins              int
 	Losses            int
@@ -29,11 +29,20 @@ type Ranking struct {
 
 type Rankings []Ranking
 
+var RankingRandomFloat64 = rand.Float64
+
+func GetWinRankingPoints() int {
+	if TraversalBonusThreshold == 0 {
+		return 2
+	}
+	return 3
+}
+
 func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentScore *ScoreSummary, disqualified bool) {
 	fields.Played += 1
 
 	// Store a random value to be used as the last tiebreaker if necessary.
-	fields.Random = rand.Float64()
+	fields.Random = RankingRandomFloat64()
 
 	if disqualified {
 		// Don't award any points.
@@ -43,7 +52,7 @@ func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentSco
 
 	// Assign ranking points and wins/losses/ties.
 	if ownScore.Score > opponentScore.Score {
-		fields.RankingPoints += 3
+		fields.RankingPoints += GetWinRankingPoints()
 		fields.Wins += 1
 	} else if ownScore.Score == opponentScore.Score {
 		fields.RankingPoints += 1
@@ -55,8 +64,8 @@ func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentSco
 
 	// Assign tiebreaker points.
 	fields.MatchPoints += ownScore.MatchPoints
-	fields.AutoPoints += ownScore.AutoPoints
-	fields.Gamepiece2Points += ownScore.Gamepiece2Points
+	fields.AutoFuelPoints += ownScore.AutoFuelPoints
+	fields.TowerPoints += ownScore.AutoTowerPoints + ownScore.TeleopTowerPoints
 }
 
 // Helper function to implement the required interface for Sort.
@@ -72,13 +81,13 @@ func (rankings Rankings) Less(i, j int) bool {
 	// Use cross-multiplication to keep it in integer math.
 	if a.RankingPoints*b.Played == b.RankingPoints*a.Played {
 		if a.MatchPoints*b.Played == b.MatchPoints*a.Played {
-			if a.AutoPoints*b.Played == b.AutoPoints*a.Played {
-				if a.Gamepiece2Points*b.Played == b.Gamepiece2Points*a.Played {
+			if a.AutoFuelPoints*b.Played == b.AutoFuelPoints*a.Played {
+				if a.TowerPoints*b.Played == b.TowerPoints*a.Played {
 					return a.Random > b.Random
 				}
-				return a.Gamepiece2Points*b.Played > b.Gamepiece2Points*a.Played
+				return a.TowerPoints*b.Played > b.TowerPoints*a.Played
 			}
-			return a.AutoPoints*b.Played > b.AutoPoints*a.Played
+			return a.AutoFuelPoints*b.Played > b.AutoFuelPoints*a.Played
 		}
 		return a.MatchPoints*b.Played > b.MatchPoints*a.Played
 	}

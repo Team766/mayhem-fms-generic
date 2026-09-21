@@ -16,9 +16,21 @@ var prevHighestPlayedMatch;
 var getRankingsData = function (callback) {
   $.getJSON("/api/rankings", function (data) {
     rankingsData = data;
+    addAverageFields(rankingsData);
     if (callback) {
       callback(data);
     }
+  });
+};
+
+// Adds the per-match-average fields (rounded to two decimals for display only) that the totals-only API doesn't
+// carry: "RS" (Ranking Score), Score and Auton.
+var addAverageFields = function (data) {
+  $.each(data.Rankings, function (i, ranking) {
+    var played = ranking.Played || 0;
+    ranking.RankingScore = played > 0 ? (ranking.RankingPoints / played).toFixed(2) : "0.00";
+    ranking.AverageScore = played > 0 ? (ranking.ScorePoints / played).toFixed(2) : "0.00";
+    ranking.AverageAuton = played > 0 ? (ranking.AutonPoints / played).toFixed(2) : "0.00";
   });
 };
 

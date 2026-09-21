@@ -64,7 +64,7 @@ func TestBuildJudgingSchedule(t *testing.T) {
 	for _, block := range scheduleBlocks {
 		assert.Nil(t, database.CreateScheduleBlock(&block))
 	}
-	matches, err := BuildRandomSchedule(teams, scheduleBlocks, model.Qualification)
+	matches, err := BuildRandomSchedule(teams, scheduleBlocks, model.Qualification, false)
 	assert.Nil(t, err)
 	for _, match := range matches {
 		assert.Nil(t, database.CreateMatch(&match))

@@ -81,16 +81,25 @@ func (web *Web) scheduleGeneratePostHandler(w http.ResponseWriter, r *http.Reque
 		)
 		return
 	}
-	if len(teams) < 6 {
+	minTeams := tournament.TeamsPerMatch
+	if web.arena.EventSettings.TwoVsTwoMode {
+		minTeams = tournament.TeamsPerMatch2v2
+	}
+	if len(teams) < minTeams {
 		web.renderSchedule(
 			w,
 			r,
-			fmt.Sprintf("There are only %d teams. There must be at least 6 teams to generate a schedule.", len(teams)),
+			fmt.Sprintf(
+				"There are only %d teams. There must be at least %d teams to generate a schedule.",
+				len(teams), minTeams,
+			),
 		)
 		return
 	}
 
-	matches, err := tournament.BuildRandomSchedule(teams, scheduleBlocks, matchType)
+	matches, err := tournament.BuildRandomSchedule(
+		teams, scheduleBlocks, matchType, web.arena.EventSettings.TwoVsTwoMode,
+	)
 	if err != nil {
 		web.renderSchedule(w, r, fmt.Sprintf("Error generating schedule: %s.", err.Error()))
 		return

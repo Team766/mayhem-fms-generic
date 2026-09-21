@@ -63,6 +63,7 @@ type EventSettings struct {
 	SCCUpCommands                    string
 	SCCDownCommands                  string
 	PlcAddress                       string
+	PlcWireMap                       string
 	AdminPassword                    string
 	UseLiteUdpPort                   bool
 	BlackmagicAddresses              string
@@ -116,6 +117,7 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		SelectionRound2Order:        "L",
 		SelectionRound3Order:        "",
 		SelectionShowUnpickedTeams:  true,
+		PlcWireMap:                  "mayhem",
 		ApChannel:                   36,
 		SCCUpCommands:               strings.Join(sccDefaultUpCommands, "\n"),
 		SCCDownCommands:             strings.Join(sccDefaultDownCommands, "\n"),

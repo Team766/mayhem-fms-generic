@@ -326,6 +326,15 @@ UI for configuring event settings.
                   <input type="text" class="form-control" name="plcAddress" value="{{.PlcAddress}}" placeholder="10.0.100.40">
                 </div>
               </div>
+              <div class="row mb-3">
+                <label class="col-lg-6 control-label">PLC Wire Map</label>
+                <div class="col-lg-6">
+                  <select class="form-select" name="plcWireMap">
+                    <option value="mayhem" {{if eq .PlcWireMap "mayhem"}}selected{{end}}>M-Ayhem (Arduino)</option>
+                    <option value="upstream" {{if eq .PlcWireMap "upstream"}}selected{{end}}>Upstream</option>
+                  </select>
+                </div>
+              </div>
             </fieldset>
             <fieldset class="mb-4">
               <legend>Driver Station Lite Mode</legend>

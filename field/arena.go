@@ -224,6 +224,9 @@ func (arena *Arena) LoadSettings() error {
 		sccDownCommands,
 	)
 	arena.Plc.SetAddress(settings.PlcAddress)
+	if modbusPlc, ok := arena.Plc.(*plc.ModbusPlc); ok {
+		modbusPlc.SetWireMap(settings.PlcWireMap)
+	}
 	arena.BlackmagicClient = partner.NewBlackmagicClient(settings.BlackmagicAddresses)
 
 	// Initialize Companion client with event configurations

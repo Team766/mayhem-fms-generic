@@ -57,6 +57,27 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, "/setup/settings#field", recorder.Header().Get("Location"))
 }
 
+func TestSetupSettingsPlcWireMap(t *testing.T) {
+	web := setupTestWeb(t)
+
+	// The default, for a freshly-created event, is the Mayhem wire map.
+	assert.Equal(t, "mayhem", web.arena.EventSettings.PlcWireMap)
+	recorder := web.getHttpResponse("/setup/settings")
+	assert.Contains(t, recorder.Body.String(), `<option value="mayhem" selected>`)
+
+	// Switch to the upstream wire map (no translation) and check it round-trips.
+	recorder = web.postHttpResponse("/setup/settings", "name=Untitled Event&plcWireMap=upstream")
+	assert.Equal(t, 303, recorder.Code)
+	assert.Equal(t, "upstream", web.arena.EventSettings.PlcWireMap)
+	recorder = web.getHttpResponse("/setup/settings")
+	assert.Contains(t, recorder.Body.String(), `<option value="upstream" selected>`)
+
+	// Switch back to the Mayhem wire map.
+	recorder = web.postHttpResponse("/setup/settings", "name=Untitled Event&plcWireMap=mayhem")
+	assert.Equal(t, 303, recorder.Code)
+	assert.Equal(t, "mayhem", web.arena.EventSettings.PlcWireMap)
+}
+
 func TestSetupSettingsBlockedDuringMatch(t *testing.T) {
 	web := setupTestWeb(t)
 	web.arena.EventSettings.Name = "Original Event"

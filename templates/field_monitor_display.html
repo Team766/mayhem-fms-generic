@@ -36,8 +36,8 @@ Display showing robot connection status.
       <div id="matchState" class="text-end" style="width: 45%; padding-right: 1%;"></div>
     </div>
     {{if .EventSettings.TwoVsTwoMode}}
-    {{template "row" dict "leftPosition" "1" "rightPosition" "1"}}
-    {{template "row" dict "leftPosition" "2" "rightPosition" "2"}}
+    {{template "row" dict "leftPosition" "1" "rightPosition" "2"}}
+    {{template "row" dict "leftPosition" "2" "rightPosition" "1"}}
     {{else}}
     {{template "row" dict "leftPosition" "1" "rightPosition" "3"}}
     {{template "row" dict "leftPosition" "2" "rightPosition" "2"}}

@@ -15,12 +15,10 @@ them every year, and `git grep` finds them faster and more reliably than a list 
 
 ## Why it works this way
 
-Earlier attempts: a fork of Cheesy Arena Lite (2024; Lite was dormant and lagged), a hand-maintained generic
-fork (2025; merging a year of upstream hit 39 conflicted files, all in game code upstream rewrites every
-January), a config-to-code generator and then a runtime YAML game engine (2026; thousands of lines of
-machinery to avoid about a thousand lines of yearly edits, and still unable to express the real game).
-Team 254 now maintains Lite by having an agent bring over game-agnostic upstream changes from a recorded
-checkpoint. We do the same, and add a second playbook for the game.
+We never merge upstream. Upstream rewrites its game code every January, so a fork that also changes that code
+conflicts everywhere, and separate per-year repos made catching up harder still. Instead, this one repo holds the
+current year's FMS, and two playbooks re-apply our changes onto each new upstream: one for the base, one for the
+year's game. Team 254 maintains Cheesy Arena Lite the same way.
 
 ## What we remove
 
@@ -62,7 +60,7 @@ The field uses Team 766's Arduino Modbus PLC, not upstream's Allen-Bradley progr
 upstream's, unchanged, as it was in 2025**, and the Arduino runs as flashed for M-Ayhem 2025. That works because:
 
 - The firmware serves fixed addresses that match upstream's generic signal order. A guard test (`plc/mayhem_arduino_test.go`) fails if an upstream sync moves one of those signals or grows a table past what the firmware serves. Season signals always come after the generic ones, and we remove them.
-- The hardware has no station-3 stop wiring, so those inputs read as pressed. 2v2 mode ignores station 3, so **the supported configuration with the PLC enabled is 2v2**.
+- The hardware has no station-3 stop wiring, so those inputs read as pressed. 2v2 mode ignores an empty station 3, so **the supported configuration with the PLC enabled is 2v2**. (A station 3 that holds a team would read as e-stopped.)
 - Upstream's "FTA ready" switch (a start permission, not a safety stop) does not exist on this field, so its start condition and Match Play badge are removed. The input stays in the signal list so nothing is renumbered.
 
 The bench test is in [ArduinoPlc.md](ArduinoPlc.md). Run it after any sync that touches the PLC or the arena's PLC handling.
@@ -76,8 +74,9 @@ it. `apply-game` reads the `CURRENT` spec to learn what is being replaced, appli
 **What counts as game code (the seam):** the score model and its math, ranking order and tiebreaks, the rules
 list and foul values, match timing and sounds; every screen or report that lets someone enter a score, or that
 reads the score, the summary or the rankings; tunable game settings; the game's logos and sounds; and the test
-fixtures that embed a score. A game change that touches anything else (the arena, the PLC, networking,
-playoffs, 2v2) is a base change and gets its own pull request.
+fixtures that embed a score. Wiring the game's timing and tunable settings into the arena's settings loader counts
+as game code too. A game change that touches anything else (arena behaviour, the PLC, networking, playoffs, 2v2)
+is a base change and gets its own pull request.
 
 **The no-game state.** Right after a regeneration, before a game is applied, the tree must still build, pass its
 tests and run a match: a score is only fouls and the playoff disqualification flag; ranking is by ranking points

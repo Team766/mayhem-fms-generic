@@ -8,8 +8,9 @@ cannot. Small YAML blocks are used where exact names and numbers matter. Start f
 Specs are named `specs/<year>_<name>.md` and are never deleted: the newest one is the game in the tree,
 and `apply-game` reads it next year to know what to replace.
 
-Put assets next to it in a folder of the same name: `game-logo.png`, `blinds-logo.png` (600x600), any
-replacement sounds, the rules text.
+List the game's assets in its Assets section (logos, sounds). If you have the files, keep them next to the spec in
+a folder of the same name; `apply-game` installs them into `static/img` and `static/audio`. Until real ones exist,
+the current logos and a placeholder sound are fine.
 
 ## Sections
 
@@ -20,7 +21,7 @@ replacement sounds, the rules text.
 | 3 | Match timing | Auto, pause, teleop, endgame warning. Say "stock" if unchanged |
 | 4 | Scoring elements | **Counters**: id, display name, points per phase, which phases, who enters it (near or far scoring panel, referee). **Per-robot statuses**: yes/no or named levels with points, phase. **Derived totals**: groups shown on screens and used by tiebreakers |
 | 5 | Fouls | Point values and wording (minor/major/tech). Any foul that changes ranking points, exactly how |
-| 6 | Rules list | Number, text, minor/major, flags. May point to a file in the assets folder |
+| 6 | Rules list | Number, text, minor/major, flags. May point to a separate file next to the spec |
 | 7 | Ranking points | Win/tie values. Each bonus RP as an exact sentence: what is counted, in which phases, the threshold, the comparison (`>=`), how bypassed or absent robots are treated |
 | 8 | Ranking order and tiebreakers | Qualification sort order. Playoff tiebreakers in order, and for each which side wins (more or fewer) |
 | 9 | Screens | For each of: scoring panels, referee panel, audience overlay, audience final score, announcer, wall, rankings display, reports, edit result: what is shown, in what order, with what labels |

@@ -30,7 +30,7 @@ The spec is the durable artifact; when the tree moves to a new upstream, the sam
 5. **Completeness checks.**
    - No outgoing name is left: `git grep -n -i -E '<outgoing words>'` over Go, templates, scripts, styles and CSV, excluding `docs/` and `specs/`, prints nothing you cannot explain.
    - Every score, summary or ranking field that a script or template reads exists in the Go structs (grep the field accesses and compare).
-   - `git diff --stat <base>` touches only the game seam. Explain any exception.
+   - `git diff --stat <branch you started from>` touches only the game seam. Explain any exception.
    - Point `specs/CURRENT` at the new spec.
 6. **Verify.**
    - `go generate ./... && go fmt ./... && go vet ./... && go build ./... && go test ./...`, with no new vet warnings.

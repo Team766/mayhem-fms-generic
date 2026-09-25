@@ -32,7 +32,7 @@ re-applied as intent. `UPSTREAM.md` records the last upstream commit that was re
 1. List the range: `git log --reverse --date=short --format='%n%h %ad %s' --name-only <checkpoint>..<upstream ref>`.
 2. Classify every commit as **bring over**, **skip** (touches only upstream's game or something we removed) or **partial**. A wrongly skipped fix is silent, so:
    - judge by hunk, not by file: generic fixes ride inside commits that look like game commits;
-   - compare with what cheesy-arena-lite brought over for the same range, and look again at any difference;
+   - compare with what [cheesy-arena-lite](https://github.com/Team254/cheesy-arena-lite) brought over for the same range (its `UPSTREAM.md` records its checkpoint), and look again at any difference;
    - have a second reader (a cheaper model or a person) argue why each skip might be generic.
 3. Bring commits over in upstream order, one commit each where practical. For each, ask whether it adds a screen, a loop over alliance stations or a PLC signal: those need 2v2 handling ([../TwoVTwo.md](../TwoVTwo.md)) or a look at the Arduino's fixed addresses.
 4. Run the gates. Move the checkpoint to the last commit you **reviewed**, and record the skips with reasons in `UPSTREAM.md` and the pull request.

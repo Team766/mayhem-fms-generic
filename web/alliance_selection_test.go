@@ -110,6 +110,7 @@ func TestAllianceSelectionTwoVsTwo(t *testing.T) {
 	web.arena.EventSettings.PlayoffType = model.SingleEliminationPlayoff
 	web.arena.EventSettings.NumPlayoffAlliances = 2
 	web.arena.EventSettings.SelectionRound3Order = "L" // Must not push 2v2 alliances to four teams.
+	assert.Nil(t, web.arena.CreatePlayoffTournament()) // As saving the settings would.
 	for i := 1; i <= 4; i++ {
 		web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
 	}
@@ -155,6 +156,13 @@ func TestAllianceSelectionTwoVsTwo(t *testing.T) {
 			}
 		}
 		assert.True(t, sawRealTeam, "expected at least one playoff match to already have real teams assigned")
+	}
+
+	// The bracket shows both teams of each two-team alliance.
+	recorder = web.getHttpResponse("/api/bracket/svg")
+	assert.Equal(t, 200, recorder.Code)
+	for _, teamNum := range []string{`"teamnum r">101<`, `"teamnum r">102<`, `"teamnum b">103<`, `"teamnum b">104<`} {
+		assert.Contains(t, recorder.Body.String(), teamNum)
 	}
 }
 

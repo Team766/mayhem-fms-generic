@@ -151,7 +151,12 @@ func TestScheduleTwoVsTwo(t *testing.T) {
 		{12, 42},
 	} {
 		scheduleBlocks := []model.ScheduleBlock{
-			{0, model.Qualification, time.Unix(0, 0).UTC(), tc.numMatches, 60},
+			{
+				MatchType:       model.Qualification,
+				StartTime:       time.Unix(0, 0).UTC(),
+				NumMatches:      tc.numMatches,
+				MatchSpacingSec: 60,
+			},
 		}
 		matches, err := BuildRandomSchedule(teams, scheduleBlocks, model.Qualification, true)
 		assert.Nil(t, err)

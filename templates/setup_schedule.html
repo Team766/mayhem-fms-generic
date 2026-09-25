@@ -148,6 +148,7 @@ UI for generating a match schedule.
 {{define "script"}}
 <!-- @formatter:off -->
 <script>var numTeams = {{.NumTeams}};</script>
+<script>var teamsPerMatch = {{if .TwoVsTwoMode}}4{{else}}6{{end}};</script>
 <script src="/static/js/setup_schedule.js"></script>
 <script>
   {{range $block := .ScheduleBlocks}}

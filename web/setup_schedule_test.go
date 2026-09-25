@@ -80,6 +80,23 @@ func TestSetupScheduleTwoVsTwo(t *testing.T) {
 	}
 }
 
+func TestSetupScheduleTeamsPerMatch(t *testing.T) {
+	testCases := []struct {
+		twoVsTwoMode bool
+		expected     string
+	}{
+		{false, "var teamsPerMatch = 6;"},
+		{true, "var teamsPerMatch = 4;"},
+	}
+	for _, testCase := range testCases {
+		web := setupTestWeb(t)
+		web.arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoMode
+		recorder := web.getHttpResponse("/setup/schedule?matchType=qualification")
+		assert.Equal(t, 200, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), testCase.expected)
+	}
+}
+
 func TestSetupScheduleErrors(t *testing.T) {
 	web := setupTestWeb(t)
 

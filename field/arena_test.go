@@ -4,6 +4,7 @@
 package field
 
 import (
+	"fmt"
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/partner"
@@ -1100,12 +1101,163 @@ func TestSignalReset(t *testing.T) {
 }
 
 func TestTwoVsTwoActiveStations(t *testing.T) {
+	testCases := []struct {
+		name         string
+		twoVsTwoMode bool
+		teams        map[string]int
+		expected     []string
+	}{
+		{"3v3, all empty", false, nil, []string{"R1", "R2", "R3", "B1", "B2", "B3"}},
+		{
+			"3v3, all full",
+			false,
+			map[string]int{"R1": 1, "R2": 2, "R3": 3, "B1": 4, "B2": 5, "B3": 6},
+			[]string{"R1", "R2", "R3", "B1", "B2", "B3"},
+		},
+		{"2v2, all empty", true, nil, []string{"R1", "R2", "B1", "B2"}},
+		{"2v2, R3 holds a team", true, map[string]int{"R3": 3}, []string{"R1", "R2", "R3", "B1", "B2"}},
+		{"2v2, B3 holds a team", true, map[string]int{"B3": 6}, []string{"R1", "R2", "B1", "B2", "B3"}},
+		{
+			"2v2, 3v3 match still loaded",
+			true,
+			map[string]int{"R1": 1, "R2": 2, "R3": 3, "B1": 4, "B2": 5, "B3": 6},
+			[]string{"R1", "R2", "R3", "B1", "B2", "B3"},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			arena := setupTestArena(t)
+			for station, teamId := range testCase.teams {
+				assert.Nil(t, arena.Database.CreateTeam(&model.Team{Id: teamId}))
+				assert.Nil(t, arena.assignTeam(teamId, station))
+			}
+			arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoMode
+			assert.Equal(t, testCase.expected, arena.activeStations())
+		})
+	}
+
+	// A driver station connection alone also keeps R3 in play.
 	arena := setupTestArena(t)
-
-	assert.Equal(t, []string{"R1", "R2", "R3", "B1", "B2", "B3"}, arena.activeStations())
-
 	arena.EventSettings.TwoVsTwoMode = true
-	assert.Equal(t, []string{"R1", "R2", "B1", "B2"}, arena.activeStations())
+	arena.AllianceStations["R3"].DsConn = &DriverStationConnection{TeamId: 3}
+	assert.Equal(t, []string{"R1", "R2", "R3", "B1", "B2"}, arena.activeStations())
+}
+
+// setupLinkedTestArenaWithPlc returns an arena with a PLC in which each of the given stations holds a team with a
+// linked robot and a reset A-stop.
+func setupLinkedTestArenaWithPlc(t *testing.T, stations ...string) (*Arena, *FakePlc) {
+	arena := setupTestArena(t)
+	plc := &FakePlc{isEnabled: true, ftaReady: true}
+	arena.Plc = plc
+	for i, station := range stations {
+		teamId := 100 + i
+		assert.Nil(t, arena.Database.CreateTeam(&model.Team{Id: teamId}))
+		assert.Nil(t, arena.assignTeam(teamId, station))
+		// lastPacketTime is set to now so that Update()'s driver station packet send doesn't immediately time out
+		// and clear RobotLinked back out from under the test.
+		arena.AllianceStations[station].DsConn = &DriverStationConnection{
+			TeamId: teamId, RobotLinked: true, lastPacketTime: time.Now(),
+		}
+		arena.AllianceStations[station].aStopReset = true
+	}
+	return arena, plc
+}
+
+// Verifies that in 2v2, a PLC E-stop on any of the four stations in play is honoured and blocks the match start.
+func TestTwoVsTwoPlcEStopOnActiveStation(t *testing.T) {
+	for i, station := range []string{"R1", "R2", "B1", "B2"} {
+		t.Run(station, func(t *testing.T) {
+			arena, plc := setupLinkedTestArenaWithPlc(t, "R1", "R2", "B1", "B2")
+			arena.EventSettings.TwoVsTwoMode = true
+			plc.cycleState = true
+			arena.Update()
+			assert.Nil(t, arena.checkCanStartMatch())
+
+			if i < 2 {
+				plc.redEStops[i] = true
+			} else {
+				plc.blueEStops[i-2] = true
+			}
+			arena.Update()
+			assert.True(t, arena.AllianceStations[station].EStop)
+			err := arena.StartMatch()
+			if assert.NotNil(t, err) {
+				assert.Contains(t, err.Error(), fmt.Sprintf("an emergency stop is active (%s)", station))
+			}
+			assert.Equal(t, PreMatch, arena.MatchState)
+			assert.False(t, plc.stackLights[3])
+		})
+	}
+}
+
+// Verifies that turning 2v2 on while a 3v3 match is loaded doesn't take R3/B3 out of play: their E-stops are still
+// honoured (before and during the match) and they still block the start when not ready.
+func TestTwoVsTwoSettingTurnedOnWithThreeVsThreeMatchLoaded(t *testing.T) {
+	testCases := []struct {
+		station  string
+		eStopIdx int
+		red      bool
+	}{
+		{"R3", 2, true},
+		{"B3", 2, false},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.station, func(t *testing.T) {
+			arena, plc := setupLinkedTestArenaWithPlc(t, "R1", "R2", "R3", "B1", "B2", "B3")
+			match := model.Match{
+				Type: model.Practice, Red1: 100, Red2: 101, Red3: 102, Blue1: 103, Blue2: 104, Blue3: 105,
+			}
+			assert.Nil(t, arena.LoadMatch(&match))
+			arena.EventSettings.TwoVsTwoMode = true
+			plc.cycleState = true
+			pressEStop := func(pressed bool) {
+				if testCase.red {
+					plc.redEStops[testCase.eStopIdx] = pressed
+				} else {
+					plc.blueEStops[testCase.eStopIdx] = pressed
+				}
+			}
+
+			// A pressed E-stop blocks the start.
+			pressEStop(true)
+			arena.Update()
+			assert.True(t, arena.AllianceStations[testCase.station].EStop)
+			err := arena.checkCanStartMatch()
+			if assert.NotNil(t, err) {
+				assert.Contains(t, err.Error(), fmt.Sprintf("an emergency stop is active (%s)", testCase.station))
+			}
+			assert.False(t, plc.stackLights[3])
+
+			// An unlinked, unbypassed robot blocks the start and keeps the stack light from going green.
+			pressEStop(false)
+			arena.AllianceStations[testCase.station].DsConn.RobotLinked = false
+			arena.Update()
+			assert.False(t, arena.AllianceStations[testCase.station].EStop)
+			err = arena.checkCanStartMatch()
+			if assert.NotNil(t, err) {
+				assert.Contains(
+					t, err.Error(), fmt.Sprintf("not all robots are connected or bypassed (%s)", testCase.station),
+				)
+			}
+			assert.False(t, plc.stackLights[3])
+
+			// Once ready, the match starts, and an E-stop pressed mid-match disables that robot.
+			arena.AllianceStations[testCase.station].DsConn.RobotLinked = true
+			arena.Update()
+			assert.Equal(t, [4]bool{false, false, false, true}, plc.stackLights)
+			assert.Nil(t, arena.StartMatch())
+			arena.Update()
+			assert.Equal(t, AutoPeriod, arena.MatchState)
+			assert.True(t, arena.AllianceStations[testCase.station].DsConn.Enabled)
+			pressEStop(true)
+			arena.Update()
+			arena.lastDsPacketTime = time.Unix(0, 0) // Force a DS packet.
+			arena.Update()
+			assert.True(t, arena.AllianceStations[testCase.station].EStop)
+			assert.True(t, arena.AllianceStations[testCase.station].DsConn.EStop)
+			assert.False(t, arena.AllianceStations[testCase.station].DsConn.Enabled)
+		})
+	}
 }
 
 func TestTwoVsTwoCheckCanStartMatch(t *testing.T) {
@@ -1171,37 +1323,14 @@ func TestTwoVsTwoSubstituteTeamsRejectsThirdTeam(t *testing.T) {
 	assert.Nil(t, arena.SubstituteTeams(101, 0, 0, 104, 0, 0))
 }
 
-// Verifies that in 2v2, R3/B3 -- unlinked and never bypassed -- do not stop the readiness stack light from
+// Verifies that in 2v2, empty R3/B3 -- no team, never bypassed -- do not stop the readiness stack light from
 // going green or the match from starting, and that their E-stops are ignored; and that the same E-stop press
 // is NOT ignored once back in 3v3.
 func TestTwoVsTwoPlcReadyAndEStop(t *testing.T) {
-	arena := setupTestArena(t)
+	arena, plc := setupLinkedTestArenaWithPlc(t, "R1", "R2", "B1", "B2")
 	arena.EventSettings.TwoVsTwoMode = true
-	var plc FakePlc
-	plc.isEnabled = true
-	plc.ftaReady = true
-	arena.Plc = &plc
 
-	arena.Database.CreateTeam(&model.Team{Id: 254})
-	arena.Database.CreateTeam(&model.Team{Id: 148})
-	arena.Database.CreateTeam(&model.Team{Id: 100})
-	arena.Database.CreateTeam(&model.Team{Id: 200})
-	// lastPacketTime is set to now so that Update()'s driver station packet send doesn't immediately time out
-	// and clear RobotLinked back out from under the test.
-	assert.Nil(t, arena.assignTeam(254, "R1"))
-	arena.AllianceStations["R1"].DsConn = &DriverStationConnection{TeamId: 254, RobotLinked: true, lastPacketTime: time.Now()}
-	arena.AllianceStations["R1"].aStopReset = true
-	assert.Nil(t, arena.assignTeam(148, "R2"))
-	arena.AllianceStations["R2"].DsConn = &DriverStationConnection{TeamId: 148, RobotLinked: true, lastPacketTime: time.Now()}
-	arena.AllianceStations["R2"].aStopReset = true
-	assert.Nil(t, arena.assignTeam(100, "B1"))
-	arena.AllianceStations["B1"].DsConn = &DriverStationConnection{TeamId: 100, RobotLinked: true, lastPacketTime: time.Now()}
-	arena.AllianceStations["B1"].aStopReset = true
-	assert.Nil(t, arena.assignTeam(200, "B2"))
-	arena.AllianceStations["B2"].DsConn = &DriverStationConnection{TeamId: 200, RobotLinked: true, lastPacketTime: time.Now()}
-	arena.AllianceStations["B2"].aStopReset = true
-
-	// R3/B3 are unlinked and never bypassed; readiness must still reach green and the match must be startable.
+	// R3/B3 are empty and never bypassed; readiness must still reach green and the match must be startable.
 	plc.cycleState = true
 	arena.Update()
 	assert.Equal(t, [4]bool{false, false, false, true}, plc.stackLights)
@@ -1209,7 +1338,7 @@ func TestTwoVsTwoPlcReadyAndEStop(t *testing.T) {
 	assert.False(t, arena.AllianceStations["R3"].Bypass)
 	assert.False(t, arena.AllianceStations["B3"].Bypass)
 
-	// R3/B3 E-stops are ignored in 2v2.
+	// Empty R3/B3 E-stops are ignored in 2v2.
 	plc.redEStops[2] = true
 	plc.blueEStops[2] = true
 	arena.Update()

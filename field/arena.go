@@ -117,26 +117,18 @@ type AllianceStation struct {
 // stationOrder is the fixed R1,R2,R3,B1,B2,B3 index order used by the six-element per-station arrays.
 var stationOrder = [6]string{"R1", "R2", "R3", "B1", "B2", "B3"}
 
-// activeStations returns the alliance stations that are in play for the current event configuration: all six
-// in 3v3, or R1, R2, B1, B2 in 2v2 (R3 and B3 sit out). Everything that must not let an idle third station
-// block a match -- start conditions, PLC e-stop/a-stop handling, stack-light readiness, driver-station
-// enabling, and network configuration -- iterates over this instead of a hardcoded station list.
+// Returns the alliance stations that are in play. In 2v2 mode, an empty R3 or B3 is skipped.
 func (arena *Arena) activeStations() []string {
-	if arena.EventSettings.TwoVsTwoMode {
-		return []string{"R1", "R2", "B1", "B2"}
-	}
-	return stationOrder[:]
-}
-
-// clearInactiveStations zeroes the array slots, in stationOrder, of any station that active doesn't list.
-func clearInactiveStations[T any](active []string, values [6]T) [6]T {
-	var zero T
-	for i, station := range stationOrder {
-		if !slices.Contains(active, station) {
-			values[i] = zero
+	var stations []string
+	for _, station := range stationOrder {
+		allianceStation := arena.AllianceStations[station]
+		isEmpty := allianceStation.Team == nil && allianceStation.DsConn == nil
+		if arena.EventSettings.TwoVsTwoMode && (station == "R3" || station == "B3") && isEmpty {
+			continue
 		}
+		stations = append(stations, station)
 	}
-	return values
+	return stations
 }
 
 // Creates the arena and sets it to its initial state.
@@ -361,17 +353,14 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 	}
 
 	arena.setupNetwork(
-		clearInactiveStations(
-			arena.activeStations(),
-			[6]*model.Team{
-				arena.AllianceStations["R1"].Team,
-				arena.AllianceStations["R2"].Team,
-				arena.AllianceStations["R3"].Team,
-				arena.AllianceStations["B1"].Team,
-				arena.AllianceStations["B2"].Team,
-				arena.AllianceStations["B3"].Team,
-			},
-		),
+		[6]*model.Team{
+			arena.AllianceStations["R1"].Team,
+			arena.AllianceStations["R2"].Team,
+			arena.AllianceStations["R3"].Team,
+			arena.AllianceStations["B1"].Team,
+			arena.AllianceStations["B2"].Team,
+			arena.AllianceStations["B3"].Team,
+		},
 		false,
 	)
 
@@ -469,17 +458,14 @@ func (arena *Arena) SubstituteTeams(red1, red2, red3, blue1, blue2, blue3 int) e
 	arena.CurrentMatch.Blue2 = blue2
 	arena.CurrentMatch.Blue3 = blue3
 	arena.setupNetwork(
-		clearInactiveStations(
-			arena.activeStations(),
-			[6]*model.Team{
-				arena.AllianceStations["R1"].Team,
-				arena.AllianceStations["R2"].Team,
-				arena.AllianceStations["R3"].Team,
-				arena.AllianceStations["B1"].Team,
-				arena.AllianceStations["B2"].Team,
-				arena.AllianceStations["B3"].Team,
-			},
-		),
+		[6]*model.Team{
+			arena.AllianceStations["R1"].Team,
+			arena.AllianceStations["R2"].Team,
+			arena.AllianceStations["R3"].Team,
+			arena.AllianceStations["B1"].Team,
+			arena.AllianceStations["B2"].Team,
+			arena.AllianceStations["B3"].Team,
+		},
 		false,
 	)
 	arena.MatchLoadNotifier.Notify()
@@ -980,10 +966,7 @@ func (arena *Arena) preLoadNextMatch() {
 		return
 	}
 
-	teamIds := clearInactiveStations(
-		arena.activeStations(),
-		[6]int{nextMatch.Red1, nextMatch.Red2, nextMatch.Red3, nextMatch.Blue1, nextMatch.Blue2, nextMatch.Blue3},
-	)
+	teamIds := [6]int{nextMatch.Red1, nextMatch.Red2, nextMatch.Red3, nextMatch.Blue1, nextMatch.Blue2, nextMatch.Blue3}
 
 	var teams [6]*model.Team
 	for i, teamId := range teamIds {

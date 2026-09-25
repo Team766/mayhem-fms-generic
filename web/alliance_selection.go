@@ -435,7 +435,12 @@ func (web *Web) determineNextCell() (int, int) {
 		}
 	}
 
-	if web.arena.EventSettings.TwoVsTwoMode {
+	// Go by the size the alliances were created with, not the current settings, which may have changed since.
+	numColumns := 0
+	if len(web.arena.AllianceSelectionAlliances) > 0 {
+		numColumns = len(web.arena.AllianceSelectionAlliances[0].TeamIds)
+	}
+	if numColumns < 3 {
 		// 2v2 alliances only have the first two columns.
 		return -1, -1
 	}
@@ -456,6 +461,9 @@ func (web *Web) determineNextCell() (int, int) {
 	}
 
 	// Check the fourth column.
+	if numColumns < 4 {
+		return -1, -1
+	}
 	if web.arena.EventSettings.SelectionRound3Order == "F" {
 		for i, alliance := range web.arena.AllianceSelectionAlliances {
 			if alliance.TeamIds[3] == 0 {

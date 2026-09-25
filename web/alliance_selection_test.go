@@ -4,14 +4,13 @@
 package web
 
 import (
-	"testing"
-
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestAllianceSelection(t *testing.T) {
@@ -163,6 +162,58 @@ func TestAllianceSelectionTwoVsTwo(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	for _, teamNum := range []string{`"teamnum r">101<`, `"teamnum r">102<`, `"teamnum b">103<`, `"teamnum b">104<`} {
 		assert.Contains(t, recorder.Body.String(), teamNum)
+	}
+}
+
+// Verifies that changing the 2v2 setting partway through an alliance selection neither crashes the page nor
+// changes which cells the selection autofocuses: that follows the size the alliances were created with.
+func TestAllianceSelectionTwoVsTwoSettingChangedMidSelection(t *testing.T) {
+	testCases := []struct {
+		name             string
+		twoVsTwoAtStart  bool
+		teamsPerAlliance int
+		// Next cell after the first two columns are filled.
+		expectedRow int
+		expectedCol int
+	}{
+		{"2v2 turned off", true, 2, -1, -1},
+		{"2v2 turned on", false, 3, 1, 2},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			web := setupTestWeb(t)
+			web.arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoAtStart
+			web.arena.EventSettings.NumPlayoffAlliances = 2
+			web.arena.EventSettings.SelectionRound2Order = "L"
+			for i := 1; i <= 6; i++ {
+				web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+			}
+			recorder := web.postHttpResponse("/alliance_selection/start", "")
+			assert.Equal(t, 303, recorder.Code)
+			if !assert.Equal(t, testCase.teamsPerAlliance, len(web.arena.AllianceSelectionAlliances[0].TeamIds)) {
+				return
+			}
+
+			web.arena.EventSettings.TwoVsTwoMode = !testCase.twoVsTwoAtStart
+			// A backup round turned on partway through must not be looked for in alliances created without one.
+			web.arena.EventSettings.SelectionRound3Order = "F"
+
+			recorder = web.getHttpResponse("/alliance_selection")
+			assert.Equal(t, 200, recorder.Code)
+			nextRow, nextCol := web.determineNextCell()
+			assert.Equal(t, 0, nextRow)
+			assert.Equal(t, 0, nextCol)
+
+			recorder = web.postHttpResponse(
+				"/alliance_selection", "selection0_0=101&selection0_1=102&selection1_0=103&selection1_1=104",
+			)
+			assert.Equal(t, 303, recorder.Code)
+			recorder = web.getHttpResponse("/alliance_selection")
+			assert.Equal(t, 200, recorder.Code)
+			nextRow, nextCol = web.determineNextCell()
+			assert.Equal(t, testCase.expectedRow, nextRow)
+			assert.Equal(t, testCase.expectedCol, nextCol)
+		})
 	}
 }
 

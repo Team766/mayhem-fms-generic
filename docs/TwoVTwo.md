@@ -18,8 +18,9 @@ their alliances are known, and in a practice match that is short a team.
 
 ## The setting
 
-`EventSettings.TwoVsTwoMode`, default off, a checkbox on Setup > Settings. It is sent to pages with the match, and
-read by the generators:
+`EventSettings.TwoVsTwoMode`, default off, a checkbox on Setup > Settings. It belongs to the event: once the
+qualification schedule exists it is locked (clear the schedule to change it). It is sent to pages with the match,
+and read by the generators:
 
 | Generator | With the setting on |
 |-----------|---------------------|

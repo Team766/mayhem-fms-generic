@@ -82,7 +82,7 @@ is a base change and gets its own pull request.
 tests and run a match: a score is only fouls and the playoff disqualification flag; ranking is by ranking points
 (win 3, tie 1), then match points; a tied playoff match goes to the alliance with fewer major fouls; timing is
 auto, pause, teleop and a warning; the scoring panel shows only Commit; displays show teams, score and timer;
-there are two placeholder rules so the referee flow stays testable; no game settings.
+the rules list and foul values stay upstream's until a game replaces them; no game settings.
 
 ## What survives a regeneration untouched
 

@@ -24,6 +24,7 @@ The spec is the durable artifact; when the tree moves to a new upstream, the sam
 ## Procedure
 
 1. **Read the whole spec and settle open questions first.** They are cheap now and expensive after forty files.
+   The game being replaced shows how a game plugs into every screen. If the new game resembles an FRC game, upstream's version of it is a useful reference too (`git show <upstream tag>:game/score.go` and friends).
 2. **Name what goes and what comes.** Outgoing: the ids and labels in the `specs/CURRENT` spec and the Go, JSON and CSS names derived from them. Incoming: the names you will use, from the new spec's ids. Put both in the pull request.
 3. **Model and math, with tests in the same commit**: every scoring element in every phase; every ranking point at its threshold and one below; every tiebreak level with each side winning; every rule that mentions robots, in each alliance size; and **each worked example in the spec as a test with the spec's numbers**. If a test disagrees with the spec, work out by hand which is wrong; fix the spec if its arithmetic is wrong, never bend the code to a wrong number.
 4. **Entry, then display and reporting.** Every element must be enterable live and editable after the match, by the scorer the spec assigns it to. Every screen and report shows what the spec's "Screens" section says, with third-robot controls following the 2v2 layout rule. Install the spec's assets.

@@ -30,6 +30,8 @@ func NewPlayoffTournament(playoffType model.PlayoffType, numPlayoffAlliances int
 		finalMatchup, breakSpecs, err = newDoubleEliminationBracket(numPlayoffAlliances)
 	case model.SingleEliminationPlayoff:
 		finalMatchup, breakSpecs, err = newSingleEliminationBracket(numPlayoffAlliances)
+	case model.SingleGameUntilFinalsPlayoff:
+		finalMatchup, breakSpecs, err = newSingleGameUntilFinalsBracket(numPlayoffAlliances)
 	default:
 		err = fmt.Errorf("invalid playoff type: %v", playoffType)
 	}

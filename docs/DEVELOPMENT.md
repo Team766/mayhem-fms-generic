@@ -51,7 +51,7 @@ the Companion and Blackmagic clients; the driver-station protocol code.
 |---------|----------|
 | 2v2 mode | [TwoVTwo.md](TwoVTwo.md) |
 | The M-Ayhem Arduino PLC, unmodified | Below |
-| Single-game playoff rounds | A third playoff type: single elimination where every round before the final is decided by one game and the final stays best-of-three. It reuses upstream's bracket and only changes how many wins a pre-final series needs; a tied game is replayed |
+| Single-game playoff rounds | A third playoff type: single elimination where every round before the final is decided by one game and the final stays best-of-three. It reuses upstream's bracket and only changes how many wins a pre-final series needs. If a game ends in a tie, the next game of that series is played |
 | Per-team station lights | Planned; notes in [ArduinoPlc.md](ArduinoPlc.md) |
 
 ### PLC

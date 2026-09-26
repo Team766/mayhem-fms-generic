@@ -234,6 +234,34 @@ func TestSetupSettingsDoubleElimination(t *testing.T) {
 	assert.Equal(t, 4, web.arena.EventSettings.NumPlayoffAlliances)
 }
 
+func TestSetupSettingsSingleGameUntilFinals(t *testing.T) {
+	web := setupTestWeb(t)
+
+	recorder := web.postHttpResponse(
+		"/setup/settings", "playoffType=SingleGameUntilFinalsPlayoff&numPlayoffAlliances=6",
+	)
+	assert.Equal(t, 303, recorder.Code)
+	assert.Equal(t, model.SingleGameUntilFinalsPlayoff, web.arena.EventSettings.PlayoffType)
+	assert.Equal(t, 6, web.arena.EventSettings.NumPlayoffAlliances)
+
+	// The setting should round-trip through the settings page and be preserved when the playoff type isn't
+	// explicitly resubmitted.
+	recorder = web.getHttpResponse("/setup/settings")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "SingleGameUntilFinalsPlayoff")
+
+	recorder = web.postHttpResponse("/setup/settings", "name=Renamed Event")
+	assert.Equal(t, 303, recorder.Code)
+	assert.Equal(t, model.SingleGameUntilFinalsPlayoff, web.arena.EventSettings.PlayoffType)
+	assert.Equal(t, 6, web.arena.EventSettings.NumPlayoffAlliances)
+
+	// Invalid number of alliances for this playoff type.
+	recorder = web.postHttpResponse(
+		"/setup/settings", "playoffType=SingleGameUntilFinalsPlayoff&numPlayoffAlliances=1",
+	)
+	assert.Contains(t, recorder.Body.String(), "must be between 2 and 16")
+}
+
 func TestSetupSettingsInvalidValues(t *testing.T) {
 	web := setupTestWeb(t)
 	recorder := web.postHttpResponse("/setup/settings", "playoffType=SingleEliminationPlayoff&numPlayoffAlliances=8")

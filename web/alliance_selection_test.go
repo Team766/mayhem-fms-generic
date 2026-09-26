@@ -244,6 +244,88 @@ func TestAllianceSelectionTwoVsTwoSettingChangedMidSelection(t *testing.T) {
 	}
 }
 
+func TestAllianceSelectionFinalizeSingleGameUntilFinals(t *testing.T) {
+	web := setupTestWeb(t)
+
+	web.arena.EventSettings.PlayoffType = model.SingleGameUntilFinalsPlayoff
+	web.arena.EventSettings.NumPlayoffAlliances = 4
+	assert.Nil(t, web.arena.CreatePlayoffTournament())
+
+	for i := 1; i <= 12; i++ {
+		web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+	}
+
+	recorder := web.postHttpResponse("/alliance_selection/start", "")
+	assert.Equal(t, 303, recorder.Code)
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&selection0_2=103&"+
+			"selection1_0=104&selection1_1=105&selection1_2=106&"+
+			"selection2_0=107&selection2_1=108&selection2_2=109&"+
+			"selection3_0=110&selection3_1=111&selection3_2=112",
+	)
+	assert.Equal(t, 303, recorder.Code)
+	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
+	assert.Equal(t, 303, recorder.Code)
+
+	// The bracket and match play pages should render successfully with the new playoff type.
+	recorder = web.getHttpResponse("/match_play")
+	assert.Equal(t, 200, recorder.Code)
+
+	recorder = web.getHttpResponse("/match_play/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	// Only the first game of each pre-final series should be scheduled; the second and third stay hidden.
+	assert.Contains(t, recorder.Body.String(), "SF1-1")
+	assert.NotContains(t, recorder.Body.String(), "SF1-2")
+	assert.NotContains(t, recorder.Body.String(), "SF1-3")
+
+	recorder = web.getHttpResponse("/api/bracket/svg")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Equal(t, "image/svg+xml", recorder.Header()["Content-Type"][0])
+	assert.Contains(t, recorder.Body.String(), "bracket_4")
+}
+
+func TestAllianceSelectionFinalizeSingleGameUntilFinalsTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	web.arena.EventSettings.PlayoffType = model.SingleGameUntilFinalsPlayoff
+	web.arena.EventSettings.NumPlayoffAlliances = 4
+	web.arena.EventSettings.TwoVsTwoMode = true
+	assert.Nil(t, web.arena.CreatePlayoffTournament())
+
+	for i := 1; i <= 8; i++ {
+		web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+	}
+
+	recorder := web.postHttpResponse("/alliance_selection/start", "")
+	assert.Equal(t, 303, recorder.Code)
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&"+
+			"selection1_0=103&selection1_1=104&"+
+			"selection2_0=105&selection2_1=106&"+
+			"selection3_0=107&selection3_1=108",
+	)
+	assert.Equal(t, 303, recorder.Code)
+	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
+	assert.Equal(t, 303, recorder.Code)
+
+	// The bracket and match play pages should render successfully with the new playoff type.
+	recorder = web.getHttpResponse("/match_play")
+	assert.Equal(t, 200, recorder.Code)
+
+	recorder = web.getHttpResponse("/match_play/match_load")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "SF1-1")
+	assert.NotContains(t, recorder.Body.String(), "SF1-2")
+	assert.NotContains(t, recorder.Body.String(), "SF1-3")
+
+	recorder = web.getHttpResponse("/api/bracket/svg")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Equal(t, "image/svg+xml", recorder.Header()["Content-Type"][0])
+	assert.Contains(t, recorder.Body.String(), "bracket_4")
+}
+
 func TestAllianceSelectionErrors(t *testing.T) {
 	web := setupTestWeb(t)
 

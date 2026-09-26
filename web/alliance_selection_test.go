@@ -4,14 +4,15 @@
 package web
 
 import (
-	"testing"
-
+	"fmt"
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"strings"
+	"testing"
 )
 
 func TestAllianceSelection(t *testing.T) {
@@ -101,6 +102,146 @@ func TestAllianceSelection(t *testing.T) {
 	assert.Equal(t, 16, len(matches))
 	team, _ := web.arena.Database.GetTeamById(254)
 	assert.False(t, team.YellowCard)
+}
+
+func TestAllianceSelectionTwoVsTwo(t *testing.T) {
+	testCases := []struct {
+		name         string
+		playoffType  model.PlayoffType
+		numAlliances int
+		bracketType  string
+	}{
+		{"single elimination", model.SingleEliminationPlayoff, 2, "bracket_2"},
+		{"double elimination", model.DoubleEliminationPlayoff, 4, "bracket_double4"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			web := setupTestWeb(t)
+
+			web.arena.EventSettings.TwoVsTwoMode = true
+			web.arena.EventSettings.PlayoffType = testCase.playoffType
+			web.arena.EventSettings.NumPlayoffAlliances = testCase.numAlliances
+			web.arena.EventSettings.SelectionRound3Order = "L" // Must not push 2v2 alliances to four teams.
+			assert.Nil(t, web.arena.CreatePlayoffTournament()) // As saving the settings would.
+			numTeams := 2 * testCase.numAlliances
+			for i := 1; i <= numTeams; i++ {
+				web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+			}
+
+			// Starting alliance selection in 2v2 creates alliances of two, with no third or backup round.
+			recorder := web.postHttpResponse("/alliance_selection/start", "")
+			assert.Equal(t, 303, recorder.Code)
+			if assert.Equal(t, testCase.numAlliances, len(web.arena.AllianceSelectionAlliances)) {
+				for _, alliance := range web.arena.AllianceSelectionAlliances {
+					assert.Equal(t, 2, len(alliance.TeamIds))
+				}
+			}
+
+			// Autofocus should never advance past the second (last) column.
+			nextRow, nextCol := web.determineNextCell()
+			assert.Equal(t, 0, nextRow)
+			assert.Equal(t, 0, nextCol)
+
+			// Alliance i is teams 101+2i and 102+2i.
+			var selections []string
+			for i := 0; i < testCase.numAlliances; i++ {
+				selections = append(
+					selections, fmt.Sprintf("selection%d_0=%d&selection%d_1=%d", i, 101+2*i, i, 102+2*i),
+				)
+			}
+			recorder = web.postHttpResponse("/alliance_selection", strings.Join(selections, "&"))
+			assert.Equal(t, 303, recorder.Code)
+			nextRow, nextCol = web.determineNextCell()
+			assert.Equal(t, -1, nextRow)
+			assert.Equal(t, -1, nextCol)
+
+			// Finalizing must leave the third lineup slot at 0 and create playoff matches with no third team.
+			recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
+			assert.Equal(t, 303, recorder.Code)
+			alliances, err := web.arena.Database.GetAllAlliances()
+			assert.Nil(t, err)
+			if assert.Equal(t, testCase.numAlliances, len(alliances)) {
+				for i, alliance := range alliances {
+					assert.Equal(t, []int{101 + 2*i, 102 + 2*i}, alliance.TeamIds)
+					assert.Equal(t, [3]int{102 + 2*i, 101 + 2*i, 0}, alliance.Lineup)
+				}
+			}
+			matches, err := web.arena.Database.GetMatchesByType(model.Playoff, false)
+			assert.Nil(t, err)
+			if assert.NotEmpty(t, matches) {
+				var sawRealTeam bool
+				for _, match := range matches {
+					assert.Equal(t, 0, match.Red3)
+					assert.Equal(t, 0, match.Blue3)
+					if match.Red1 != 0 || match.Red2 != 0 || match.Blue1 != 0 || match.Blue2 != 0 {
+						sawRealTeam = true
+					}
+				}
+				assert.True(t, sawRealTeam, "expected at least one playoff match to already have real teams assigned")
+			}
+
+			// The bracket shows both teams of each two-team alliance.
+			recorder = web.getHttpResponse("/api/bracket/svg")
+			assert.Equal(t, 200, recorder.Code)
+			body := recorder.Body.String()
+			assert.Contains(t, body, testCase.bracketType)
+			for teamId := 101; teamId <= 100+numTeams; teamId++ {
+				assert.Regexp(t, fmt.Sprintf(`class="teamnum [rb]">%d<`, teamId), body)
+			}
+		})
+	}
+}
+
+// Verifies that changing the 2v2 setting partway through an alliance selection neither crashes the page nor
+// changes which cells the selection autofocuses: that follows the size the alliances were created with.
+func TestAllianceSelectionTwoVsTwoSettingChangedMidSelection(t *testing.T) {
+	testCases := []struct {
+		name             string
+		twoVsTwoAtStart  bool
+		teamsPerAlliance int
+		// Next cell after the first two columns are filled.
+		expectedRow int
+		expectedCol int
+	}{
+		{"2v2 turned off", true, 2, -1, -1},
+		{"2v2 turned on", false, 3, 1, 2},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			web := setupTestWeb(t)
+			web.arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoAtStart
+			web.arena.EventSettings.NumPlayoffAlliances = 2
+			web.arena.EventSettings.SelectionRound2Order = "L"
+			for i := 1; i <= 6; i++ {
+				web.arena.Database.CreateRanking(&game.Ranking{TeamId: 100 + i, Rank: i})
+			}
+			recorder := web.postHttpResponse("/alliance_selection/start", "")
+			assert.Equal(t, 303, recorder.Code)
+			if !assert.Equal(t, testCase.teamsPerAlliance, len(web.arena.AllianceSelectionAlliances[0].TeamIds)) {
+				return
+			}
+
+			web.arena.EventSettings.TwoVsTwoMode = !testCase.twoVsTwoAtStart
+			// A backup round turned on partway through must not be looked for in alliances created without one.
+			web.arena.EventSettings.SelectionRound3Order = "F"
+
+			recorder = web.getHttpResponse("/alliance_selection")
+			assert.Equal(t, 200, recorder.Code)
+			nextRow, nextCol := web.determineNextCell()
+			assert.Equal(t, 0, nextRow)
+			assert.Equal(t, 0, nextCol)
+
+			recorder = web.postHttpResponse(
+				"/alliance_selection", "selection0_0=101&selection0_1=102&selection1_0=103&selection1_1=104",
+			)
+			assert.Equal(t, 303, recorder.Code)
+			recorder = web.getHttpResponse("/alliance_selection")
+			assert.Equal(t, 200, recorder.Code)
+			nextRow, nextCol = web.determineNextCell()
+			assert.Equal(t, testCase.expectedRow, nextRow)
+			assert.Equal(t, testCase.expectedCol, nextCol)
+		})
+	}
 }
 
 func TestAllianceSelectionErrors(t *testing.T) {

@@ -39,13 +39,17 @@ func TestEventSettingsReadWrite(t *testing.T) {
 	)
 	assert.Equal(t, 140, game.GetTeleopDurationSec())
 
+	assert.False(t, eventSettings.TwoVsTwoMode)
+
 	eventSettings.Name = "Chezy Champs"
 	eventSettings.NumPlayoffAlliances = 6
 	eventSettings.SelectionRound2Order = "F"
 	eventSettings.SelectionRound3Order = "L"
+	eventSettings.TwoVsTwoMode = true
 	err = db.UpdateEventSettings(eventSettings)
 	assert.Nil(t, err)
 	eventSettings2, err := db.GetEventSettings()
 	assert.Nil(t, err)
 	assert.Equal(t, eventSettings, eventSettings2)
+	assert.True(t, eventSettings2.TwoVsTwoMode)
 }

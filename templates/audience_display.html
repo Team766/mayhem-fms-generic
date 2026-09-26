@@ -13,7 +13,7 @@ Display shown on the audience screen overlayed over the video.
     <link rel="stylesheet" href="/static/css/cheesy-arena.css"/>
     <link rel="stylesheet" href="/static/css/audience_display.css"/>
   </head>
-  <body>
+  <body{{if .TwoVsTwoMode}} class="two-v-two"{{end}}>
     <div id="overlayCentering">
       <div id="matchOverlayContainer">
         <div class="playoff-alliance" id="leftPlayoffAlliance"></div>
@@ -22,13 +22,17 @@ Display shown on the audience screen overlayed over the video.
             <div class="teams" id="leftTeams">
               <div id="leftTeam1"></div>
               <div id="leftTeam2"></div>
+              {{if not .TwoVsTwoMode}}
               <div id="leftTeam3"></div>
+              {{end}}
             </div>
             <div class="score reversible-left">
               <div class="avatars">
                 <img class="avatar" id="leftTeam1Avatar" src=""/>
                 <img class="avatar" id="leftTeam2Avatar" src=""/>
+                {{if not .TwoVsTwoMode}}
                 <img class="avatar" id="leftTeam3Avatar" src=""/>
+                {{end}}
               </div>
               <div class="score-number" id="leftScoreNumber"></div>
             </div>
@@ -37,13 +41,17 @@ Display shown on the audience screen overlayed over the video.
               <div class="avatars">
                 <img class="avatar" id="rightTeam1Avatar" src=""/>
                 <img class="avatar" id="rightTeam2Avatar" src=""/>
+                {{if not .TwoVsTwoMode}}
                 <img class="avatar" id="rightTeam3Avatar" src=""/>
+                {{end}}
               </div>
             </div>
             <div class="teams" id="rightTeams">
               <div id="rightTeam1"></div>
               <div id="rightTeam2"></div>
+              {{if not .TwoVsTwoMode}}
               <div id="rightTeam3"></div>
+              {{end}}
             </div>
           </div>
           <div id="eventMatchInfo">

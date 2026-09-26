@@ -29,6 +29,22 @@ func TestWallDisplay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Wall Display - Untitled Event - Cheesy Arena")
 }
 
+func TestWallDisplayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	url := "/displays/wall?displayId=1&background=%23fff&message=&reversed=false&topSpacingPx=0&zoomFactor=1"
+	recorder := web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "leftTeam3")
+	assert.Contains(t, recorder.Body.String(), "rightTeam3")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "leftTeam3")
+	assert.NotContains(t, recorder.Body.String(), "rightTeam3")
+}
+
 func TestWallDisplayWebsocket(t *testing.T) {
 	web := setupTestWeb(t)
 

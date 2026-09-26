@@ -67,6 +67,10 @@ func (database *Database) UpdateAllianceFromMatch(allianceId int, matchTeamIds [
 	}
 
 	for _, teamId := range matchTeamIds {
+		if teamId == 0 {
+			// An empty third slot (2v2, or a short-handed alliance) is not a team to remember.
+			continue
+		}
 		found := false
 		for _, allianceTeamId := range alliance.TeamIds {
 			if teamId == allianceTeamId {

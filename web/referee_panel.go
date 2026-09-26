@@ -50,15 +50,17 @@ func (web *Web) refereePanelFoulListHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	data := struct {
-		Match     *model.Match
-		RedFouls  []game.Foul
-		BlueFouls []game.Foul
-		Rules     map[int]*game.Rule
+		Match        *model.Match
+		RedFouls     []game.Foul
+		BlueFouls    []game.Foul
+		Rules        map[int]*game.Rule
+		TwoVsTwoMode bool
 	}{
 		web.arena.CurrentMatch,
 		web.arena.RedRealtimeScore.CurrentScore.Fouls,
 		web.arena.BlueRealtimeScore.CurrentScore.Fouls,
 		game.GetAllRules(),
+		web.arena.EventSettings.TwoVsTwoMode,
 	}
 	err = template.ExecuteTemplate(w, "referee_panel_foul_list", data)
 	if err != nil {
@@ -187,11 +189,15 @@ func (web *Web) refereePanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 				if args.Alliance == "red" {
 					cards[strconv.Itoa(web.arena.CurrentMatch.Red1)] = args.Card
 					cards[strconv.Itoa(web.arena.CurrentMatch.Red2)] = args.Card
-					cards[strconv.Itoa(web.arena.CurrentMatch.Red3)] = args.Card
+					if web.arena.CurrentMatch.Red3 != 0 {
+						cards[strconv.Itoa(web.arena.CurrentMatch.Red3)] = args.Card
+					}
 				} else {
 					cards[strconv.Itoa(web.arena.CurrentMatch.Blue1)] = args.Card
 					cards[strconv.Itoa(web.arena.CurrentMatch.Blue2)] = args.Card
-					cards[strconv.Itoa(web.arena.CurrentMatch.Blue3)] = args.Card
+					if web.arena.CurrentMatch.Blue3 != 0 {
+						cards[strconv.Itoa(web.arena.CurrentMatch.Blue3)] = args.Card
+					}
 				}
 			} else {
 				cards[strconv.Itoa(args.TeamId)] = args.Card

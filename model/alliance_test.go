@@ -52,6 +52,21 @@ func TestUpdateAllianceFromMatch(t *testing.T) {
 	assert.Equal(t, [3]int{1503, 188, 296}, alliance2.Lineup)
 }
 
+func TestUpdateAllianceFromMatchTwoVsTwo(t *testing.T) {
+	db := setupTestDb(t)
+	defer db.Close()
+
+	// A 2v2 alliance only has a captain and one pick; the match lineup's third slot is always 0 and must
+	// never be written back as a team.
+	alliance := Alliance{Id: 3, TeamIds: []int{254, 1114}, Lineup: [3]int{1114, 254, 0}}
+	assert.Nil(t, db.CreateAlliance(&alliance))
+	assert.Nil(t, db.UpdateAllianceFromMatch(3, [3]int{1503, 1114, 0}))
+	alliance2, err := db.GetAllianceById(3)
+	assert.Nil(t, err)
+	assert.Equal(t, []int{254, 1114, 1503}, alliance2.TeamIds)
+	assert.Equal(t, [3]int{1503, 1114, 0}, alliance2.Lineup)
+}
+
 func TestTruncateAllianceTeams(t *testing.T) {
 	db := setupTestDb(t)
 	defer db.Close()

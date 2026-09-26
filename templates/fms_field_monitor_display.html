@@ -18,7 +18,7 @@ Display showing robot connection status in the style of FMS Field Monitor.
     <link rel="stylesheet" href="/static/css/fms_field_monitor_display.css"/>
   </head>
 
-  <body>
+  <body{{if .EventSettings.TwoVsTwoMode}} class="two-v-two"{{end}}>
     <div id="matchStatusRow" class="ds-dependent">
       {{if .EventSettings.NetworkSecurityEnabled}}
       <div id="matchName" class="text-start" style="width: 20%; padding-left: 1%;"></div>
@@ -39,11 +39,15 @@ Display showing robot connection status in the style of FMS Field Monitor.
       <div class="fms-column left-column reversible-left">
         {{template "team" dict "side" "left" "position" "1" "station" "1"}}
         {{template "team" dict "side" "left" "position" "2" "station" "2"}}
+        {{if not .EventSettings.TwoVsTwoMode}}
         {{template "team" dict "side" "left" "position" "3" "station" "3"}}
+        {{end}}
       </div>
       <!-- Right side (Red by default, Blue if reversed) -->
       <div id="rightTeams" class="fms-column right-column reversible-right">
+        {{if not .EventSettings.TwoVsTwoMode}}
         {{template "team" dict "side" "right" "position" "3" "station" "3"}}
+        {{end}}
         {{template "team" dict "side" "right" "position" "2" "station" "2"}}
         {{template "team" dict "side" "right" "position" "1" "station" "1"}}
       </div>

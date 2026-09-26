@@ -15,6 +15,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMatchLogsTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	match := model.Match{Type: model.Practice, ShortName: "P1", Red1: 101, Red2: 102, Red3: 103}
+	assert.Nil(t, web.arena.Database.CreateMatch(&match))
+
+	recorder := web.getHttpResponse("/match_logs")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "/match_logs/"+strconv.Itoa(match.Id)+"/R3/log")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/match_logs")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "/match_logs/"+strconv.Itoa(match.Id)+"/R3/log")
+	assert.Contains(t, recorder.Body.String(), "/match_logs/"+strconv.Itoa(match.Id)+"/R2/log")
+}
+
 func TestGetMatchLogFromRequestParsesLegacyAndNewColumns(t *testing.T) {
 	web := setupTestWeb(t)
 	match := &model.Match{Type: model.Qualification, ShortName: "Q9998", Red1: 9998}

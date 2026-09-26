@@ -46,6 +46,57 @@ func TestSetupSchedule(t *testing.T) {
 	assert.Equal(t, time.Date(2014, 1, 3, 13, 0, 0, 0, location).Unix(), matches[24].Time.Unix())
 }
 
+func TestSetupScheduleTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.EventSettings.TwoVsTwoMode = true
+
+	for i := 0; i < 14; i++ {
+		web.arena.Database.CreateTeam(&model.Team{Id: i + 1})
+	}
+
+	postData := "numScheduleBlocks=1&startTime0=2014-01-01 09:00:00 AM&numMatches0=28&matchSpacingSec0=480&" +
+		"matchType=qualification"
+	recorder := web.postHttpResponse("/setup/schedule/generate", postData)
+	assert.Equal(t, 303, recorder.Code)
+
+	recorder = web.getHttpResponse("/setup/schedule?matchType=qualification")
+	assert.Equal(t, 200, recorder.Code)
+	// No stray "Team 0" first-match row for the always-empty third slot.
+	assert.NotContains(t, recorder.Body.String(), "<td>0</td>")
+
+	recorder = web.postHttpResponse("/setup/schedule/save?matchType=qualification", "")
+	assert.Equal(t, 303, recorder.Code)
+	matches, err := web.arena.Database.GetMatchesByType(model.Qualification, true)
+	assert.Nil(t, err)
+	if assert.Equal(t, 28, len(matches)) {
+		for _, match := range matches {
+			assert.Equal(t, 0, match.Red3)
+			assert.Equal(t, 0, match.Blue3)
+			assert.NotZero(t, match.Red1)
+			assert.NotZero(t, match.Red2)
+			assert.NotZero(t, match.Blue1)
+			assert.NotZero(t, match.Blue2)
+		}
+	}
+}
+
+func TestSetupScheduleTeamsPerMatch(t *testing.T) {
+	testCases := []struct {
+		twoVsTwoMode bool
+		expected     string
+	}{
+		{false, "var teamsPerMatch = 6;"},
+		{true, "var teamsPerMatch = 4;"},
+	}
+	for _, testCase := range testCases {
+		web := setupTestWeb(t)
+		web.arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoMode
+		recorder := web.getHttpResponse("/setup/schedule?matchType=qualification")
+		assert.Equal(t, 200, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), testCase.expected)
+	}
+}
+
 func TestSetupScheduleErrors(t *testing.T) {
 	web := setupTestWeb(t)
 

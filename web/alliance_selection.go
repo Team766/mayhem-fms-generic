@@ -117,7 +117,10 @@ func (web *Web) allianceSelectionStartHandler(w http.ResponseWriter, r *http.Req
 	// Create a blank alliance set matching the event configuration.
 	web.arena.AllianceSelectionAlliances = make([]model.Alliance, web.arena.EventSettings.NumPlayoffAlliances)
 	teamsPerAlliance := 3
-	if web.arena.EventSettings.SelectionRound3Order != "" {
+	if web.arena.EventSettings.TwoVsTwoMode {
+		// 2v2 alliances are a captain and one pick; there is no third or backup round.
+		teamsPerAlliance = 2
+	} else if web.arena.EventSettings.SelectionRound3Order != "" {
 		teamsPerAlliance = 4
 	}
 	for i := 0; i < web.arena.EventSettings.NumPlayoffAlliances; i++ {
@@ -205,10 +208,12 @@ func (web *Web) allianceSelectionFinalizeHandler(w http.ResponseWriter, r *http.
 	// Save alliances to the database.
 	for _, alliance := range web.arena.AllianceSelectionAlliances {
 		// Populate the initial lineup according to the tournament rules (alliance captain in the middle, first pick on
-		// the left, second pick on the right).
+		// the left, second pick on the right). In 2v2 there is no third robot; the slot stays 0.
 		alliance.Lineup[0] = alliance.TeamIds[1]
 		alliance.Lineup[1] = alliance.TeamIds[0]
-		alliance.Lineup[2] = alliance.TeamIds[2]
+		if len(alliance.TeamIds) > 2 {
+			alliance.Lineup[2] = alliance.TeamIds[2]
+		}
 
 		err := web.arena.Database.CreateAlliance(&alliance)
 		if err != nil {
@@ -430,6 +435,16 @@ func (web *Web) determineNextCell() (int, int) {
 		}
 	}
 
+	// Go by the size the alliances were created with, not the current settings, which may have changed since.
+	numColumns := 0
+	if len(web.arena.AllianceSelectionAlliances) > 0 {
+		numColumns = len(web.arena.AllianceSelectionAlliances[0].TeamIds)
+	}
+	if numColumns < 3 {
+		// 2v2 alliances only have the first two columns.
+		return -1, -1
+	}
+
 	// Check the third column.
 	if web.arena.EventSettings.SelectionRound2Order == "F" {
 		for i, alliance := range web.arena.AllianceSelectionAlliances {
@@ -446,6 +461,9 @@ func (web *Web) determineNextCell() (int, int) {
 	}
 
 	// Check the fourth column.
+	if numColumns < 4 {
+		return -1, -1
+	}
 	if web.arena.EventSettings.SelectionRound3Order == "F" {
 		for i, alliance := range web.arena.AllianceSelectionAlliances {
 			if alliance.TeamIds[3] == 0 {

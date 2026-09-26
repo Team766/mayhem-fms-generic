@@ -25,6 +25,21 @@ func TestMatchPlay(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "Are you sure you want to discard the results for this match?")
 }
 
+func TestMatchPlayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	recorder := web.getHttpResponse("/match_play")
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "statusR3")
+	assert.Contains(t, recorder.Body.String(), "statusB3")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse("/match_play")
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "statusR3")
+	assert.NotContains(t, recorder.Body.String(), "statusB3")
+}
+
 func TestMatchPlayMatchList(t *testing.T) {
 	web := setupTestWeb(t)
 

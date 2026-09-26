@@ -4,12 +4,12 @@
 package web
 
 import (
-	"testing"
-
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
+	"regexp"
+	"testing"
 )
 
 func TestFieldMonitorDisplay(t *testing.T) {
@@ -26,6 +26,46 @@ func TestFmsFieldMonitorDisplay(t *testing.T) {
 	recorder := web.getHttpResponse("/displays/fms_field_monitor?displayId=1&ds=false&fta=true&reversed=false")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "Field Monitor - Untitled Event - Cheesy Arena")
+}
+
+func TestFieldMonitorDisplayTwoVsTwo(t *testing.T) {
+	// The rows keep upstream's mirrored pairing (the right side runs 3, 2, 1 from the top); 2v2 only drops station 3.
+	testCases := []struct {
+		twoVsTwoMode   bool
+		teamIdsInOrder []string
+	}{
+		{false, []string{"leftTeam1Id", "rightTeam3Id", "leftTeam2Id", "rightTeam2Id", "leftTeam3Id", "rightTeam1Id"}},
+		{true, []string{"leftTeam1Id", "rightTeam2Id", "leftTeam2Id", "rightTeam1Id"}},
+	}
+	teamIdRegex := regexp.MustCompile(`id="((?:left|right)Team\dId)"`)
+	for _, testCase := range testCases {
+		web := setupTestWeb(t)
+		web.arena.EventSettings.TwoVsTwoMode = testCase.twoVsTwoMode
+		recorder := web.getHttpResponse("/displays/field_monitor?displayId=1&ds=false&fta=true&reversed=false")
+		assert.Equal(t, 200, recorder.Code)
+		body := recorder.Body.String()
+		var teamIds []string
+		for _, match := range teamIdRegex.FindAllStringSubmatch(body, -1) {
+			teamIds = append(teamIds, match[1])
+		}
+		assert.Equal(t, testCase.teamIdsInOrder, teamIds)
+	}
+}
+
+func TestFmsFieldMonitorDisplayTwoVsTwo(t *testing.T) {
+	web := setupTestWeb(t)
+
+	url := "/displays/fms_field_monitor?displayId=1&ds=false&fta=true&reversed=false"
+	recorder := web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.Contains(t, recorder.Body.String(), "rightTeam3Id")
+
+	web.arena.EventSettings.TwoVsTwoMode = true
+	recorder = web.getHttpResponse(url)
+	assert.Equal(t, 200, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "leftTeam3Id")
+	assert.NotContains(t, recorder.Body.String(), "rightTeam3Id")
 }
 
 func TestFieldMonitorDisplayWebsocket(t *testing.T) {

@@ -16,6 +16,7 @@ import (
 	"log"
 	"net"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -111,6 +112,23 @@ type AllianceStation struct {
 	WifiStatus   network.TeamWifiStatus
 	aStopReset   bool
 	GameData     string
+}
+
+// stationOrder is the fixed R1,R2,R3,B1,B2,B3 index order used by the six-element per-station arrays.
+var stationOrder = [6]string{"R1", "R2", "R3", "B1", "B2", "B3"}
+
+// Returns the alliance stations that are in play. In 2v2 mode, an empty R3 or B3 is skipped.
+func (arena *Arena) activeStations() []string {
+	var stations []string
+	for _, station := range stationOrder {
+		allianceStation := arena.AllianceStations[station]
+		isEmpty := allianceStation.Team == nil && allianceStation.DsConn == nil
+		if arena.EventSettings.TwoVsTwoMode && (station == "R3" || station == "B3") && isEmpty {
+			continue
+		}
+		stations = append(stations, station)
+	}
+	return stations
 }
 
 // Creates the arena and sets it to its initial state.
@@ -303,6 +321,9 @@ func (arena *Arena) LoadMatch(match *model.Match) error {
 	if arena.MatchState != PreMatch && arena.MatchState != TimeoutActive {
 		return fmt.Errorf("cannot load match while there is a match still in progress or with results pending")
 	}
+	if arena.EventSettings.TwoVsTwoMode && (match.Red3 != 0 || match.Blue3 != 0) {
+		return fmt.Errorf("cannot load match %s: a third robot is not allowed in 2v2 mode", match.LongName)
+	}
 
 	arena.CurrentMatch = match
 
@@ -403,6 +424,9 @@ func (arena *Arena) LoadNextMatch(startScheduledBreak bool) error {
 func (arena *Arena) SubstituteTeams(red1, red2, red3, blue1, blue2, blue3 int) error {
 	if !arena.CurrentMatch.ShouldAllowSubstitution() {
 		return fmt.Errorf("Can't substitute teams for qualification matches.")
+	}
+	if arena.EventSettings.TwoVsTwoMode && (red3 != 0 || blue3 != 0) {
+		return fmt.Errorf("a third robot is not allowed in 2v2 mode")
 	}
 
 	if err := arena.validateTeams(red1, red2, red3, blue1, blue2, blue3); err != nil {
@@ -1023,7 +1047,7 @@ func (arena *Arena) getStartMatchConditions() []string {
 
 	conditions = append(
 		conditions,
-		arena.getAllianceStationStartConditions("R1", "R2", "R3", "B1", "B2", "B3")...,
+		arena.getAllianceStationStartConditions(arena.activeStations()...)...,
 	)
 
 	if arena.Plc.IsEnabled() {
@@ -1149,12 +1173,22 @@ func (arena *Arena) handlePlcInputOutput() {
 	}
 	redEStops, blueEStops := arena.Plc.GetTeamEStops()
 	redAStops, blueAStops := arena.Plc.GetTeamAStops()
-	arena.handleTeamStop("R1", redEStops[0], redAStops[0])
-	arena.handleTeamStop("R2", redEStops[1], redAStops[1])
-	arena.handleTeamStop("R3", redEStops[2], redAStops[2])
-	arena.handleTeamStop("B1", blueEStops[0], blueAStops[0])
-	arena.handleTeamStop("B2", blueEStops[1], blueAStops[1])
-	arena.handleTeamStop("B3", blueEStops[2], blueAStops[2])
+	teamStops := [6]struct {
+		eStop, aStop bool
+	}{
+		{redEStops[0], redAStops[0]},
+		{redEStops[1], redAStops[1]},
+		{redEStops[2], redAStops[2]},
+		{blueEStops[0], blueAStops[0]},
+		{blueEStops[1], blueAStops[1]},
+		{blueEStops[2], blueAStops[2]},
+	}
+	active := arena.activeStations()
+	for i, station := range stationOrder {
+		if slices.Contains(active, station) {
+			arena.handleTeamStop(station, teamStops[i].eStop, teamStops[i].aStop)
+		}
+	}
 	redEthernets, blueEthernets := arena.Plc.GetEthernetConnected()
 	arena.AllianceStations["R1"].Ethernet = redEthernets[0]
 	arena.AllianceStations["R2"].Ethernet = redEthernets[1]
@@ -1165,8 +1199,16 @@ func (arena *Arena) handlePlcInputOutput() {
 	arena.Plc.SetAwardsModeLight(arena.AllianceStationDisplayMode == "logo")
 
 	// Handle in-match PLC functions.
-	redAllianceReady := arena.checkAllianceStationsReady("R1", "R2", "R3") == nil
-	blueAllianceReady := arena.checkAllianceStationsReady("B1", "B2", "B3") == nil
+	var redStations, blueStations []string
+	for _, station := range active {
+		if strings.HasPrefix(station, "R") {
+			redStations = append(redStations, station)
+		} else {
+			blueStations = append(blueStations, station)
+		}
+	}
+	redAllianceReady := arena.checkAllianceStationsReady(redStations...) == nil
+	blueAllianceReady := arena.checkAllianceStationsReady(blueStations...) == nil
 
 	// Handle the evergreen PLC functions: stack lights, stack buzzer, and field reset light.
 	switch arena.MatchState {

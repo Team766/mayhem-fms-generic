@@ -13,7 +13,6 @@ For the game-agnostic version, see [Cheesy Arena Lite](https://github.com/Team25
 * Team stack lights and seven-segment display are replaced by an LCD screen, which shows team info before the match and
   realtime scoring and timer during the match
 * Smooth-scrolling rankings display
-* Direct publishing of schedule, results, and rankings to The Blue Alliance
 
 **For scorekeepers and event staff**
 
@@ -91,24 +90,6 @@ field sensors and control lights and motors. The PLC hardware travels with the F
 for more information.
 
 The PLC code can be found [here](https://github.com/ejordan376/Cheesy-PLC).
-
-## Team Sign integration
-
-Cheesy Arena has the ability to integrate with
-the [Cypress Team Signs](https://cypressintegration.com/customsolutions/teamdisplay/) used at official FRC events. See
-the [Configuring Cheesy Arena wiki page](https://github.com/Team254/cheesy-arena/wiki/Configuring-Cheesy-Arena-Settings#team-signs)
-for details configurating the team signs in Cheesy Arena.
-
-## DMX Lighting integration
-
-Cheesy Arena has the ability to integrate with DMX lighting hardware like what's used at official FRC events.
-See the [DMX Lighting Setup wiki page](https://github.com/Team254/cheesy-arena/wiki/DMX-Lighting-Setup) for details.
-
-## LED hardware
-
-Due to the prohibitive cost of the LEDs and LED controllers used on official fields, for years in which LEDs are
-mandatory for a proper game experience (such as 2018), Cheesy Arena integrates
-with [Advatek](https://www.advateklights.com) controllers and LEDs.
 
 ## Advanced networking
 

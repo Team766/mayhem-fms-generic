@@ -35,7 +35,6 @@ const (
 	LogoDisplay
 	QueueingDisplay
 	RankingsDisplay
-	TwitchStreamDisplay
 	WallDisplay
 	WebpageDisplay
 	FmsFieldMonitorDisplay
@@ -52,7 +51,6 @@ var DisplayTypeNames = map[DisplayType]string{
 	LogoDisplay:            "Logo",
 	QueueingDisplay:        "Queueing",
 	RankingsDisplay:        "Rankings",
-	TwitchStreamDisplay:    "Twitch Stream",
 	WallDisplay:            "Wall",
 	WebpageDisplay:         "Web Page",
 	FmsFieldMonitorDisplay: "FMS Field Monitor",
@@ -69,7 +67,6 @@ var displayTypePaths = map[DisplayType]string{
 	LogoDisplay:            "/displays/logo",
 	QueueingDisplay:        "/displays/queueing",
 	RankingsDisplay:        "/displays/rankings",
-	TwitchStreamDisplay:    "/displays/twitch",
 	WallDisplay:            "/displays/wall",
 	WebpageDisplay:         "/displays/webpage",
 	FmsFieldMonitorDisplay: "/displays/fms_field_monitor",

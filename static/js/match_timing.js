@@ -22,7 +22,7 @@ const matchStates = {
 let matchTiming;
 
 const getTeleopDurationSec = function () {
-  return matchTiming.TransitionShiftDurationSec + 4 * matchTiming.ShiftDurationSec + matchTiming.EndgameDurationSec;
+  return matchTiming.TeleopDurationSec;
 };
 
 // Handles a websocket message containing the length of each period in the match.

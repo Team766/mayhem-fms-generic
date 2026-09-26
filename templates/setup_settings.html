@@ -35,12 +35,6 @@ UI for configuring event settings.
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" id="publishing-tab" data-bs-toggle="tab" data-bs-target="#publishing" type="button"
-              role="tab">
-              Publishing
-            </button>
-          </li>
-          <li class="nav-item">
             <button class="nav-link" id="automation-tab" data-bs-toggle="tab" data-bs-target="#automation" type="button"
               role="tab">
               Automation
@@ -138,16 +132,10 @@ UI for configuring event settings.
                     name="selectionShowUnpickedTeams" {{if .SelectionShowUnpickedTeams}} checked{{end}}>
                 </div>
               </div>
-            </fieldset>
-            <fieldset class="mb-4">
-              <legend>Team Info Download</legend>
               <div class="row mb-3">
-                <label class="col-lg-6 control-label" for="tbaDownloadEnabled">
-                  Enable Team Info Download (From The Blue Alliance)
-                </label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="tbaDownloadEnabled"
-                    name="tbaDownloadEnabled" {{if .TbaDownloadEnabled}} checked{{end}}>
+                <label class="col-lg-6 control-label">Event Code</label>
+                <div class="col-lg-6">
+                  <input type="text" class="form-control" name="eventCode" value="{{.EventCode}}">
                 </div>
               </div>
             </fieldset>
@@ -191,7 +179,7 @@ UI for configuring event settings.
           </div>
           <div class="tab-pane" id="game" role="tabpanel">
             <fieldset class="mb-4">
-              <legend>Game-Specific</legend>
+              <legend>Match Timing</legend>
               <div class="row mb-3">
                 <label class="col-lg-6 control-label">Autonomous Period Duration<br/>(seconds)</label>
                 <div class="col-lg-6">
@@ -205,46 +193,16 @@ UI for configuring event settings.
                 </div>
               </div>
               <div class="row mb-3">
-                <label class="col-lg-6 control-label">Transition Shift Duration<br/>(seconds)</label>
+                <label class="col-lg-6 control-label">Teleoperated Period Duration<br/>(seconds)</label>
                 <div class="col-lg-6">
-                  <input type="text" class="form-control" name="transitionShiftDurationSec"
-                    value="{{.TransitionShiftDurationSec}}">
+                  <input type="text" class="form-control" name="teleopDurationSec" value="{{.TeleopDurationSec}}">
                 </div>
               </div>
               <div class="row mb-3">
-                <label class="col-lg-6 control-label">Shift Duration<br/>(seconds)</label>
+                <label class="col-lg-6 control-label">Warning Time Before End of Teleoperated Period<br/>(seconds)</label>
                 <div class="col-lg-6">
-                  <input type="text" class="form-control" name="shiftDurationSec" value="{{.ShiftDurationSec}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Endgame Duration<br/>(seconds)</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="endgameDurationSec" value="{{.EndgameDurationSec}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Energized Bonus RP Fuel Threshold</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" id="energizedBonusThreshold" name="energizedBonusThreshold"
-                    value="{{.EnergizedBonusThreshold}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Supercharged Bonus RP Fuel Threshold</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" id="superchargedBonusThreshold"
-                    name="superchargedBonusThreshold" value="{{.SuperchargedBonusThreshold}}">
-                </div>
-              </div>
-              <div class="row">
-                <label class="col-lg-6 control-label">
-                  Traversal Bonus RP Point Threshold<br>
-                  <small class="text-muted">Set to 0 to disable the bonus and award 2 RP instead of 3 for a win.</small>
-                </label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" id="traversalBonusThreshold" name="traversalBonusThreshold"
-                    value="{{.TraversalBonusThreshold}}">
+                  <input type="text" class="form-control" name="warningRemainingDurationSec"
+                    value="{{.WarningRemainingDurationSec}}">
                 </div>
               </div>
             </fieldset>
@@ -361,89 +319,6 @@ UI for configuring event settings.
               </div>
             </fieldset>
             <fieldset class="mb-4">
-              <legend>Team Signs</legend>
-              <p>
-                If you are using a set of the (2024+) official team number / timer signs, enter their two-digit IDs
-                (e.g.
-                51, 52, etc.) here.
-              </p>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Red 1 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignRed1Id"
-                    value="{{if gt .TeamSignRed1Id 0}}{{.TeamSignRed1Id}}{{end}}" placeholder="51">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Red 2 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignRed2Id"
-                    value="{{if gt .TeamSignRed2Id 0}}{{.TeamSignRed2Id}}{{end}}" placeholder="52">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Red 3 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignRed3Id"
-                    value="{{if gt .TeamSignRed3Id 0}}{{.TeamSignRed3Id}}{{end}}" placeholder="53">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Red Timer Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignRedTimerId"
-                    value="{{if gt .TeamSignRedTimerId 0}}{{.TeamSignRedTimerId}}{{end}}" placeholder="50">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Blue 1 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignBlue1Id"
-                    value="{{if gt .TeamSignBlue1Id 0}}{{.TeamSignBlue1Id}}{{end}}" placeholder="55">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Blue 2 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignBlue2Id"
-                    value="{{if gt .TeamSignBlue2Id 0}}{{.TeamSignBlue2Id}}{{end}}" placeholder="56">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Blue 3 Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignBlue3Id"
-                    value="{{if gt .TeamSignBlue3Id 0}}{{.TeamSignBlue3Id}}{{end}}" placeholder="57">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Blue Timer Sign ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="teamSignBlueTimerId"
-                    value="{{if gt .TeamSignBlueTimerId 0}}{{.TeamSignBlueTimerId}}{{end}}" placeholder="54">
-                </div>
-              </div>
-            </fieldset>
-            <fieldset class="mb-4">
-              <legend>LED Lighting</legend>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">LED Controller Address</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="ledControllerAddress"
-                    value="{{.LedControllerAddress}}" placeholder="10.0.100.60">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Universe Mode</label>
-                <div class="col-lg-6">
-                  <select class="form-select" name="ledUniverseMode">
-                    <option value="single" {{if ne .LedUniverseMode "two"}}selected{{end}}>Single Universe</option>
-                    <option value="two" {{if eq .LedUniverseMode "two"}}selected{{end}}>Two Universes</option>
-                  </select>
-                </div>
-              </div>
-            </fieldset>
-            <fieldset class="mb-4">
               <legend>Driver Station Lite Mode</legend>
               <p>When enabled, the Driver Station software will prompt teams to allow Cheesy Arena to connect rather
                 than automatically connecting, and will preserve the ability to use the spacebar for robot
@@ -457,57 +332,6 @@ UI for configuring event settings.
               </div>
             </fieldset>
           </div>
-          <div class="tab-pane" id="publishing" role="tabpanel">
-            <fieldset class="mb-4">
-              <legend>Publishing</legend>
-              <p>Contact The Blue Alliance to obtain an event code and credentials.</p>
-              <div class="row mb-3">
-                <label class="col-lg-8 control-label"
-                  for="tbaPublishingEnabled">Enable The Blue Alliance publishing</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="tbaPublishingEnabled"
-                    name="tbaPublishingEnabled" {{if .TbaPublishingEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Event Code</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaEventCode" value="{{.TbaEventCode}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Auth ID</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaSecretId" value="{{.TbaSecretId}}">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">TBA Secret</label>
-                <div class="col-lg-6">
-                  <input type="text" class="form-control" name="tbaSecret" value="{{.TbaSecret}}">
-                </div>
-              </div>
-            </fieldset>
-            <div class="col-lg-4">
-              {{if .TbaPublishingEnabled}}
-              <legend>Publishing Operations</legend>
-              <div>
-                <a href="/setup/settings/publish_teams" class="btn btn-primary">Publish Teams</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_matches" class="btn btn-primary">Publish Schedule/Results</a></div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_rankings" class="btn btn-primary">Publish Standings</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_alliances" class="btn btn-primary">Publish Alliances</a>
-              </div>
-              <div class="mt-2">
-                <a href="/setup/settings/publish_awards" class="btn btn-primary">Publish Awards</a>
-              </div>
-              {{end}}
-            </div>
-          </div>
           <div class="tab-pane" id="automation" role="tabpanel">
             <fieldset class="mb-4">
               <legend>Audience display</legend>
@@ -516,37 +340,6 @@ UI for configuring event settings.
                 <label class="col-lg-8 control-label" for="autoAudienceDisplayEnabled">Enabled automated audience display</label>
                 <div class="col-lg-1 checkbox">
                   <input type="checkbox" name="autoAudienceDisplayEnabled" {{if .AutoAudienceDisplayEnabled}} checked{{end}}>
-                </div>
-              </div>
-            </fieldset>
-            <fieldset class="mb-4">
-              <legend>Nexus</legend>
-              <p>Automatically populate practice and playoff match lineups from Nexus. Uses the same event code as TBA-
-                configure it on the publishing tab.</p>
-              <p>When enabled, Nexus is the source of truth for lineups and they can not
-                be overridden by the scorekeeper. To make changes, update the lineup in Nexus or disable this setting.</p>
-              <div class="row mb-5">
-                <label class="col-lg-8 control-label" for="nexusEnabled">Enable Nexus lineups</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="nexusEnabled" name="nexusEnabled" {{if .NexusEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <p><b>Nexus AutoQueue</b>: The queuing status in Nexus can be automatically updated when match scores are
-                committed. To generate an AutoQueue key, the TBA event key must be set and you must log in with a Nexus
-                account that has the lead queuer role.</p>
-              <div class="row mb-3">
-                <label class="col-lg-8 control-label" for="nexusAutoQueueEnabled">Enable Nexus AutoQueue</label>
-                <div class="col-lg-1 checkbox">
-                  <input type="checkbox" id="nexusAutoQueueEnabled" name="nexusAutoQueueEnabled" {{if .NexusAutoQueueEnabled}} checked{{end}}>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label class="col-lg-6 control-label">Nexus AutoQueue key</label>
-                <div class="col-lg-6">
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="nexusAutoQueueKeyInput" name="nexusAutoQueueKey" value="{{.NexusAutoQueueKey}}">
-                    {{if .TbaEventCode}}<a class="btn btn-outline-primary" href="{{.NexusBaseUrl}}/event/{{.TbaEventCode}}/auto-queue?fms=true" target="_blank" rel="opener">Generate</a>{{end}}
-                  </div>
                 </div>
               </div>
             </fieldset>
@@ -844,17 +637,6 @@ UI for configuring event settings.
         }
       });
     });
-  });
-
-  // Handle Nexus AutoQueue key generation.
-  window.addEventListener('message', (event) => {
-    if(event.origin !== '{{.NexusBaseUrl}}') return;
-
-    const key = event.data;
-    if(key) {
-      $('#nexusAutoQueueKeyInput').val(key);
-      $('#settingsForm').submit();
-    }
   });
 </script>
 {{end}}

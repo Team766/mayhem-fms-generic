@@ -36,15 +36,6 @@ const closeFoulsDialogIfOutside = function (event) {
 // Handles a websocket message to update the teams for the current match.
 const handleMatchLoad = function (data) {
   $("#matchName").text(data.Match.LongName);
-  if (alliance === "red") {
-    $(".team-1 .team-num").text(data.Match.Red1);
-    $(".team-2 .team-num").text(data.Match.Red2);
-    $(".team-3 .team-num").text(data.Match.Red3);
-  } else {
-    $(".team-1 .team-num").text(data.Match.Blue1);
-    $(".team-2 .team-num").text(data.Match.Blue2);
-    $(".team-3 .team-num").text(data.Match.Blue3);
-  }
 };
 
 const renderLocalFoulCounts = function () {
@@ -110,47 +101,15 @@ const resetLocalState = function () {
 // Refresh which UI controls are enabled/disabled
 const updateUIMode = function () {
   $(".scoring-button").prop('disabled', !scoringAvailable);
-  $(".scoring-tower-button").prop('disabled', !scoringAvailable);
   $("#commit").prop('disabled', !commitAvailable);
 }
 
-const endgameStatusNames = [
-  "None",
-  "Level 1",
-  "Level 2",
-  "Level 3",
-];
-
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
-  let realtimeScore;
-  if (alliance === "red") {
-    realtimeScore = data.Red;
-  } else {
-    realtimeScore = data.Blue;
-  }
-  const score = realtimeScore.Score;
-
-  for (let i = 0; i < 3; i++) {
-    const i1 = i + 1;
-    for (let j = 0; j < endgameStatusNames.length; j++) {
-      $(`#auto-input-${i1} .tower-${j}`).attr("data-selected", j == score.AutoTowerStatuses[i]);
-      $(`#endgame-input-${i1} .tower-${j}`).attr("data-selected", j == score.EndgameTowerStatuses[i]);
-    }
-  }
-
   const redFouls = data.Red.Score.Fouls || [];
   const blueFouls = data.Blue.Score.Fouls || [];
   renderGlobalFoulCounts(redFouls, blueFouls);
 };
-
-// Websocket message senders for various buttons
-const handleAutoTowerClick = function (teamPosition, autoTowerStatus) {
-  websocket.send("autoTower", {TeamPosition: teamPosition, AutoTowerStatus: autoTowerStatus});
-}
-const handleEndgameClick = function (teamPosition, endgameTowerStatus) {
-  websocket.send("endgame", {TeamPosition: teamPosition, EndgameTowerStatus: endgameTowerStatus});
-}
 
 // Sends a websocket message to indicate that the score for this alliance is ready.
 const commitMatchScore = function () {

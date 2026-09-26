@@ -130,11 +130,6 @@ func (match *Match) ShouldAllowSubstitution() bool {
 	return match.Type != Qualification
 }
 
-// Returns true if the match is of a type that allows loading lineup information from Nexus.
-func (match *Match) ShouldAllowNexusSubstitution() bool {
-	return match.Type == Practice || match.Type == Playoff
-}
-
 // Returns true if the red and yellow cards should be updated as a result of the match.
 func (match *Match) ShouldUpdateCards() bool {
 	return match.Type == Qualification || match.Type == Playoff
@@ -148,11 +143,6 @@ func (match *Match) ShouldUpdateRankings() bool {
 // Returns true if the playoff match set should be updated as a result of the match.
 func (match *Match) ShouldUpdatePlayoffMatches() bool {
 	return match.Type == Playoff
-}
-
-// Returns true if the teams currently set in each station match the passed lineup.
-func (match *Match) IsLineupEqual(red1, red2, red3, blue1, blue2, blue3 int) bool {
-	return [6]int{match.Red1, match.Red2, match.Red3, match.Blue1, match.Blue2, match.Blue3} == [6]int{red1, red2, red3, blue1, blue2, blue3}
 }
 
 // Returns the enum equivalent of the given match type string.

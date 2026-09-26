@@ -7,22 +7,16 @@ package game
 
 import "time"
 
-const (
-	ScoringGracePeriodSec  = 3
-	MotorsOnExtraPeriodSec = 2
-)
-
 var MatchTiming = struct {
-	AutoDurationSec            int
-	PauseDurationSec           int
-	TransitionShiftDurationSec int
-	ShiftDurationSec           int
-	EndgameDurationSec         int
-	TimeoutDurationSec         int
-}{20, 3, 10, 25, 30, 0}
+	AutoDurationSec             int
+	PauseDurationSec            int
+	TeleopDurationSec           int
+	WarningRemainingDurationSec int
+	TimeoutDurationSec          int
+}{20, 3, 140, 30, 0}
 
 func GetTeleopDurationSec() int {
-	return MatchTiming.TransitionShiftDurationSec + 4*MatchTiming.ShiftDurationSec + MatchTiming.EndgameDurationSec
+	return MatchTiming.TeleopDurationSec
 }
 
 func GetDurationToAutoEnd() time.Duration {

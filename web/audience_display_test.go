@@ -63,7 +63,7 @@ func TestAudienceDisplayWebsocket(t *testing.T) {
 	web.arena.StartMatch()
 	web.arena.Update()
 	web.arena.Update()
-	messages := readWebsocketMultiple(t, ws, 4)
+	messages := readWebsocketMultiple(t, ws, 3)
 	screen, ok := messages["audienceDisplayMode"]
 	if assert.True(t, ok) {
 		assert.Equal(t, "match", screen)
@@ -74,8 +74,6 @@ func TestAudienceDisplayWebsocket(t *testing.T) {
 	}
 	_, ok = messages["matchTime"]
 	assert.True(t, ok)
-	_, ok = messages["realtimeScore"]
-	assert.True(t, ok)
 	web.arena.RealtimeScoreNotifier.Notify()
 	readWebsocketType(t, ws, "realtimeScore")
 	web.arena.SavedMatch = &model.Match{
@@ -83,10 +81,11 @@ func TestAudienceDisplayWebsocket(t *testing.T) {
 		UseTiebreakCriteria: true,
 	}
 	web.arena.SavedMatchResult = &model.MatchResult{
-		RedScore: &game.Score{},
+		RedScore: &game.Score{
+			Fouls: []game.Foul{{FoulId: 1, IsMajor: false}, {FoulId: 2, IsMajor: false}, {FoulId: 3, IsMajor: false}},
+		},
 		BlueScore: &game.Score{
-			AutoTowerStatuses: [3]game.TowerStatus{game.TowerLevel1},
-			Fouls:             []game.Foul{{FoulId: 1, IsMajor: true}},
+			Fouls: []game.Foul{{FoulId: 4, IsMajor: true}},
 		},
 		RedCards:  map[string]string{},
 		BlueCards: map[string]string{},

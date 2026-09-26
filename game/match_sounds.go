@@ -52,42 +52,11 @@ func UpdateMatchSounds() {
 			float64(MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec),
 		},
 		{
-			"shift_change",
-			"wav",
-			float64(
-				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + MatchTiming.TransitionShiftDurationSec,
-			),
-		},
-		{
-			"shift_change",
-			"wav",
-			float64(
-				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + MatchTiming.TransitionShiftDurationSec +
-					MatchTiming.ShiftDurationSec,
-			),
-		},
-		{
-			"shift_change",
-			"wav",
-			float64(
-				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + MatchTiming.TransitionShiftDurationSec +
-					2*MatchTiming.ShiftDurationSec,
-			),
-		},
-		{
-			"shift_change",
-			"wav",
-			float64(
-				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + MatchTiming.TransitionShiftDurationSec +
-					3*MatchTiming.ShiftDurationSec,
-			),
-		},
-		{
 			"warning",
 			"wav",
 			float64(
 				MatchTiming.AutoDurationSec + MatchTiming.PauseDurationSec + GetTeleopDurationSec() -
-					MatchTiming.EndgameDurationSec,
+					MatchTiming.WarningRemainingDurationSec,
 			),
 		},
 		{

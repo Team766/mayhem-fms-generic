@@ -165,8 +165,6 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("GET /displays/queueing/websocket", web.queueingDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/rankings", web.rankingsDisplayHandler)
 	mux.HandleFunc("GET /displays/rankings/websocket", web.rankingsDisplayWebsocketHandler)
-	mux.HandleFunc("GET /displays/twitch", web.twitchDisplayHandler)
-	mux.HandleFunc("GET /displays/twitch/websocket", web.twitchDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/unpicked", web.unpickedDisplayHandler)
 	mux.HandleFunc("GET /displays/unpicked/websocket", web.unpickedDisplayWebsocketHandler)
 	mux.HandleFunc("GET /displays/wall", web.wallDisplayHandler)
@@ -225,11 +223,6 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/schedule/save", web.scheduleSavePostHandler)
 	mux.HandleFunc("GET /setup/settings", web.settingsGetHandler)
 	mux.HandleFunc("POST /setup/settings", web.settingsPostHandler)
-	mux.HandleFunc("GET /setup/settings/publish_alliances", web.settingsPublishAlliancesHandler)
-	mux.HandleFunc("GET /setup/settings/publish_awards", web.settingsPublishAwardsHandler)
-	mux.HandleFunc("GET /setup/settings/publish_matches", web.settingsPublishMatchesHandler)
-	mux.HandleFunc("GET /setup/settings/publish_rankings", web.settingsPublishRankingsHandler)
-	mux.HandleFunc("GET /setup/settings/publish_teams", web.settingsPublishTeamsHandler)
 	mux.HandleFunc("GET /setup/sponsor_slides", web.sponsorSlidesGetHandler)
 	mux.HandleFunc("POST /setup/sponsor_slides", web.sponsorSlidesPostHandler)
 	mux.HandleFunc("GET /setup/teams", web.teamsGetHandler)
@@ -240,7 +233,6 @@ func (web *Web) newHandler() http.Handler {
 	mux.HandleFunc("POST /setup/teams/clear", web.teamsClearHandler)
 	mux.HandleFunc("GET /setup/teams/generate_wpa_keys", web.teamsGenerateWpaKeysHandler)
 	mux.HandleFunc("GET /setup/teams/progress", web.teamsUpdateProgressBarHandler)
-	mux.HandleFunc("GET /setup/teams/refresh", web.teamsRefreshHandler)
 	return mux
 }
 

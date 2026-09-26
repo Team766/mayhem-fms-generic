@@ -38,10 +38,8 @@ type MatchTimeMessage struct {
 }
 
 type audienceAllianceScoreFields struct {
-	Score              *game.Score
-	ScoreSummary       *game.ScoreSummary
-	ActiveRemainingSec int
-	ActiveDurationSec  int
+	Score        *game.Score
+	ScoreSummary *game.ScoreSummary
 }
 
 // Instantiates notifiers and configures their message producing methods.
@@ -203,9 +201,7 @@ func (arena *Arena) GenerateMatchLoadMessage() any {
 		}
 	}
 
-	// Don't allow manual substitution of practice/playoff teams when they would be automatically overwritten by Nexus.
-	var allowManualSubstitution = arena.CurrentMatch.ShouldAllowSubstitution() &&
-		!(arena.EventSettings.NexusEnabled && arena.CurrentMatch.ShouldAllowNexusSubstitution())
+	var allowManualSubstitution = arena.CurrentMatch.ShouldAllowSubstitution()
 
 	return &struct {
 		Match              *model.Match
@@ -392,8 +388,6 @@ func getAudienceAllianceScoreFields(
 	fields := new(audienceAllianceScoreFields)
 	fields.Score = &allianceScore.CurrentScore
 	fields.ScoreSummary = allianceScoreSummary
-	fields.ActiveRemainingSec = allianceScore.ActiveRemainingSec
-	fields.ActiveDurationSec = allianceScore.ActiveDurationSec
 	return fields
 }
 

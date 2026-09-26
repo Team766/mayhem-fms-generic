@@ -5,16 +5,13 @@ package field
 
 import (
 	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/led"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/partner"
 	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/tournament"
 	"github.com/Team254/cheesy-arena/websocket"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"strings"
+	"net"
 	"testing"
 	"time"
 )
@@ -220,6 +217,74 @@ func TestArenaMatchFlow(t *testing.T) {
 	assert.Equal(t, true, arena.AllianceStations["B3"].DsConn.Auto)
 	assert.Equal(t, false, arena.AllianceStations["B3"].DsConn.Enabled)
 	assert.Equal(t, false, arena.AllianceStations["R1"].Bypass)
+}
+
+// Verifies that the Companion "endgame start" event fires exactly once, at the moment the teleop period reaches
+// the match warning time -- and not before or after -- including on the default test match.
+func TestArenaCompanionEndgameStart(t *testing.T) {
+	arena := setupTestArena(t)
+	assert.Equal(t, model.Test, arena.CurrentMatch.Type)
+
+	// Stand up a fake Companion listener to capture whatever commands the arena sends it.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	assert.Nil(t, err)
+	defer listener.Close()
+	receivedCommands := make(chan string, 10)
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go func(conn net.Conn) {
+				defer conn.Close()
+				buf := make([]byte, 256)
+				if n, err := conn.Read(buf); err == nil {
+					receivedCommands <- string(buf[:n])
+				}
+			}(conn)
+		}
+	}()
+	addr := listener.Addr().(*net.TCPAddr)
+	arena.CompanionClient = partner.NewCompanionClient(
+		addr.IP.String(),
+		addr.Port,
+		map[partner.CompanionEvent]partner.CompanionEventConfig{
+			partner.EventEndgameStart: {Page: 1, Row: 2, Column: 3},
+		},
+	)
+
+	endgameStartTimeSec := game.MatchTiming.AutoDurationSec + game.MatchTiming.PauseDurationSec +
+		game.GetTeleopDurationSec() - game.MatchTiming.WarningRemainingDurationSec
+
+	assertNoCommandReceived := func() {
+		select {
+		case command := <-receivedCommands:
+			t.Fatalf("expected no Companion command, but got %q", command)
+		case <-time.After(150 * time.Millisecond):
+		}
+	}
+
+	// Just before the warning time, the event should not have fired yet.
+	arena.MatchState = TeleopPeriod
+	arena.MatchStartTime = time.Now().Add(-time.Duration(endgameStartTimeSec-1) * time.Second)
+	arena.Update()
+	assertNoCommandReceived()
+
+	// At the warning time, the event should fire exactly once.
+	arena.MatchStartTime = time.Now().Add(-time.Duration(endgameStartTimeSec) * time.Second)
+	arena.Update()
+	select {
+	case command := <-receivedCommands:
+		assert.Equal(t, "LOCATION 1/2/3 PRESS\n", command)
+	case <-time.After(time.Second):
+		t.Fatal("expected a Companion command at the warning time, but got none")
+	}
+
+	// Continuing through the rest of teleop should not trigger it again.
+	arena.MatchStartTime = time.Now().Add(-time.Duration(endgameStartTimeSec+5) * time.Second)
+	arena.Update()
+	assertNoCommandReceived()
 }
 
 func TestArenaStateEnforcement(t *testing.T) {
@@ -505,80 +570,6 @@ func TestSubstituteTeam(t *testing.T) {
 	if assert.NotNil(t, err) {
 		assert.Equal(t, err.Error(), "Team 108 is not present at the event.")
 	}
-}
-
-func TestLoadTeamsFromNexus(t *testing.T) {
-	arena := setupTestArena(t)
-
-	for i := 1; i <= 12; i++ {
-		arena.Database.CreateTeam(&model.Team{Id: 100 + i})
-	}
-	match := model.Match{
-		Type:        model.Practice,
-		Red1:        101,
-		Red2:        102,
-		Red3:        103,
-		Blue1:       104,
-		Blue2:       105,
-		Blue3:       106,
-		TbaMatchKey: model.TbaMatchKey{CompLevel: "p", SetNumber: 0, MatchNumber: 1},
-	}
-	arena.Database.CreateMatch(&match)
-
-	assertTeams := func(red1, red2, red3, blue1, blue2, blue int) {
-		assert.Equal(t, red1, arena.CurrentMatch.Red1)
-		assert.Equal(t, red2, arena.CurrentMatch.Red2)
-		assert.Equal(t, red3, arena.CurrentMatch.Red3)
-		assert.Equal(t, blue1, arena.CurrentMatch.Blue1)
-		assert.Equal(t, blue2, arena.CurrentMatch.Blue2)
-		assert.Equal(t, blue, arena.CurrentMatch.Blue3)
-		assert.Equal(t, red1, arena.AllianceStations["R1"].Team.Id)
-		assert.Equal(t, red2, arena.AllianceStations["R2"].Team.Id)
-		assert.Equal(t, red3, arena.AllianceStations["R3"].Team.Id)
-		assert.Equal(t, blue1, arena.AllianceStations["B1"].Team.Id)
-		assert.Equal(t, blue2, arena.AllianceStations["B2"].Team.Id)
-		assert.Equal(t, blue, arena.AllianceStations["B3"].Team.Id)
-	}
-
-	// Sanity check that the match loads correctly without Nexus enabled.
-	assert.Nil(t, arena.LoadMatch(&match))
-	assertTeams(101, 102, 103, 104, 105, 106)
-
-	// Mock the Nexus server.
-	nexusServer := httptest.NewServer(
-		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
-				if strings.Contains(r.URL.String(), "/api/v1/event/my_event_code/match/p1/lineup") {
-					w.Write([]byte("{\"red\":[\"112\",\"111\",\"110\"],\"blue\":[\"109\",\"108\",\"107\"]}"))
-				} else {
-					http.Error(w, "Match not found", 404)
-				}
-			},
-		),
-	)
-	defer nexusServer.Close()
-	arena.NexusClient = partner.NewNexusClient("my_event_code", "auto_queue_key")
-	arena.NexusClient.BaseUrl = nexusServer.URL
-	arena.EventSettings.NexusEnabled = true
-
-	// Check that the correct teams are loaded from Nexus.
-	assert.Nil(t, arena.LoadMatch(&match))
-	assertTeams(112, 111, 110, 109, 108, 107)
-
-	// Check with a match that Nexus doesn't know about.
-	match = model.Match{
-		Type:        model.Practice,
-		Red1:        106,
-		Red2:        105,
-		Red3:        104,
-		Blue1:       103,
-		Blue2:       102,
-		Blue3:       101,
-		TbaMatchKey: model.TbaMatchKey{CompLevel: "p", SetNumber: 0, MatchNumber: 2},
-	}
-	arena.Database.CreateMatch(&match)
-	assert.Nil(t, arena.LoadMatch(&match))
-	assertTeams(106, 105, 104, 103, 102, 101)
 }
 
 func TestArenaTimeout(t *testing.T) {
@@ -1040,209 +1031,16 @@ func TestPlcMatchCycleEvergreen(t *testing.T) {
 	assert.Equal(t, false, plc.awardsModeLight)
 }
 
-func TestPlcMatchCycleGameSpecific(t *testing.T) {
-	arena := setupTestArena(t)
-	var plc FakePlc
-	plc.isEnabled = true
-	plc.ftaReady = true
-	arena.Plc = &plc
-	assertHubLights := func(red, blue bool) {
-		assert.Equal(t, red, plc.redHubLight)
-		assert.Equal(t, blue, plc.blueHubLight)
-	}
-	assertHubLedModes := func(red, blue led.Mode) {
-		redMode, blueMode := arena.Leds.GetModes()
-		assert.Equal(t, red, redMode)
-		assert.Equal(t, blue, blueMode)
-	}
-
-	// Hub counts should be ignored before a match has started, motors should stay off, and the LEDs should signal
-	// field reset.
-	arena.SignalReset()
-	assert.Equal(t, PreMatch, arena.MatchState)
-	plc.redHubCount = 5
-	plc.blueHubCount = 8
-	arena.Update()
-	assert.Equal(t, game.Hub{}, arena.RedRealtimeScore.CurrentScore.Hub)
-	assert.Equal(t, game.Hub{}, arena.BlueRealtimeScore.CurrentScore.Hub)
-	assert.False(t, plc.redHubMotor)
-	assert.False(t, plc.blueHubMotor)
-	assertHubLights(false, false)
-	assertHubLedModes(led.GreenMode, led.GreenMode)
-	plc.redHubCount = 0
-	plc.blueHubCount = 0
-
-	arena.AllianceStations["R1"].Bypass = true
-	arena.AllianceStations["R2"].Bypass = true
-	arena.AllianceStations["R3"].Bypass = true
-	arena.AllianceStations["B1"].Bypass = true
-	arena.AllianceStations["B2"].Bypass = true
-	arena.AllianceStations["B3"].Bypass = true
-	arena.Update()
-	assert.Nil(t, arena.StartMatch())
-	arena.Update()
-	assert.Equal(t, AutoPeriod, arena.MatchState)
-	assert.True(t, plc.redHubMotor)
-	assert.True(t, plc.blueHubMotor)
-	assertHubLights(true, true)
-	assertHubLedModes(led.RedStartupMode, led.BlueStartupMode)
-
-	redHub := &arena.RedRealtimeScore.CurrentScore.Hub
-	blueHub := &arena.BlueRealtimeScore.CurrentScore.Hub
-
-	// Auto counts accrue in the auto bucket.
-	plc.redHubCount = 3
-	plc.blueHubCount = 1
-	arena.Update()
-	assert.Equal(t, [game.ShiftCount]int{3, 0, 0, 0, 0, 0, 0}, redHub.ShiftCounts)
-	assert.Equal(t, [game.ShiftCount]int{1, 0, 0, 0, 0, 0, 0}, blueHub.ShiftCounts)
-
-	// After teleop starts, counts land in the transition bucket.
-	durationToTeleopStart := time.Duration(
-		game.MatchTiming.AutoDurationSec+game.MatchTiming.PauseDurationSec,
-	) * time.Second
-	arena.MatchStartTime = time.Now().Add(
-		-time.Duration(game.MatchTiming.AutoDurationSec)*time.Second -
-			time.Duration(game.MatchTiming.PauseDurationSec)*time.Second/2,
-	)
-	arena.Update()
-	assert.Equal(t, PausePeriod, arena.MatchState)
-	assert.True(t, plc.redHubMotor)
-	assert.True(t, plc.blueHubMotor)
-	assertHubLights(true, true)
-
-	plc.cycleState = true
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopStart - time.Millisecond)
-	arena.Update()
-	assert.Equal(t, TeleopPeriod, arena.MatchState)
-	assert.True(t, plc.redHubMotor)
-	assert.True(t, plc.blueHubMotor)
-	assert.True(t, redHub.WonAuto)
-	assert.False(t, blueHub.WonAuto)
-	assertHubLights(true, true)
-	assertHubLedModes(led.RedAdvantageMode, led.BlueMode)
-
-	plc.cycleState = false
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopStart - time.Millisecond)
-	arena.Update()
-	assertHubLights(false, true)
-
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopStart - 5*time.Second)
-	plc.redHubCount = 5
-	plc.blueHubCount = 2
-	arena.Update()
-	assert.Equal(t, TeleopPeriod, arena.MatchState)
-	assert.Equal(t, [game.ShiftCount]int{3, 2, 0, 0, 0, 0, 0}, redHub.ShiftCounts)
-	assert.Equal(t, [game.ShiftCount]int{1, 1, 0, 0, 0, 0, 0}, blueHub.ShiftCounts)
-	assertHubLights(false, true)
-	assertHubLedModes(led.RedAdvantageMode, led.BlueMode)
-
-	arena.MatchStartTime = time.Now().Add(
-		-(durationToTeleopStart +
-			time.Duration(game.MatchTiming.TransitionShiftDurationSec+game.MatchTiming.ShiftDurationSec)*time.Second -
-			2*time.Second),
-	)
-	arena.Update()
-	assertHubLights(false, false)
-
-	plc.cycleState = true
-	arena.MatchStartTime = time.Now().Add(
-		-(durationToTeleopStart +
-			time.Duration(game.MatchTiming.TransitionShiftDurationSec+game.MatchTiming.ShiftDurationSec)*time.Second -
-			2*time.Second),
-	)
-	arena.Update()
-	assertHubLights(false, true)
-
-	// Subsequent teleop shifts should bucket counts by the configured shift timing.
-	arena.MatchStartTime = time.Now().Add(
-		-(durationToTeleopStart +
-			time.Duration(game.MatchTiming.TransitionShiftDurationSec)*time.Second +
-			5*time.Second),
-	)
-	plc.redHubCount = 8
-	plc.blueHubCount = 4
-	arena.Update()
-	assert.Equal(t, [game.ShiftCount]int{3, 2, 3, 0, 0, 0, 0}, redHub.ShiftCounts)
-	assert.Equal(t, [game.ShiftCount]int{1, 1, 2, 0, 0, 0, 0}, blueHub.ShiftCounts)
-	assertHubLights(false, true)
-	assertHubLedModes(led.OffMode, led.BlueMode)
-
-	arena.MatchStartTime = time.Now().Add(
-		-(durationToTeleopStart +
-			time.Duration(game.MatchTiming.TransitionShiftDurationSec+game.MatchTiming.ShiftDurationSec)*time.Second +
-			5*time.Second),
-	)
-	plc.redHubCount = 9
-	plc.blueHubCount = 7
-	arena.Update()
-	assert.Equal(t, [game.ShiftCount]int{3, 2, 3, 1, 0, 0, 0}, redHub.ShiftCounts)
-	assert.Equal(t, [game.ShiftCount]int{1, 1, 2, 3, 0, 0, 0}, blueHub.ShiftCounts)
-	assertHubLights(true, false)
-	assertHubLedModes(led.RedMode, led.OffMode)
-
-	durationToTeleopEnd := time.Duration(
-		game.MatchTiming.AutoDurationSec+game.MatchTiming.PauseDurationSec+game.GetTeleopDurationSec(),
-	) * time.Second
-
-	plc.cycleState = false
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopEnd + 2*time.Second)
-	arena.Update()
-	assert.Equal(t, TeleopPeriod, arena.MatchState)
-	assertHubLights(false, false)
-
-	plc.cycleState = true
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopEnd + 2*time.Second)
-	arena.Update()
-	assertHubLights(true, true)
-
-	// Motors stay on briefly after the match to exhaust remaining Fuel.
-	arena.MatchStartTime = time.Now().Add(-durationToTeleopEnd - 1*time.Second)
-	arena.Update()
-	assert.Equal(t, PostMatch, arena.MatchState)
-	assert.True(t, plc.redHubMotor)
-	assert.True(t, plc.blueHubMotor)
-	assertHubLights(false, false)
-	assertHubLedModes(led.WhiteMode, led.WhiteMode)
-
-	arena.MatchStartTime = time.Now().Add(
-		-durationToTeleopEnd -
-			time.Duration(game.ScoringGracePeriodSec+game.MotorsOnExtraPeriodSec)*time.Second +
-			time.Millisecond,
-	)
-	arena.Update()
-	assert.True(t, plc.redHubMotor)
-	assert.True(t, plc.blueHubMotor)
-	assertHubLights(false, false)
-
-	arena.MatchStartTime = time.Now().Add(
-		-durationToTeleopEnd -
-			time.Duration(game.ScoringGracePeriodSec+game.MotorsOnExtraPeriodSec)*time.Second -
-			time.Millisecond,
-	)
-	arena.Update()
-	assert.False(t, plc.redHubMotor)
-	assert.False(t, plc.blueHubMotor)
-	assertHubLights(false, false)
-}
-
 func TestSignalVolunteers(t *testing.T) {
 	arena := setupTestArena(t)
-	assertHubLedModes := func(red, blue led.Mode) {
-		redMode, blueMode := arena.Leds.GetModes()
-		assert.Equal(t, red, redMode)
-		assert.Equal(t, blue, blueMode)
-	}
 
 	// Test that SignalVolunteers only works in PreMatch and PostMatch states.
 	for _, state := range []MatchState{StartMatch, AutoPeriod, PausePeriod, TeleopPeriod, PostTimeout} {
 		arena.MatchState = state
 		arena.FieldVolunteers = false
-		arena.Leds.SetMode(led.OffMode, led.OffMode)
 		arena.SignalVolunteers()
 		assert.False(t, arena.FieldVolunteers)
 		assert.NotEqual(t, "signalCount", arena.AllianceStationDisplayMode)
-		assertHubLedModes(led.OffMode, led.OffMode)
 	}
 
 	// Test SignalVolunteers in PreMatch state.
@@ -1253,7 +1051,6 @@ func TestSignalVolunteers(t *testing.T) {
 	assert.True(t, arena.FieldVolunteers)
 	assert.False(t, arena.FieldReset)
 	assert.Equal(t, "signalCount", arena.AllianceStationDisplayMode)
-	assertHubLedModes(led.PurpleMode, led.PurpleMode)
 
 	// Test SignalVolunteers in PostMatch state.
 	arena.MatchState = PostMatch
@@ -1264,16 +1061,10 @@ func TestSignalVolunteers(t *testing.T) {
 	assert.True(t, arena.FieldVolunteers)
 	assert.False(t, arena.FieldReset)
 	assert.Equal(t, "signalCount", arena.AllianceStationDisplayMode)
-	assertHubLedModes(led.PurpleMode, led.PurpleMode)
 }
 
 func TestSignalReset(t *testing.T) {
 	arena := setupTestArena(t)
-	assertHubLedModes := func(red, blue led.Mode) {
-		redMode, blueMode := arena.Leds.GetModes()
-		assert.Equal(t, red, redMode)
-		assert.Equal(t, blue, blueMode)
-	}
 
 	// Test that SignalReset only works in PreMatch and PostMatch states.
 	for _, state := range []MatchState{StartMatch, AutoPeriod, PausePeriod, TeleopPeriod, PostTimeout} {
@@ -1281,12 +1072,10 @@ func TestSignalReset(t *testing.T) {
 		arena.FieldReset = false
 		arena.FieldVolunteers = false
 		arena.AllianceStationDisplayMode = "match"
-		arena.Leds.SetMode(led.OffMode, led.OffMode)
 		arena.SignalReset()
 		assert.False(t, arena.FieldReset)
 		assert.False(t, arena.FieldVolunteers)
 		assert.NotEqual(t, "fieldReset", arena.AllianceStationDisplayMode)
-		assertHubLedModes(led.OffMode, led.OffMode)
 	}
 
 	// Test SignalReset in PreMatch state.
@@ -1298,7 +1087,6 @@ func TestSignalReset(t *testing.T) {
 	assert.False(t, arena.FieldVolunteers)
 	assert.True(t, arena.FieldReset)
 	assert.Equal(t, "fieldReset", arena.AllianceStationDisplayMode)
-	assertHubLedModes(led.GreenMode, led.GreenMode)
 
 	// Test SignalReset in PostMatch state.
 	arena.MatchState = PostMatch
@@ -1309,5 +1097,4 @@ func TestSignalReset(t *testing.T) {
 	assert.False(t, arena.FieldVolunteers)
 	assert.True(t, arena.FieldReset)
 	assert.Equal(t, "fieldReset", arena.AllianceStationDisplayMode)
-	assertHubLedModes(led.GreenMode, led.GreenMode)
 }

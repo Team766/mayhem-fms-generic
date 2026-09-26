@@ -489,27 +489,6 @@ func (web *Web) commitMatchScore(match *model.Match, matchResult *model.MatchRes
 			}
 		}
 
-		if web.arena.EventSettings.TbaPublishingEnabled && match.Type != model.Practice {
-			// Publish asynchronously to The Blue Alliance.
-			go func() {
-				if err = web.arena.TbaClient.PublishMatches(web.arena.Database); err != nil {
-					log.Printf("Failed to publish matches: %s", err.Error())
-				}
-				if match.ShouldUpdateRankings() {
-					if err = web.arena.TbaClient.PublishRankings(web.arena.Database); err != nil {
-						log.Printf("Failed to publish rankings: %s", err.Error())
-					}
-				}
-			}()
-		}
-
-		if web.arena.EventSettings.NexusAutoQueueEnabled && !isMatchReviewEdit {
-			// Trigger Nexus AutoQueue asynchronously, ignoring errors.
-			go func() {
-				web.arena.NexusClient.AutoQueue(match.LongName, match.TypeOrder, match.Status)
-			}()
-		}
-
 		// Back up the database, but don't error out if it fails.
 		err = web.arena.Database.Backup(
 			web.arena.EventSettings.Name, fmt.Sprintf("post_%s_match_%s", match.Type, match.ShortName),

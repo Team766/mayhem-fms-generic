@@ -5,7 +5,6 @@ package web
 
 import (
 	"github.com/Team254/cheesy-arena/field"
-	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
@@ -56,93 +55,6 @@ func TestScoringPanelWebsocket(t *testing.T) {
 	readWebsocketType(t, blueWs, "matchTime")
 	readWebsocketType(t, blueWs, "realtimeScore")
 
-	// Send some auto tower scoring commands.
-	autoData := struct {
-		TeamPosition    int
-		AutoTowerStatus int
-	}{}
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
-		web.arena.RedRealtimeScore.CurrentScore.AutoTowerStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
-		web.arena.BlueRealtimeScore.CurrentScore.AutoTowerStatuses,
-	)
-	autoData.TeamPosition = 1
-	autoData.AutoTowerStatus = 1
-	redWs.Write("autoTower", autoData)
-	autoData.TeamPosition = 2
-	autoData.AutoTowerStatus = 3
-	blueWs.Write("autoTower", autoData)
-	autoData.TeamPosition = 3
-	autoData.AutoTowerStatus = 2
-	redWs.Write("autoTower", autoData)
-	for i := 0; i < 3; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerLevel1, game.TowerNone, game.TowerLevel2},
-		web.arena.RedRealtimeScore.CurrentScore.AutoTowerStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerLevel3, game.TowerNone},
-		web.arena.BlueRealtimeScore.CurrentScore.AutoTowerStatuses,
-	)
-
-	// Send some endgame scoring commands.
-	endgameData := struct {
-		TeamPosition       int
-		EndgameTowerStatus int
-	}{}
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
-		web.arena.RedRealtimeScore.CurrentScore.EndgameTowerStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerNone, game.TowerNone},
-		web.arena.BlueRealtimeScore.CurrentScore.EndgameTowerStatuses,
-	)
-	endgameData.TeamPosition = 1
-	endgameData.EndgameTowerStatus = 2
-	redWs.Write("endgame", endgameData)
-	endgameData.TeamPosition = 2
-	endgameData.EndgameTowerStatus = 3
-	blueWs.Write("endgame", endgameData)
-	endgameData.TeamPosition = 3
-	endgameData.EndgameTowerStatus = 1
-	blueWs.Write("endgame", endgameData)
-	endgameData.TeamPosition = 3
-	endgameData.EndgameTowerStatus = 1
-	redWs.Write("endgame", endgameData)
-	endgameData.TeamPosition = 3
-	endgameData.EndgameTowerStatus = 3
-	redWs.Write("endgame", endgameData)
-	endgameData.TeamPosition = 2
-	endgameData.EndgameTowerStatus = 0
-	redWs.Write("endgame", endgameData)
-	for i := 0; i < 6; i++ {
-		readWebsocketType(t, redWs, "realtimeScore")
-		readWebsocketType(t, blueWs, "realtimeScore")
-	}
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerLevel2, game.TowerNone, game.TowerLevel3},
-		web.arena.RedRealtimeScore.CurrentScore.EndgameTowerStatuses,
-	)
-	assert.Equal(
-		t,
-		[3]game.TowerStatus{game.TowerNone, game.TowerLevel3, game.TowerLevel1},
-		web.arena.BlueRealtimeScore.CurrentScore.EndgameTowerStatuses,
-	)
-
 	// Add a couple of fouls.
 	foulData := struct {
 		Alliance string
@@ -165,12 +77,6 @@ func TestScoringPanelWebsocket(t *testing.T) {
 
 	// Test that some invalid commands do nothing and don't result in score change notifications.
 	redWs.Write("invalid", nil)
-	autoData.TeamPosition = 1
-	autoData.AutoTowerStatus = 4
-	redWs.Write("autoTower", autoData)
-	endgameData.TeamPosition = 1
-	endgameData.EndgameTowerStatus = 4
-	blueWs.Write("endgame", endgameData)
 
 	// Test committing logic.
 	redWs.Write("commitMatch", nil)

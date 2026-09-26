@@ -61,6 +61,118 @@ func TestSetupSettings(t *testing.T) {
 	assert.Equal(t, "/setup/settings#field", recorder.Header().Get("Location"))
 }
 
+func TestSetupSettingsTwoVsTwoModeLocking(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		existingMatchType     model.MatchType
+		initialTwoVsTwoMode   bool
+		requestTwoVsTwoMode   bool
+		wantStatusCode        int
+		wantErrorMessage      string
+		wantFinalTwoVsTwoMode bool
+	}{
+		{
+			name:                  "no matches, turn on",
+			initialTwoVsTwoMode:   false,
+			requestTwoVsTwoMode:   true,
+			wantStatusCode:        303,
+			wantFinalTwoVsTwoMode: true,
+		},
+		{
+			name:                  "no matches, turn off",
+			initialTwoVsTwoMode:   true,
+			requestTwoVsTwoMode:   false,
+			wantStatusCode:        303,
+			wantFinalTwoVsTwoMode: false,
+		},
+		{
+			name:                  "practice matches alone do not lock it",
+			existingMatchType:     model.Practice,
+			initialTwoVsTwoMode:   false,
+			requestTwoVsTwoMode:   true,
+			wantStatusCode:        303,
+			wantFinalTwoVsTwoMode: true,
+		},
+		{
+			name:                "qualification schedule exists, turning on is refused",
+			existingMatchType:   model.Qualification,
+			initialTwoVsTwoMode: false,
+			requestTwoVsTwoMode: true,
+			wantStatusCode:      200,
+			wantErrorMessage: "The 2v2 setting can't be changed once the qualification schedule exists. Clear the " +
+				"qualification schedule first to change it.",
+			wantFinalTwoVsTwoMode: false,
+		},
+		{
+			name:                "qualification schedule exists, turning off is refused",
+			existingMatchType:   model.Qualification,
+			initialTwoVsTwoMode: true,
+			requestTwoVsTwoMode: false,
+			wantStatusCode:      200,
+			wantErrorMessage: "The 2v2 setting can't be changed once the qualification schedule exists. Clear the " +
+				"qualification schedule first to change it.",
+			wantFinalTwoVsTwoMode: true,
+		},
+		{
+			name:                  "qualification schedule exists, unchanged value is saved",
+			existingMatchType:     model.Qualification,
+			initialTwoVsTwoMode:   true,
+			requestTwoVsTwoMode:   true,
+			wantStatusCode:        303,
+			wantFinalTwoVsTwoMode: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			web := setupTestWeb(t)
+			web.arena.EventSettings.TwoVsTwoMode = testCase.initialTwoVsTwoMode
+			assert.Nil(t, web.arena.Database.UpdateEventSettings(web.arena.EventSettings))
+			if testCase.existingMatchType != model.Test {
+				assert.Nil(t, web.arena.Database.CreateMatch(&model.Match{Type: testCase.existingMatchType}))
+			}
+
+			body := "name=Test Event"
+			if testCase.requestTwoVsTwoMode {
+				body += "&twoVsTwoMode=on"
+			}
+			recorder := web.postHttpResponse("/setup/settings", body)
+
+			assert.Equal(t, testCase.wantStatusCode, recorder.Code)
+			if testCase.wantErrorMessage != "" {
+				assert.Contains(t, recorder.Body.String(), testCase.wantErrorMessage)
+			}
+			assert.Equal(t, testCase.wantFinalTwoVsTwoMode, web.arena.EventSettings.TwoVsTwoMode)
+		})
+	}
+}
+
+func TestSetupSettingsOtherFieldsSaveWhileTwoVsTwoModeLocked(t *testing.T) {
+	web := setupTestWeb(t)
+	web.arena.EventSettings.TwoVsTwoMode = true
+	assert.Nil(t, web.arena.Database.UpdateEventSettings(web.arena.EventSettings))
+	assert.Nil(t, web.arena.Database.CreateMatch(&model.Match{Type: model.Qualification}))
+
+	// The checkbox is disabled in the browser, so a real submission still carries the current value via the hidden
+	// input; simulate that here.
+	recorder := web.postHttpResponse("/setup/settings", "name=Locked Event&twoVsTwoMode=on")
+
+	assert.Equal(t, 303, recorder.Code)
+	assert.Equal(t, "Locked Event", web.arena.EventSettings.Name)
+	assert.True(t, web.arena.EventSettings.TwoVsTwoMode)
+}
+
+func TestSetupSettingsTwoVsTwoModeLockedRendering(t *testing.T) {
+	web := setupTestWeb(t)
+	assert.Nil(t, web.arena.Database.CreateMatch(&model.Match{Type: model.Qualification}))
+
+	recorder := web.getHttpResponse("/setup/settings")
+
+	assert.Equal(t, 200, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "Locked: the qualification schedule exists.")
+	assert.Contains(t, recorder.Body.String(), `name="twoVsTwoMode"  disabled>`)
+}
+
 func TestSetupSettingsBlockedDuringMatch(t *testing.T) {
 	web := setupTestWeb(t)
 	web.arena.EventSettings.Name = "Original Event"

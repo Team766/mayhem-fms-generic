@@ -132,11 +132,40 @@ const handleMatchTime = function (data) {
   $("#teamTitle").text(title)
 };
 
+// The text shown in the Endgame row for each game.EndgameStatus enum value.
+const endgameStatusLabels = ["None", "Park", "Balance"];
+
+// The location text shown in the Crown row for each game.CrownPlacement enum value. Index 0 (CrownNone) is handled
+// the same way as any other value here, since the crown's String() also reports "None" for it.
+const crownPlacementLabels = [
+  "-", "Auto Floor", "Auto First", "Auto Top", "Teleop Floor", "Teleop First", "Teleop Top", "Teleop Stacked",
+];
+
+// Updates the head-referee score summary rows for one alliance from its live score and summary.
+const updateScoreSummary = function (alliance, score, summary) {
+  const prefix = `${alliance}ScoreSummary`;
+  for (let i = 1; i <= 3; i++) {
+    $(`#${prefix}Leave${i}`).text(score.LeaveStatuses[i - 1] ? "✔" : "✘");
+    $(`#${prefix}AutoBalance${i}`).text(score.AutoBalanceStatuses[i - 1] ? "✔" : "✘");
+    $(`#${prefix}Endgame${i}`).text(endgameStatusLabels[score.EndgameStatuses[i - 1]]);
+  }
+  $(`#${prefix}Auto`).text(`${score.AutoFloor}/${score.AutoFirst}/${score.AutoTop}`);
+  $(`#${prefix}Teleop`).text(
+    `${score.TeleopFloor}/${score.TeleopFirst}/${score.TeleopTop}/${score.TeleopStacked}`
+  );
+  $(`#${prefix}Crown`).text(crownPlacementLabels[summary.Crown]);
+  $(`#${prefix}Toss`).text(score.Toss ? "✔" : "✘");
+  $(`#${prefix}Shelf`).text(`${summary.ShelfTreasureCount}/${summary.ShelfTreasureGoal}`);
+};
+
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
   for (const [teamId, card] of Object.entries(Object.assign(data.RedCards, data.BlueCards))) {
     $(`[data-team="${teamId}"]`).attr("data-card", card);
   }
+
+  updateScoreSummary("red", data.Red.Score, data.Red.ScoreSummary);
+  updateScoreSummary("blue", data.Blue.Score, data.Blue.ScoreSummary);
 
   const newRedFoulsHashCode = hashObject(data.Red.Score.Fouls);
   const newBlueFoulsHashCode = hashObject(data.Blue.Score.Fouls);

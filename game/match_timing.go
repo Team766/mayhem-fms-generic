@@ -7,13 +7,16 @@ package game
 
 import "time"
 
+// TossRemainingDurationSec is the point in the match, given as seconds remaining, at which the human players may throw
+// their marked toss cube into the treasure chest. It is announced by the "toss" sound.
 var MatchTiming = struct {
 	AutoDurationSec             int
 	PauseDurationSec            int
 	TeleopDurationSec           int
 	WarningRemainingDurationSec int
+	TossRemainingDurationSec    int
 	TimeoutDurationSec          int
-}{20, 3, 140, 30, 0}
+}{15, 3, 120, 30, 20, 0}
 
 func GetTeleopDurationSec() int {
 	return MatchTiming.TeleopDurationSec

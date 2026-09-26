@@ -63,11 +63,13 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 	colWidths := map[string]float64{
 		"Rank":   13,
 		"Team":   20,
-		"RP":     24,
-		"Match":  24,
+		"RP":     16,
+		"RS":     18,
+		"Score":  18,
+		"Auton":  18,
 		"W-L-T":  26,
-		"DQ":     20,
-		"Played": 20,
+		"DQ":     14,
+		"Played": 18,
 	}
 	rowHeight := 6.5
 
@@ -81,18 +83,31 @@ func (web *Web) rankingsPdfReportHandler(w http.ResponseWriter, r *http.Request)
 	pdf.CellFormat(colWidths["Rank"], rowHeight, "Rank", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Team"], rowHeight, "Team", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["RP"], rowHeight, "RP", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colWidths["Match"], rowHeight, "Match", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["RS"], rowHeight, "RS", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["Score"], rowHeight, "Score", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colWidths["Auton"], rowHeight, "Auton", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["W-L-T"], rowHeight, "W-L-T", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["DQ"], rowHeight, "DQ", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colWidths["Played"], rowHeight, "Played", "1", 1, "C", true, 0, "")
 	for _, ranking := range rankings {
-		// Render ranking info row.
+		// Render ranking info row. RS, Score and Auton are per-match averages, rounded to two decimals for display
+		// only; the underlying ranking comparison always uses the exact totals.
+		played := float64(ranking.Played)
+		var rankingScore, averageScore, averageAuton float64
+		if played > 0 {
+			rankingScore = float64(ranking.RankingPoints) / played
+			averageScore = float64(ranking.ScorePoints) / played
+			averageAuton = float64(ranking.AutonPoints) / played
+		}
+
 		pdf.SetFont("Arial", "B", 10)
 		pdf.CellFormat(colWidths["Rank"], rowHeight, strconv.Itoa(ranking.Rank), "1", 0, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 10)
 		pdf.CellFormat(colWidths["Team"], rowHeight, strconv.Itoa(ranking.TeamId), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["RP"], rowHeight, strconv.Itoa(ranking.RankingPoints), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(colWidths["Match"], rowHeight, strconv.Itoa(ranking.MatchPoints), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths["RS"], rowHeight, fmt.Sprintf("%.2f", rankingScore), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths["Score"], rowHeight, fmt.Sprintf("%.2f", averageScore), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths["Auton"], rowHeight, fmt.Sprintf("%.2f", averageAuton), "1", 0, "C", false, 0, "")
 		record := fmt.Sprintf("%d-%d-%d", ranking.Wins, ranking.Losses, ranking.Ties)
 		pdf.CellFormat(colWidths["W-L-T"], rowHeight, record, "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths["DQ"], rowHeight, strconv.Itoa(ranking.Disqualifications), "1", 0, "C", false, 0, "")

@@ -113,8 +113,10 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 	recorder := web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Regexp(t, `(?s)>\s*0\s*</td>`, recorder.Body.String())  // The red score
-	assert.Regexp(t, `(?s)>\s*85\s*</td>`, recorder.Body.String()) // The blue score
+	// Red scores 132 match points and no foul points; blue scores 43 match points plus the 60 foul points from red's
+	// five major and two minor fouls.
+	assert.Regexp(t, `(?s)>\s*132\s*</td>`, recorder.Body.String()) // The red score
+	assert.Regexp(t, `(?s)>\s*103\s*</td>`, recorder.Body.String()) // The blue score
 	assert.NotContains(t, recorder.Body.String(), "match-review-rps")
 
 	// Check response for non-existent match.
@@ -150,9 +152,65 @@ func TestMatchReviewEditExistingResult(t *testing.T) {
 	recorder = web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Regexp(t, `(?s)>\s*15\s*</td>`, recorder.Body.String()) // The red score
-	assert.Regexp(t, `(?s)>\s*5\s*</td>`, recorder.Body.String())  // The blue score
+	assert.Regexp(t, `(?s)>\s*10\s*</td>`, recorder.Body.String()) // The red score, from blue's major foul
+	assert.Regexp(t, `(?s)>\s*5\s*</td>`, recorder.Body.String())  // The blue score, from red's minor foul
 	assert.NotContains(t, recorder.Body.String(), "match-review-rps")
+}
+
+// Posts a full JSON body covering every game.Score field via the edit-result form's endpoint and confirms that
+// every field round-trips into the persisted match result.
+func TestMatchReviewEditResultRoundTripsGameFields(t *testing.T) {
+	web := setupTestWeb(t)
+
+	match := model.Match{
+		Type: model.Qualification, ShortName: "Q1", Red1: 101, Red2: 102, Red3: 103, Blue1: 104, Blue2: 105,
+		Blue3: 106,
+	}
+	web.arena.Database.CreateMatch(&match)
+	matchResult := model.NewMatchResult()
+	matchResult.MatchId = match.Id
+	assert.Nil(t, web.arena.Database.CreateMatchResult(matchResult))
+
+	postBody := fmt.Sprintf(
+		"matchResultJson={\"MatchId\":%d,"+
+			"\"RedScore\":{\"AutoFloor\":1,\"AutoFirst\":2,\"AutoTop\":3,\"TeleopFloor\":4,\"TeleopFirst\":5,"+
+			"\"TeleopTop\":6,\"TeleopStacked\":7,\"Crown\":6,\"LeaveStatuses\":[true,false,true],"+
+			"\"AutoBalanceStatuses\":[false,true,false],\"EndgameStatuses\":[0,1,2],\"Toss\":true,"+
+			"\"Fouls\":[{\"TeamId\":1,\"RuleId\":1}]},"+
+			"\"BlueScore\":{\"AutoFloor\":0,\"Crown\":0,\"Toss\":false,\"Fouls\":[]},"+
+			"\"RedCards\":{},\"BlueCards\":{}}",
+		match.Id,
+	)
+	recorder := web.postHttpResponse(fmt.Sprintf("/match_review/%d/edit", match.Id), postBody)
+	assert.Equal(t, 303, recorder.Code, recorder.Body.String())
+
+	savedResult, err := web.arena.Database.GetMatchResultForMatch(match.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, savedResult.RedScore.AutoFloor)
+	assert.Equal(t, 2, savedResult.RedScore.AutoFirst)
+	assert.Equal(t, 3, savedResult.RedScore.AutoTop)
+	assert.Equal(t, 4, savedResult.RedScore.TeleopFloor)
+	assert.Equal(t, 5, savedResult.RedScore.TeleopFirst)
+	assert.Equal(t, 6, savedResult.RedScore.TeleopTop)
+	assert.Equal(t, 7, savedResult.RedScore.TeleopStacked)
+	assert.Equal(t, game.CrownTeleopTop, savedResult.RedScore.Crown)
+	assert.Equal(t, [3]bool{true, false, true}, savedResult.RedScore.LeaveStatuses)
+	assert.Equal(t, [3]bool{false, true, false}, savedResult.RedScore.AutoBalanceStatuses)
+	assert.Equal(
+		t,
+		[3]game.EndgameStatus{game.EndgameNone, game.EndgamePark, game.EndgameBalance},
+		savedResult.RedScore.EndgameStatuses,
+	)
+	assert.True(t, savedResult.RedScore.Toss)
+	assert.Equal(t, 1, len(savedResult.RedScore.Fouls))
+
+	// The recomputed summary should reflect the new fields, including the crown bonus (CrownTeleopTop = +10).
+	summary := savedResult.RedScoreSummary()
+	assert.Equal(t, 4+4, summary.LeavePoints) // Two robots left (stations 1 and 3).
+	assert.Equal(t, 4*1+8*2+12*3, summary.AutoTreasurePoints)
+	assert.Equal(t, 10, summary.CrownBonusPoints)
+	assert.Equal(t, 2*4+5*5+10*6+8*7+10, summary.TeleopTreasurePoints)
+	assert.Equal(t, 2+12, summary.EndgamePoints) // Station 2 parked (2), station 3 balanced (12).
 }
 
 func TestMatchReviewCreateNewResult(t *testing.T) {
@@ -192,8 +250,8 @@ func TestMatchReviewCreateNewResult(t *testing.T) {
 	recorder = web.getHttpResponse("/match_review")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), ">QF4-3<")
-	assert.Regexp(t, `(?s)>\s*15\s*</td>`, recorder.Body.String()) // The red score
-	assert.Regexp(t, `(?s)>\s*5\s*</td>`, recorder.Body.String())  // The blue score
+	assert.Regexp(t, `(?s)>\s*10\s*</td>`, recorder.Body.String()) // The red score, from blue's major foul
+	assert.Regexp(t, `(?s)>\s*5\s*</td>`, recorder.Body.String())  // The blue score, from red's minor foul
 	assert.NotContains(t, recorder.Body.String(), "match-review-rps")
 }
 
@@ -268,9 +326,9 @@ func TestMatchReviewSummary(t *testing.T) {
 
 	var response MatchReviewSummaryResponse
 	assert.Nil(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	assert.Equal(t, 15, response.RedSummary.Score)
+	assert.Equal(t, 10, response.RedSummary.Score)
 	assert.Equal(t, 0, response.RedSummary.MatchPoints)
-	assert.Equal(t, 15, response.RedSummary.FoulPoints)
+	assert.Equal(t, 10, response.RedSummary.FoulPoints)
 	assert.Equal(t, 0, response.BlueSummary.Score)
 
 	matchResult, err := web.arena.Database.GetMatchResultForMatch(match.Id)
@@ -310,7 +368,7 @@ func TestMatchReviewSummaryCurrentMatch(t *testing.T) {
 	var response MatchReviewSummaryResponse
 	assert.Nil(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	assert.Equal(t, 0, response.RedSummary.Score)
-	assert.Equal(t, 15, response.BlueSummary.Score)
+	assert.Equal(t, 10, response.BlueSummary.Score)
 
 	assert.Equal(t, 0, len(web.arena.RedRealtimeScore.CurrentScore.Fouls))
 	assert.Equal(t, 0, len(web.arena.BlueRealtimeScore.CurrentScore.Fouls))

@@ -23,18 +23,21 @@ func TestCalculateRankings(t *testing.T) {
 	rankings, err := database.GetAllRankings()
 	assert.Nil(t, err)
 	assert.Equal(t, updatedRankings, rankings)
+	// Ranking points per match: team 1 has 9/3 = 3 and team 3 has 6/2 = 3, and team 1 wins that tie on score per match
+	// (324/3 = 108 against 132/2 = 66). Then team 4 (3/2 = 1.5), then teams 5 and 2 (both 4/3), which team 5 wins on
+	// score per match (295/3 against 192/3), then team 6 (1/2).
 	if assert.Equal(t, 6, len(rankings)) {
-		assert.Equal(t, 6, rankings[0].TeamId)
+		assert.Equal(t, 1, rankings[0].TeamId)
 		assert.Equal(t, 0, rankings[0].PreviousRank)
-		assert.Equal(t, 4, rankings[1].TeamId)
+		assert.Equal(t, 3, rankings[1].TeamId)
 		assert.Equal(t, 0, rankings[1].PreviousRank)
-		assert.Equal(t, 5, rankings[2].TeamId)
+		assert.Equal(t, 4, rankings[2].TeamId)
 		assert.Equal(t, 0, rankings[2].PreviousRank)
-		assert.Equal(t, 2, rankings[3].TeamId)
+		assert.Equal(t, 5, rankings[3].TeamId)
 		assert.Equal(t, 0, rankings[3].PreviousRank)
-		assert.Equal(t, 1, rankings[4].TeamId)
+		assert.Equal(t, 2, rankings[4].TeamId)
 		assert.Equal(t, 0, rankings[4].PreviousRank)
-		assert.Equal(t, 3, rankings[5].TeamId)
+		assert.Equal(t, 6, rankings[5].TeamId)
 		assert.Equal(t, 0, rankings[5].PreviousRank)
 	}
 
@@ -55,18 +58,20 @@ func TestCalculateRankings(t *testing.T) {
 	rankings, err = database.GetAllRankings()
 	assert.Nil(t, err)
 	assert.Equal(t, updatedRankings, rankings)
+	// Ranking points per match: team 3 has 10/2 = 5, team 1 has 13/3 = 4.33, team 2 has 8/3 = 2.67, team 4 has
+	// 3/2 = 1.5, team 5 has 3/3 = 1 and team 6 has 0.
 	if assert.Equal(t, 6, len(rankings)) {
-		assert.Equal(t, 6, rankings[0].TeamId)
+		assert.Equal(t, 3, rankings[0].TeamId)
 		assert.Equal(t, previousRankings[rankings[0].TeamId], rankings[0].PreviousRank)
-		assert.Equal(t, 5, rankings[1].TeamId)
+		assert.Equal(t, 1, rankings[1].TeamId)
 		assert.Equal(t, previousRankings[rankings[1].TeamId], rankings[1].PreviousRank)
-		assert.Equal(t, 4, rankings[2].TeamId)
+		assert.Equal(t, 2, rankings[2].TeamId)
 		assert.Equal(t, previousRankings[rankings[2].TeamId], rankings[2].PreviousRank)
-		assert.Equal(t, 2, rankings[3].TeamId)
+		assert.Equal(t, 4, rankings[3].TeamId)
 		assert.Equal(t, previousRankings[rankings[3].TeamId], rankings[3].PreviousRank)
-		assert.Equal(t, 1, rankings[4].TeamId)
+		assert.Equal(t, 5, rankings[4].TeamId)
 		assert.Equal(t, previousRankings[rankings[4].TeamId], rankings[4].PreviousRank)
-		assert.Equal(t, 3, rankings[5].TeamId)
+		assert.Equal(t, 6, rankings[5].TeamId)
 		assert.Equal(t, previousRankings[rankings[5].TeamId], rankings[5].PreviousRank)
 	}
 
@@ -83,16 +88,18 @@ func TestCalculateRankings(t *testing.T) {
 	rankings, err = database.GetAllRankings()
 	assert.Nil(t, err)
 	assert.Equal(t, updatedRankings, rankings)
+	// Teams 5 and 1 are equal on every criterion (8/3 ranking points, 427/3 score, 116/3 auton) and are separated by
+	// the random value, as are teams 3 and 6 (5/2, 235/2, 64/2). Team 4 (3/2) then beats team 2 (3/3).
 	if assert.Equal(t, 6, len(rankings)) {
-		assert.Equal(t, 4, rankings[0].TeamId)
+		assert.Equal(t, 5, rankings[0].TeamId)
 		assert.Equal(t, previousRankings[rankings[0].TeamId], rankings[0].PreviousRank)
-		assert.Equal(t, 3, rankings[1].TeamId)
+		assert.Equal(t, 1, rankings[1].TeamId)
 		assert.Equal(t, previousRankings[rankings[1].TeamId], rankings[1].PreviousRank)
-		assert.Equal(t, 6, rankings[2].TeamId)
+		assert.Equal(t, 3, rankings[2].TeamId)
 		assert.Equal(t, previousRankings[rankings[2].TeamId], rankings[2].PreviousRank)
-		assert.Equal(t, 5, rankings[3].TeamId)
+		assert.Equal(t, 6, rankings[3].TeamId)
 		assert.Equal(t, previousRankings[rankings[3].TeamId], rankings[3].PreviousRank)
-		assert.Equal(t, 1, rankings[4].TeamId)
+		assert.Equal(t, 4, rankings[4].TeamId)
 		assert.Equal(t, previousRankings[rankings[4].TeamId], rankings[4].PreviousRank)
 		assert.Equal(t, 2, rankings[5].TeamId)
 		assert.Equal(t, previousRankings[rankings[5].TeamId], rankings[5].PreviousRank)

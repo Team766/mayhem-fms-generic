@@ -95,6 +95,77 @@ UI for manually editing the result for a match.
 <div id="{{.Alliance}}Score" data-alliance="{{.Alliance}}">
   <div class="card card-body bg-{{.Alliance}} mb-3">
     <fieldset>
+      <legend>Autonomous</legend>
+      <div class="row mb-3">
+        {{template "counterInput" dict "alliance" .Alliance "field" "AutoFloor" "label" "Floor"}}
+        {{template "counterInput" dict "alliance" .Alliance "field" "AutoFirst" "label" "First"}}
+        {{template "counterInput" dict "alliance" .Alliance "field" "AutoTop" "label" "Top"}}
+      </div>
+      {{range $i, $team := .Teams}}
+      <div class="row mb-2">
+        <label class="col-lg-2 control-label">Team {{$team}}</label>
+        <div class="col-lg-3">
+          <label>
+            <input type="checkbox" name="{{$.Alliance}}LeaveStatuses{{add $i 1}}"> Leave
+          </label>
+        </div>
+        <div class="col-lg-3">
+          <label>
+            <input type="checkbox" name="{{$.Alliance}}AutoBalanceStatuses{{add $i 1}}"> Auto Balance
+          </label>
+        </div>
+      </div>
+      {{end}}
+    </fieldset>
+    <fieldset>
+      <legend>Teleop + Endgame</legend>
+      <div class="row mb-3">
+        {{template "counterInput" dict "alliance" .Alliance "field" "TeleopFloor" "label" "Floor"}}
+        {{template "counterInput" dict "alliance" .Alliance "field" "TeleopFirst" "label" "First"}}
+        {{template "counterInput" dict "alliance" .Alliance "field" "TeleopTop" "label" "Top"}}
+        {{template "counterInput" dict "alliance" .Alliance "field" "TeleopStacked" "label" "Stacked"}}
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Crown</legend>
+      <div class="row mb-3">
+        <div class="col-lg-4">
+          <select class="form-control" name="{{.Alliance}}Crown">
+            <option value="0">None</option>
+            <option value="1">Auto Floor</option>
+            <option value="2">Auto First</option>
+            <option value="3">Auto Top</option>
+            <option value="4">Floor</option>
+            <option value="5">First</option>
+            <option value="6">Top</option>
+            <option value="7">Stacked</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Endgame</legend>
+      {{range $i, $team := .Teams}}
+      <div class="row mb-2">
+        <label class="col-lg-2 control-label">Team {{$team}}</label>
+        <div class="col-lg-4">
+          <select class="form-control" name="{{$.Alliance}}EndgameStatuses{{add $i 1}}">
+            <option value="0">None</option>
+            <option value="1">Park</option>
+            <option value="2">Balance</option>
+          </select>
+        </div>
+      </div>
+      {{end}}
+      <div class="row mb-2">
+        <div class="col-lg-4">
+          <label>
+            <input type="checkbox" name="{{.Alliance}}Toss"> Toss
+          </label>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset>
       <legend>Fouls</legend>
       <div id="{{.Alliance}}Fouls"></div>
       <button type="button" class="btn btn-secondary btn-sm" onclick="addFoul('{{.Alliance}}');">Add Foul</button>
@@ -120,6 +191,12 @@ UI for manually editing the result for a match.
   {{template "scoreSummaryCard" .}}
 </div>
 {{end}}
+{{define "counterInput"}}
+<div class="col-lg-2">
+  <label class="control-label">{{.label}}</label>
+  <input type="number" class="form-control" name="{{.alliance}}{{.field}}" min="0">
+</div>
+{{end}}
 {{define "cardRadio"}}
 <div class="col-lg-2">
   <label>
@@ -134,13 +211,29 @@ UI for manually editing the result for a match.
   <table class="table table-sm mb-0 score-summary-table score-summary-table-{{.Alliance}}">
     <tbody>
       <tr>
-        {{template "summaryField" dict "label" "Score" "field" "Score" "value" .Summary.Score}}
+        {{template "summaryField" dict "label" "Leave" "field" "LeavePoints" "value" .Summary.LeavePoints}}
+        {{template "summaryField" dict "label" "Auto Balance" "field" "AutoBalancePoints" "value" .Summary.AutoBalancePoints}}
+      </tr>
+      <tr>
+        {{template "summaryField" dict "label" "Auto Treasure" "field" "AutoTreasurePoints" "value" .Summary.AutoTreasurePoints}}
+        {{template "summaryField" dict "label" "Teleop Treasure" "field" "TeleopTreasurePoints" "value" .Summary.TeleopTreasurePoints}}
+      </tr>
+      <tr>
+        {{template "summaryField" dict "label" "Endgame" "field" "EndgamePoints" "value" .Summary.EndgamePoints}}
+        {{template "summaryField" dict "label" "Toss" "field" "TossPoints" "value" .Summary.TossPoints}}
+      </tr>
+      <tr>
         {{template "summaryField" dict "label" "Foul" "field" "FoulPoints" "value" .Summary.FoulPoints}}
+        {{template "summaryField" dict "label" "Score" "field" "Score" "value" .Summary.Score}}
       </tr>
       {{if .ShowRankingPoints}}
       <tr>
-        <th scope="row">Ranking Points</th>
-        <td class="text-end font-monospace score-summary-rp" data-summary-field="BonusRankingPoints">{{.Summary.BonusRankingPoints}}</td>
+        {{template "rankingPointSummaryField" dict "label" "Auton RP" "field" "AutonRankingPoint" "value" .Summary.AutonRankingPoint}}
+        {{template "rankingPointSummaryField" dict "label" "Scoring RP" "field" "ScoringRankingPoint" "value" .Summary.ScoringRankingPoint}}
+      </tr>
+      <tr>
+        {{template "rankingPointSummaryField" dict "label" "Endgame RP" "field" "EndgameRankingPoint" "value" .Summary.EndgameRankingPoint}}
+        {{template "summaryField" dict "label" "Ranking Points" "field" "BonusRankingPoints" "value" .Summary.BonusRankingPoints}}
       </tr>
       {{end}}
     </tbody>
@@ -150,4 +243,10 @@ UI for manually editing the result for a match.
 {{define "summaryField"}}
 <th scope="row">{{.label}}</th>
 <td class="text-end font-monospace" data-summary-field="{{.field}}">{{.value}}</td>
+{{end}}
+{{define "rankingPointSummaryField"}}
+<th scope="row">{{.label}}</th>
+<td class="text-end" data-summary-field="{{.field}}">
+  {{if .value}}<span class="score-summary-rp text-success">&#x2611;</span>{{else}}<span class="score-summary-rp text-danger">&#x2612;</span>{{end}}
+</td>
 {{end}}

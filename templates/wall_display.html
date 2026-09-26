@@ -13,6 +13,7 @@ Display that can be shown on a screen supplemental to one with the audience disp
     <link rel="stylesheet" href="/static/css/lib/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/static/css/cheesy-arena.css"/>
     <link rel="stylesheet" href="/static/css/wall_display.css"/>
+    <link rel="stylesheet" href="/static/css/game_logo.css"/>
   </head>
   <body{{if .TwoVsTwoMode}} class="two-v-two"{{end}}>
     <div id="overlayCentering">
@@ -36,8 +37,16 @@ Display that can be shown on a screen supplemental to one with the audience disp
                 {{end}}
               </div>
               <div class="score-number" id="leftScoreNumber"></div>
+              <div class="score-number score-stats">
+                <div><span id="leftTreasure"></span> Treasure</div>
+                <div><span id="leftShelf"></span> Shelf</div>
+              </div>
             </div>
             <div class="score score-right reversible-right">
+              <div class="score-number score-stats">
+                <div><span id="rightTreasure"></span> Treasure</div>
+                <div><span id="rightShelf"></span> Shelf</div>
+              </div>
               <div class="score-number" id="rightScoreNumber"></div>
               <div class="avatars">
                 <img class="avatar" id="rightTeam1Avatar" src=""/>

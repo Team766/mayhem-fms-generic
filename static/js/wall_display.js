@@ -25,7 +25,7 @@ const logoUp = "35px";
 const logoDown = $("#logo").css("top");
 const scoreIn = $(".score").css("width");
 const scoreMid = "185px";
-const scoreOut = "250px";
+const scoreOut = "290px";
 const overlayTopOffset = 110;
 const timeoutDetailsIn = $("#timeoutDetails").css("width");
 const timeoutDetailsOut = "570px";
@@ -95,7 +95,7 @@ const handleMatchTime = function (data) {
 
 // Handles a websocket message to update the match score.
 const handleRealtimeScore = function (data) {
-  DisplayShared.handleRealtimeScore(data, redSide, blueSide);
+  DisplayShared.handleRealtimeScore(data, redSide, blueSide, currentMatch && currentMatch.Type === matchTypePlayoff);
 };
 
 const transitionBlankToIntro = function (callback) {

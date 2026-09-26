@@ -9,7 +9,8 @@ import "math/rand"
 
 type RankingFields struct {
 	RankingPoints     int
-	MatchPoints       int
+	ScorePoints       int
+	AutonPoints       int
 	Random            float64
 	Wins              int
 	Losses            int
@@ -57,8 +58,10 @@ func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentSco
 	}
 	fields.RankingPoints += ownScore.BonusRankingPoints
 
-	// Assign tiebreaker points.
-	fields.MatchPoints += ownScore.MatchPoints
+	// Assign tiebreaker points. The first tiebreaker is the average match score, which includes the foul points the
+	// alliance received; the second is the average autonomous score.
+	fields.ScorePoints += ownScore.Score
+	fields.AutonPoints += ownScore.AutonPoints
 }
 
 // Helper function to implement the required interface for Sort.
@@ -71,12 +74,16 @@ func (rankings Rankings) Less(i, j int) bool {
 	a := rankings[i]
 	b := rankings[j]
 
-	// Use cross-multiplication to keep it in integer math.
+	// Every criterion is a per-match average; use cross-multiplication to keep it in integer math, so that rounding
+	// for display can never create or break a tie.
 	if a.RankingPoints*b.Played == b.RankingPoints*a.Played {
-		if a.MatchPoints*b.Played == b.MatchPoints*a.Played {
-			return a.Random > b.Random
+		if a.ScorePoints*b.Played == b.ScorePoints*a.Played {
+			if a.AutonPoints*b.Played == b.AutonPoints*a.Played {
+				return a.Random > b.Random
+			}
+			return a.AutonPoints*b.Played > b.AutonPoints*a.Played
 		}
-		return a.MatchPoints*b.Played > b.MatchPoints*a.Played
+		return a.ScorePoints*b.Played > b.ScorePoints*a.Played
 	}
 	return a.RankingPoints*b.Played > b.RankingPoints*a.Played
 }

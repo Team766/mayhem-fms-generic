@@ -28,16 +28,18 @@ func TestEventSettingsReadWrite(t *testing.T) {
 			ApChannel:                   36,
 			SCCUpCommands:               "configure terminal\ninterface range gigabitEthernet 1/2-4\nno shutdown\nexit\nexit\nexit",
 			SCCDownCommands:             "configure terminal\ninterface range gigabitEthernet 1/2-4\nshutdown\nexit\nexit\nexit",
-			AutoDurationSec:             20,
+			AutoDurationSec:             15,
 			PauseDurationSec:            3,
-			TeleopDurationSec:           140,
+			TeleopDurationSec:           120,
 			WarningRemainingDurationSec: 30,
+			AutonRpThreshold:            20,
+			ScoringRpThreshold:          12,
 			CompanionAddress:            "",
 			CompanionPort:               0,
 		},
 		*eventSettings,
 	)
-	assert.Equal(t, 140, game.GetTeleopDurationSec())
+	assert.Equal(t, 120, game.GetTeleopDurationSec())
 
 	assert.False(t, eventSettings.TwoVsTwoMode)
 

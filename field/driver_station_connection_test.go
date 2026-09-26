@@ -41,7 +41,8 @@ func TestEncodeControlPacket(t *testing.T) {
 	assert.Equal(t, byte(0), data[5])
 	assert.Equal(t, byte(0), data[6])
 	assert.Equal(t, byte(0), data[20])
-	assert.Equal(t, byte(20), data[21])
+	// Before the match, the countdown shows the length of the autonomous period.
+	assert.Equal(t, byte(15), data[21])
 
 	// Check the different alliance station values.
 	dsConn.AllianceStation = "R2"
@@ -128,22 +129,23 @@ func TestEncodeControlPacket(t *testing.T) {
 	assert.Equal(t, byte(0), data[7])
 	assert.Equal(t, byte(13), data[8])
 
-	// Check the countdown at different points during the match.
+	// Check the countdown at different points during the match. The test arena uses a 2-second pause, so the match is
+	// 15 + 2 + 120 = 137 seconds long.
 	arena.MatchState = AutoPeriod
 	arena.MatchStartTime = time.Now().Add(-9 * time.Second)
 	data = dsConn.encodeControlPacket(arena, "")
-	assert.Equal(t, byte(11), data[21])
+	assert.Equal(t, byte(6), data[21]) // 15 - 9
 	arena.MatchState = PausePeriod
-	arena.MatchStartTime = time.Now().Add(-21 * time.Second)
+	arena.MatchStartTime = time.Now().Add(-16 * time.Second)
 	data = dsConn.encodeControlPacket(arena, "")
-	assert.Equal(t, byte(140), data[21])
+	assert.Equal(t, byte(120), data[21]) // The whole teleop period
 	arena.MatchState = TeleopPeriod
 	arena.MatchStartTime = time.Now().Add(-33 * time.Second)
 	data = dsConn.encodeControlPacket(arena, "")
-	assert.Equal(t, byte(129), data[21])
-	arena.MatchStartTime = time.Now().Add(-160 * time.Second)
+	assert.Equal(t, byte(104), data[21]) // 15 + 2 + 120 - 33
+	arena.MatchStartTime = time.Now().Add(-135 * time.Second)
 	data = dsConn.encodeControlPacket(arena, "")
-	assert.Equal(t, byte(2), data[21])
+	assert.Equal(t, byte(2), data[21]) // 15 + 2 + 120 - 135
 	arena.MatchState = PostMatch
 	arena.MatchStartTime = time.Now().Add(-180 * time.Second)
 	data = dsConn.encodeControlPacket(arena, "")

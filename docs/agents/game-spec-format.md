@@ -21,7 +21,7 @@ the current logos and a placeholder sound are fine.
 | 3 | Match timing | Auto, pause, teleop, endgame warning. Say "stock" if unchanged |
 | 4 | Scoring elements | **Counters**: id, display name, points per phase, which phases, who enters it (near or far scoring panel, referee). **Per-robot statuses**: yes/no or named levels with points, phase. **Derived totals**: groups shown on screens and used by tiebreakers |
 | 5 | Fouls | Point values and wording (minor/major/tech). Any foul that changes ranking points, exactly how |
-| 6 | Rules list | Number, text, minor/major, flags. May point to a separate file next to the spec |
+| 6 | Rules list | Number, text, minor/major, flags. Start from [`specs/GENERAL_RULES.md`](../../specs/GENERAL_RULES.md), drop what doesn't apply, add the game's own rules. May point to a separate file next to the spec |
 | 7 | Ranking points | Win/tie values. Each bonus RP as an exact sentence: what is counted, in which phases, the threshold, the comparison (`>=`), how bypassed or absent robots are treated |
 | 8 | Ranking order and tiebreakers | Qualification sort order. Playoff tiebreakers in order, and for each which side wins (more or fewer) |
 | 9 | Screens | For each of: scoring panels, referee panel, audience overlay, audience final score, announcer, wall, rankings display, reports, edit result: what is shown, in what order, with what labels |

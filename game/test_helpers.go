@@ -7,55 +7,43 @@ package game
 
 func TestScore1() *Score {
 	fouls := []Foul{
-		{true, 25, 16},
-		{false, 1868, 13},
-		{false, 1868, 13},
-		{true, 25, 15},
-		{true, 25, 15},
-		{true, 25, 15},
-		{true, 25, 15},
+		{1, true, 25, 16},
+		{2, false, 1868, 13},
+		{3, false, 1868, 13},
+		{4, true, 25, 15},
+		{5, true, 25, 15},
+		{6, true, 25, 15},
+		{7, true, 25, 15},
 	}
 	return &Score{
-
-		RobotsBypassed: [3]bool{false, false, true},
-		Mayhem: Mayhem{
-			AutoGamepiece1Level1Count:   1,
-			TeleopGamepiece1Level1Count: 2,
-			AutoGamepiece1Level2Count:   2,
-			TeleopGamepiece1Level2Count: 4,
-			AutoGamepiece2Count:         2,
-			TeleopGamepiece2Count:       4,
-			LeaveStatuses:              [3]bool{true, true, false},
-			ParkStatuses:               [3]bool{true, true, false},
+		AutoTowerStatuses: [3]TowerStatus{TowerNone, TowerLevel2, TowerNone},
+		Hub: Hub{
+			WonAuto:     false,
+			ShiftCounts: [ShiftCount]int{18, 10, 20, 30, 25, 40, 15},
 		},
-		Fouls:        fouls,
-		PlayoffDq:    false,
+		EndgameTowerStatuses: [3]TowerStatus{TowerLevel1, TowerLevel2, TowerNone},
+		Fouls:                fouls,
+		PlayoffDq:            false,
 	}
 }
 
 func TestScore2() *Score {
 	return &Score{
-
-		RobotsBypassed: [3]bool{false, false, false},
-		Mayhem: Mayhem{
-			AutoGamepiece1Level1Count:   2,
-			TeleopGamepiece1Level1Count: 4,
-			AutoGamepiece1Level2Count:   3,
-			TeleopGamepiece1Level2Count: 5,
-			AutoGamepiece2Count:         1,
-			TeleopGamepiece2Count:       4,
-			LeaveStatuses:              [3]bool{false, true, false},
-			ParkStatuses:               [3]bool{false, true, false},
+		AutoTowerStatuses: [3]TowerStatus{TowerLevel1, TowerNone, TowerLevel3},
+		Hub: Hub{
+			WonAuto:     true,
+			ShiftCounts: [ShiftCount]int{35, 12, 40, 30, 50, 28, 9},
 		},
-		Fouls:        []Foul{},
-		PlayoffDq:    false,
+		EndgameTowerStatuses: [3]TowerStatus{TowerLevel3, TowerLevel2, TowerLevel1},
+		Fouls:                []Foul{},
+		PlayoffDq:            false,
 	}
 }
 
 func TestRanking1() *Ranking {
-	return &Ranking{TeamId: 254, Rank: 1, PreviousRank: 0, RankingFields: RankingFields{RankingPoints: 20, MatchPoints: 625, AutoPoints: 90, Gamepiece2Points: 40, Wins: 3, Losses: 2, Ties: 1, Disqualifications: 0, Played: 10}}
+	return &Ranking{254, 1, 0, RankingFields{20, 625, 90, 554, 0.254, 3, 2, 1, 0, 10}}
 }
 
 func TestRanking2() *Ranking {
-	return &Ranking{TeamId: 1114, Rank: 2, PreviousRank: 1, RankingFields: RankingFields{RankingPoints: 18, MatchPoints: 700, AutoPoints: 100, Gamepiece2Points: 50, Wins: 1, Losses: 3, Ties: 2, Disqualifications: 0, Played: 10}}
+	return &Ranking{1114, 2, 1, RankingFields{18, 700, 625, 90, 0.1114, 1, 3, 2, 0, 10}}
 }

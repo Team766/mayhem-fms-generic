@@ -4,15 +4,14 @@
 package game
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestGetRuleById(t *testing.T) {
 	assert.Nil(t, GetRuleById(0))
 	assert.Equal(t, rules[0], GetRuleById(1))
-	assert.Equal(t, rules[17], GetRuleById(18))
+	assert.Equal(t, rules[20], GetRuleById(21))
 	assert.Nil(t, GetRuleById(1000))
 }
 

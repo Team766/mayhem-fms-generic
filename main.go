@@ -1,13 +1,12 @@
 // Copyright 2014 Team 254. All Rights Reserved.
 // Author: pat@patfairbank.com (Patrick Fairbank)
 
-// Go version 1.22 or newer is required.
-//go:build go1.22
-
 package main
 
 import (
+	"flag"
 	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/network"
 	"github.com/Team254/cheesy-arena/web"
 	"log"
 )
@@ -17,6 +16,9 @@ const httpPort = 8080
 
 // Main entry point for the application.
 func main() {
+	flag.BoolVar(&network.DevMode, "dev", false, "Bind driver station listeners to all IP addresses for development")
+	flag.Parse()
+
 	arena, err := field.NewArena(eventDbPath)
 	if err != nil {
 		log.Fatalln("Error during startup: ", err)

@@ -6,6 +6,8 @@
 var websocket;
 let redFoulsHashCode = 0;
 let blueFoulsHashCode = 0;
+let scoreIsReady = false;
+let isPostMatch = false;
 
 // Sends the foul to the server to add it to the list.
 const addFoul = function (alliance, isMajor) {
@@ -32,20 +34,46 @@ var deleteFoul = function (alliance, index) {
   websocket.send("deleteFoul", {Alliance: alliance, Index: index});
 };
 
-// Cycles through no card, yellow card, and red card.
+// Cycles through the card options for the selected team.
 var cycleCard = function (cardButton) {
-  var newCard = "";
-  if ($(cardButton).attr("data-card") === "") {
-    newCard = "yellow";
-  } else if ($(cardButton).attr("data-card") === "yellow") {
-    newCard = "red";
+  if(isPostMatch) {
+    // Cycle card.
+    const currentCard = $(cardButton).attr("data-card");
+    const hasOldYellowCard = $(cardButton).attr("data-old-yellow-card") === "true";
+    let newCard = "";
+    if (currentCard === "" && hasOldYellowCard) {
+      newCard = "red";
+    } else if (currentCard === "") {
+      newCard = "yellow";
+    } else if (currentCard === "yellow") {
+      newCard = "red";
+    }
+    websocket.send(
+      "card",
+      {Alliance: $(cardButton).attr("data-alliance"), TeamId: parseInt($(cardButton).attr("data-team")), Card: newCard}
+    );
+    $(cardButton).attr("data-card", newCard);
+    return;
   }
-  websocket.send(
-    "card",
-    {Alliance: $(cardButton).attr("data-alliance"), TeamId: parseInt($(cardButton).attr("data-team")), Card: newCard}
-  );
-  $(cardButton).attr("data-card", newCard);
+
+  // Toggle bypass.
+  const isDisabled = $(cardButton).hasClass("bypassed-status");
+  const team = $(cardButton).attr("data-team");
+  $("#confirmBypassTitle").text(`${isDisabled ? "Enable" : "Disable"} ${team}?`);
+  $("#confirmBypassAction").text(isDisabled ? "Enable" : "Disable")
+  $("#confirmBypass").attr("data-station", $(cardButton).attr("data-station")?.toUpperCase());
+
+  if(team === "0") {
+    toggleBypass();
+  } else {
+    $("#confirmBypass").modal("show");
+  }
 };
+
+const toggleBypass = function() {
+  const station = $("#confirmBypass").attr("data-station");
+  websocket.send("toggleBypass", station);
+}
 
 // Sends a websocket message to signal to the volunteers that they may enter the field.
 var signalVolunteers = function () {
@@ -57,9 +85,19 @@ var signalReset = function () {
   websocket.send("signalReset");
 };
 
-// Signals the scorekeeper that foul entry is complete for this match.
-var commitMatch = function () {
-  websocket.send("commitMatch");
+// Shows confirmation modal if not all scores are ready, otherwise directly commits and posts.
+var confirmCommit = function () {
+  if (scoreIsReady) {
+    commitAndPost();
+    return;
+  }
+
+  $("#confirmCommit").modal("show");
+};
+
+// Commits the score and posts results to the audience.
+var commitAndPost = function () {
+  websocket.send("commitAndPost");
 };
 
 // Handles a websocket message to update the teams for the current match.
@@ -73,25 +111,38 @@ var handleMatchLoad = function (data) {
   setTeamCard("blue", 2, data.Teams["B2"]);
   setTeamCard("blue", 3, data.Teams["B3"]);
 
-  $("#redScoreSummary .team-1").text(data.Teams["R1"].Id);
-  $("#redScoreSummary .team-2").text(data.Teams["R2"].Id);
-  $("#redScoreSummary .team-3").text(data.Teams["R3"].Id);
-  $("#blueScoreSummary .team-1").text(data.Teams["B1"].Id);
-  $("#blueScoreSummary .team-2").text(data.Teams["B2"].Id);
-  $("#blueScoreSummary .team-3").text(data.Teams["B3"].Id);
+  $("#redScoreSummary .team-1").text(data.Teams["R1"]?.Id || "");
+  $("#redScoreSummary .team-2").text(data.Teams["R2"]?.Id || "");
+  $("#redScoreSummary .team-3").text(data.Teams["R3"]?.Id || "");
+  $("#blueScoreSummary .team-1").text(data.Teams["B1"]?.Id || "");
+  $("#blueScoreSummary .team-2").text(data.Teams["B2"]?.Id || "");
+  $("#blueScoreSummary .team-3").text(data.Teams["B3"]?.Id || "");
 };
 
 // Handles a websocket message to update the match status.
 const handleMatchTime = function (data) {
-  $(".control-button").attr("data-enabled", matchStates[data.MatchState] === "POST_MATCH");
+  isPostMatch = matchStates[data.MatchState] === "POST_MATCH";
+  $(".control-button").attr("data-enabled", isPostMatch);
+
+  let title = "Red/Yellow Cards";
+  if(!isPostMatch) {
+    title = matchStates[data.MatchState] === "PRE_MATCH" ? "Bypass" : "Disable";
+  }
+
+  $("#teamTitle").text(title)
 };
 
-const endgameStatusNames = [
+const towerStatusNames = [
   "None",
-  "Park",
-  "Shallow",
-  "Deep",
+  "Level 1",
+  "Level 2",
+  "Level 3",
 ];
+
+const setTowerStatus = function (selector, status) {
+  $(selector).text(towerStatusNames[status]);
+  $(selector).attr("data-status", status);
+};
 
 // Handles a websocket message to update the realtime scoring fields.
 const handleRealtimeScore = function (data) {
@@ -118,21 +169,12 @@ const handleRealtimeScore = function (data) {
     }
 
     let scoreRoot = `${alliance}ScoreSummary`;
-    $(`#${scoreRoot} .team-1-leave`).text(score.Mayhem.LeaveStatuses[0] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-2-leave`).text(score.Mayhem.LeaveStatuses[1] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-3-leave`).text(score.Mayhem.LeaveStatuses[2] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-1-park`).text(score.Mayhem.ParkStatuses[0] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-2-park`).text(score.Mayhem.ParkStatuses[1] ? "✓" : "❌");
-    $(`#${scoreRoot} .team-3-park`).text(score.Mayhem.ParkStatuses[2] ? "✓" : "❌");
-    // Auto counters
-    $(`#${scoreRoot} .auto-gp1-l1`).text(score.Mayhem.AutoGamepiece1Level1Count);
-    $(`#${scoreRoot} .auto-gp1-l2`).text(score.Mayhem.AutoGamepiece1Level2Count);
-    $(`#${scoreRoot} .auto-gp2`).text(score.Mayhem.AutoGamepiece2Count);
-    
-    // Teleop counters
-    $(`#${scoreRoot} .teleop-gp1-l1`).text(score.Mayhem.TeleopGamepiece1Level1Count);
-    $(`#${scoreRoot} .teleop-gp1-l2`).text(score.Mayhem.TeleopGamepiece1Level2Count);
-    $(`#${scoreRoot} .teleop-gp2`).text(score.Mayhem.TeleopGamepiece2Count);
+    setTowerStatus(`#${scoreRoot} .team-1-auto-tower`, score.AutoTowerStatuses[0]);
+    setTowerStatus(`#${scoreRoot} .team-2-auto-tower`, score.AutoTowerStatuses[1]);
+    setTowerStatus(`#${scoreRoot} .team-3-auto-tower`, score.AutoTowerStatuses[2]);
+    setTowerStatus(`#${scoreRoot} .team-1-endgame-tower`, score.EndgameTowerStatuses[0]);
+    setTowerStatus(`#${scoreRoot} .team-2-endgame-tower`, score.EndgameTowerStatuses[1]);
+    setTowerStatus(`#${scoreRoot} .team-3-endgame-tower`, score.EndgameTowerStatuses[2]);
   }
 }
 
@@ -141,10 +183,32 @@ const handleScoringStatus = function (data) {
   if (data.RefereeScoreReady) {
     $("#commitButton").attr("data-enabled", false);
   }
-  updateScoreStatus(data, "red_near", "#redNearScoreStatus", "Red Near");
-  updateScoreStatus(data, "red_far", "#redFarScoreStatus", "Red Far");
-  updateScoreStatus(data, "blue_near", "#blueNearScoreStatus", "Blue Near");
-  updateScoreStatus(data, "blue_far", "#blueFarScoreStatus", "Blue Far");
+  updateScoreStatus(data, "red", "#redScoreStatus", "Red");
+  updateScoreStatus(data, "blue", "#blueScoreStatus", "Blue");
+
+  scoreIsReady = Object.values(data.PositionStatuses).every(status => status.Ready);
+
+  // Make the button visually distinct if not all refs have committed.
+  // HR can still press the button with confirm modal.
+  if (scoreIsReady) {
+    $("#commitButton").removeClass("disabled");
+  } else {
+    $("#commitButton").addClass("disabled");
+  }
+}
+
+const handleArenaStatus = function (data) {
+  setTeamBypassedStatus("red1", data.AllianceStations["R1"]?.Bypass);
+  setTeamBypassedStatus("red2", data.AllianceStations["R2"]?.Bypass);
+  setTeamBypassedStatus("red3", data.AllianceStations["R3"]?.Bypass);
+  setTeamBypassedStatus("blue1", data.AllianceStations["B1"]?.Bypass);
+  setTeamBypassedStatus("blue2", data.AllianceStations["B2"]?.Bypass);
+  setTeamBypassedStatus("blue3", data.AllianceStations["B3"]?.Bypass);
+};
+
+const setTeamBypassedStatus = function (station, bypassed) {
+  const cardButton = $(`#${station}Card`);
+  cardButton.toggleClass("bypassed-status", bypassed && !isPostMatch);
 }
 
 // Helper function to update a badge that shows scoring panel commit status.
@@ -157,9 +221,9 @@ const updateScoreStatus = function (data, position, element, displayName) {
 
 // Populates the red/yellow card button for a given team.
 const setTeamCard = function (alliance, position, team) {
-  const cardButton = $(`#${alliance}Team${position}Card`);
+  const cardButton = $(`#${alliance}${position}Card`);
   if (team === null) {
-    cardButton.text(0);
+    cardButton.text("-");
     cardButton.attr("data-team", 0)
     cardButton.attr("data-old-yellow-card", "");
   } else {
@@ -198,6 +262,9 @@ $(function () {
     },
     scoringStatus: function (event) {
       handleScoringStatus(event.data);
+    },
+    arenaStatus: function (event) {
+      handleArenaStatus(event.data);
     },
   });
 });

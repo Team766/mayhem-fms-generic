@@ -8,15 +8,15 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Team254/cheesy-arena/game"
+	"github.com/Team254/cheesy-arena/model"
+	"github.com/Team254/cheesy-arena/partner"
+	"github.com/Team254/cheesy-arena/playoff"
+	"github.com/Team254/cheesy-arena/websocket"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/Team254/cheesy-arena/game"
-	"github.com/Team254/cheesy-arena/model"
-	"github.com/Team254/cheesy-arena/playoff"
-	"github.com/Team254/cheesy-arena/websocket"
 )
 
 type MatchResultWithSummary struct {
@@ -84,7 +84,8 @@ func (web *Web) matchesApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	_, err = w.Write(jsonData)
 	if err != nil {
 		handleWebErr(w, err)
@@ -110,7 +111,8 @@ func (web *Web) sponsorSlidesApiHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	_, err = w.Write(jsonData)
 	if err != nil {
 		handleWebErr(w, err)
@@ -170,7 +172,8 @@ func (web *Web) rankingsApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	_, err = w.Write(jsonData)
 	if err != nil {
 		handleWebErr(w, err)
@@ -192,7 +195,8 @@ func (web *Web) alliancesApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	_, err = w.Write(jsonData)
 	if err != nil {
 		handleWebErr(w, err)
@@ -207,14 +211,11 @@ func (web *Web) arenaWebsocketApiHandler(w http.ResponseWriter, r *http.Request)
 		handleWebErr(w, err)
 		return
 	}
-	defer ws.Close()
+	defer closeWebsocket(ws)
 
 	// Subscribe the websocket to the notifiers whose messages will be passed on to the client.
 	ws.HandleNotifiers(web.arena.MatchTimingNotifier, web.arena.MatchLoadNotifier, web.arena.MatchTimeNotifier)
 }
-
-// Directory containing team avatar images
-const AvatarsDir = "static/img/avatars"
 
 // Serves the avatar for a given team, or a default if none exists.
 func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
@@ -224,9 +225,9 @@ func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	avatarPath := fmt.Sprintf("%s/%d.png", AvatarsDir, teamId)
+	avatarPath := fmt.Sprintf("%s/%d.png", partner.AvatarsDir, teamId)
 	if _, err := os.Stat(avatarPath); os.IsNotExist(err) {
-		avatarPath = fmt.Sprintf("%s/0.png", AvatarsDir)
+		avatarPath = fmt.Sprintf("%s/0.png", partner.AvatarsDir)
 	}
 
 	http.ServeFile(w, r, avatarPath)
@@ -242,7 +243,8 @@ func (web *Web) bracketSvgApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Add("Content-Type", "image/svg+xml")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	if err := web.generateBracketSvg(w, activeMatch); err != nil {
 		handleWebErr(w, err)
 		return
@@ -292,7 +294,9 @@ func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match) error 
 
 	bracketType := "double"
 	numAlliances := web.arena.EventSettings.NumPlayoffAlliances
-	if web.arena.EventSettings.PlayoffType == model.SingleEliminationPlayoff {
+	if web.arena.EventSettings.PlayoffType == model.DoubleEliminationPlayoff && numAlliances == 4 {
+		bracketType = "double4"
+	} else if web.arena.EventSettings.PlayoffType == model.SingleEliminationPlayoff {
 		if numAlliances > 8 {
 			bracketType = "16"
 		} else if numAlliances > 4 {
